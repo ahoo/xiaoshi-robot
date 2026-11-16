@@ -40,4 +40,5 @@ def run_all():
 
 
 if __name__ == '__main__':
-    run_all()
+    import json
+    json.dump(run_all(), open('../results/base_bench.json', 'w'), indent=1)

@@ -79,6 +79,9 @@ def main(seed=4, clearance=0.30, out='../results/episode.mp4'):
 
     res, agent, robot = run_episode(seed, clearance, on_step=on_step)
     writer.close()
+    import json
+    json.dump({k: res[k] for k in ('seed', 'clearance', 'delivered', 'total', 'sim_time', 'grasp_attempts', 'grasp_fail', 'collisions')}, open(out.replace('.mp4', '.json'), 'w'))
+    rd = imageio.get_reader(out); n = rd.count_frames(); imageio.imwrite(out.replace('.mp4', '.jpg'), rd.get_data(int(n * 0.3)), quality=82); rd.close()
     print(res['delivered'], '/', res['total'], 'sim time', res['sim_time'], '->', out)
     return res
 

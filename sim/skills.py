@@ -11,7 +11,7 @@ IK = ArmIK()
 PINCH_MIN_Z = 0.025        # keeps the fingertips clear of the floor
 HOLD_MIN = GRIP_CLOSED + 0.10   # jaw angle above this means something at least ~1 cm thick is between the jaws
 SOFT_GRIP = 0.4               # N*m while closing on the floor
-TILT_ABORT = 0.10             # rad of chassis tilt at which a grasp is abandoned
+TILT_ABORT = 0.07             # rad of chassis tilt at which a grasp is abandoned
 CLEAR = 0.007              # gap left between the fixed jaw and the object before closing
 
 
@@ -124,9 +124,16 @@ def grasp(robot, plan, log=None):
         robot.set_grip_torque(P['gripper_torque'])
         robot.set_arm(q5=plan['lift'][1], grip=0.3, speed=1.0); yield from wait_arm(robot)
         return False
-    robot.set_arm(q5=plan['lift'][0], speed=0.4); yield from wait_arm(robot)
-    robot.set_grip_torque(P['gripper_torque'])   # off the floor: squeeze properly
-    robot.set_arm(q5=plan['lift'][1], speed=0.4); yield from wait_arm(robot)
+    robot.set_grip_torque(P['gripper_torque'])   # both jaws are on the object now: squeeze properly before lifting
+    for _ in range(15):
+        yield
+        if robot.tilt() > TILT_ABORT:            # the jaw is sitting on top of the object and pushing the robot up
+            if log: log('机身被顶起，松手重来')
+            robot.set_arm(grip=0.5); yield from wait(robot, 0.3)
+            robot.set_arm(q5=plan['lift'][1], grip=0.3, speed=1.0); yield from wait_arm(robot)
+            return False
+    for q in plan['lift']:
+        robot.set_arm(q5=q, speed=0.4); yield from wait_arm(robot)
     yield from wait(robot, 0.3)
     if robot.joints()[5] < HOLD_MIN:
         if log: log('抬起时物体滑脱')

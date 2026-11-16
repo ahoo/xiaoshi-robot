@@ -20,7 +20,7 @@ LIDAR_RAYS = 240
 LIDAR_RANGE = 6.0
 LIDAR_MIN = 0.12               # returns closer than this to the sensor are the robot itself
 LIDAR_NOISE = 0.01             # metres, 1 sigma
-FOOTPRINT = (-0.20, 0.36, 0.17)  # lidar self-filter box in the chassis frame: x min, x max, |y| max
+FOOTPRINT = (-0.05, 0.27, 0.10)  # lidar self-filter box in the chassis frame (folded arm plus payload): x min, x max, |y| max
 
 Q_CARRY = np.array([0.002, -0.393, 0.733, 1.523, 0.002])   # pinch 0.16 m ahead, 0.19 m up; a held object clears the shoulder and the deck
 GRIP_OPEN, GRIP_CLOSED = 1.1, -0.17

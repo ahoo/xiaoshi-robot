@@ -20,7 +20,8 @@ from skills import carry_pose, grasp, holding, place, plan_grasp, wait, wait_arm
 
 CS, GX, GY = 0.05, 80, 60
 CCS, CGX, CGY = 0.25, 16, 12
-PASS = 0.215                 # m: a cell is drivable if the nearest obstacle is at least this far (robot radius 0.17 + margin)
+PASS = 0.215                 # m: a cell is drivable if the nearest mapped obstacle cell is at least this far (0.14 to the wheel rims, plus cell size, pose error and margin)
+STOP_R = 0.215               # m: collision monitor radius around the robot centre, checked against the live scan
 V_MAX, W_MAX = 0.18, 1.0
 CAM_HFOV, CAM_RANGE = math.radians(44), 2.2
 STANDOFF = 0.235             # robot centre to object when grasping
@@ -42,6 +43,7 @@ class Agent:
         self.cov = np.zeros((CGY, CGX), bool)
         self.memory = {}
         self.noise = np.zeros(3)
+        self.close_pts = np.zeros((0, 2)); self.min_range = 9.0; self.blocked_t = -9.0
         self.path = None; self.scan = None; self.state = '启动'; self.target = None; self.log_lines = []
         self.stats = dict(grasp_attempts=0, grasp_fail=0, dropped=0, missed_place=0, replans=0, stuck=0, collisions=0, floor_touch=0, max_tilt=0.0, dist=0.0)
         self._tick = 0; self._last_xy = np.array(robot.true_pose()[:2]); self._coll_t = -9.0; self._floor_t = -9.0
@@ -76,6 +78,8 @@ class Agent:
         self.noise = 0.97 * self.noise + math.sqrt(1 - 0.97 ** 2) * sig * self.rng.normal(size=3)
         x, y, th = self.pose()
         # --- lidar -> occupancy log-odds
+        if self.state in ('抓取', '放置'):          # the arm is out in front of the lidar: do not map it
+            self._sense_camera(); return
         ang, rng_ = r.lidar()
         lx, ly = x + math.cos(th) * P['lidar_pos'][0], y + math.sin(th) * P['lidar_pos'][0]
         fin = np.isfinite(rng_); a = ang[fin] + th; rr = rng_[fin]
@@ -91,8 +95,16 @@ class Agent:
             hi = np.floor((lx + np.cos(a) * (rr + 0.015)) / CS).astype(int); hj = np.floor((ly + np.sin(a) * (rr + 0.015)) / CS).astype(int)
             ok = (hi >= 0) & (hi < GX) & (hj >= 0) & (hj < GY)
             flat = np.unique(hj[ok] * GX + hi[ok])
-            lo[flat] = np.minimum(lo[flat].astype(int) + 6, 12).astype(np.int8)
-        # --- camera: coverage and object detections (ground truth + noise, gated by field of view and line of sight)
+            lo[flat] = np.minimum(lo[flat].astype(int) + 6, 20).astype(np.int8)
+            # points close to the robot, in the robot frame, for the collision monitor
+            qx, qy = lx + np.cos(a) * rr - x, ly + np.sin(a) * rr - y; dq = np.hypot(qx, qy); close = dq < STOP_R
+            self.close_pts = np.stack([qx[close] / dq[close], qy[close] / dq[close]], 1) if close.any() else np.zeros((0, 2))
+            self.min_range = float(dq.min())
+        self._sense_camera()
+
+    def _sense_camera(self):
+        """Camera: coverage and object detections (ground truth + noise, gated by field of view and line of sight)."""
+        r = self.r
         tx, ty, tth = r.true_pose()
         cam = np.array([tx + math.cos(tth) * 0.108, ty + math.sin(tth) * 0.108, 0.126])
         for j in range(CGY):
@@ -128,7 +140,7 @@ class Agent:
         if self._tick % 5 == 0: self.sense()
         xy = np.array(r.true_pose()[:2]); self.stats['dist'] += float(np.linalg.norm(xy - self._last_xy)); self._last_xy = xy
         tilt = math.degrees(r.tilt())
-        if tilt > 3 and tilt > self.stats['max_tilt'] + 0.5: self.log('机身倾斜 %.1f°（%s）' % (tilt, self.state))
+        if tilt > 3 and tilt > self.stats['max_tilt'] + 0.5 and r.t - getattr(self, '_tilt_t', -9) > 2: self._tilt_t = r.t; self.log('机身倾斜超过 3°（%s）' % self.state)
         self.stats['max_tilt'] = max(self.stats['max_tilt'], tilt)
         d = r.d
         for i in range(d.ncon):
@@ -227,6 +239,10 @@ class Agent:
 
     def drive_world(self, vwx, vwy, th_des):
         x, y, th = self.pose()
+        # collision monitor: whatever the map says, never move towards something the lidar sees this close right now
+        for ux, uy in self.close_pts:
+            toward = vwx * ux + vwy * uy
+            if toward > 0: vwx -= toward * ux; vwy -= toward * uy; self.blocked_t = self.r.t
         c, s = math.cos(th), math.sin(th)
         self.r.set_twist(c * vwx + s * vwy, -s * vwx + c * vwy, float(np.clip(2.2 * wrap(th_des - th), -W_MAX, W_MAX)))
 
@@ -290,6 +306,7 @@ class Agent:
         self.stop(); yield from wait(self.r, 0.4)
 
     def spin(self, turns=1.0):
+        if self.min_range < 0.27: return           # too close to something for the folded arm to swing round safely
         acc = 0.0; last = self.pose()[2]
         while acc < 2 * math.pi * turns:
             self.r.set_twist(0, 0, 0.9); yield
