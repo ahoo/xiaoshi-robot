@@ -20,6 +20,7 @@ LIDAR_RAYS = 240
 LIDAR_RANGE = 6.0
 LIDAR_MIN = 0.12               # returns closer than this to the sensor are the robot itself
 LIDAR_NOISE = 0.01             # metres, 1 sigma
+FOOTPRINT = (-0.20, 0.36, 0.17)  # lidar self-filter box in the chassis frame: x min, x max, |y| max
 
 Q_CARRY = np.array([0.002, -0.393, 0.733, 1.523, 0.002])   # pinch 0.16 m ahead, 0.19 m up; a held object clears the shoulder and the deck
 GRIP_OPEN, GRIP_CLOSED = 1.1, -0.17
@@ -101,6 +102,10 @@ class Robot:
         if grip is not None: self.arm_target[5] = grip
         if speed is not None: self.arm_speed = speed
 
+    def set_grip_torque(self, limit):
+        """Torque limit of the gripper servo (N*m); the STS3215 has a register for this."""
+        a = self.arm_act[5]; self.m.actuator_forcerange[a] = [-limit, limit]; self._flim[a] = limit
+
     def arm_done(self, tol=0.03):
         return np.abs(self.arm_cmd[:5] - self.arm_target[:5]).max() < 0.004 and np.abs(self.d.qpos[self.arm_qadr][:5] - self.arm_target[:5]).max() < tol
 
@@ -116,8 +121,10 @@ class Robot:
         mujoco.mj_multiRay(self.m, d, d.site_xpos[self.lidar_site], vec.reshape(-1), self._geomgroup, 1, -1, self._ray_geom, self._ray_dist, None, LIDAR_RAYS, LIDAR_RANGE)
         r = self._ray_dist.copy()
         r[(self._ray_geom < 0) | (r < LIDAR_MIN)] = np.inf
-        # anything that belongs to the robot (arm, wheels) is reported as "no return": a real driver masks it by range and bearing
-        own = np.array([g >= 0 and self.m.body_rootid[self.m.geom_bodyid[g]] == self.chassis for g in self._ray_geom])
+        # footprint filter, as a real lidar driver would be configured: returns that land inside a box around the robot
+        # (arm reach and a carried object included) are discarded, because they are the robot itself or its payload
+        px = P['lidar_pos'][0] + r * np.cos(self.ray_ang); py = r * np.sin(self.ray_ang)
+        own = np.isfinite(r) & (px > FOOTPRINT[0]) & (px < FOOTPRINT[1]) & (np.abs(py) < FOOTPRINT[2])
         self.last_self_hits = int(own.sum())
         r[own] = np.inf
         return self.ray_ang, r + self.rng.normal(0, LIDAR_NOISE, LIDAR_RAYS) * np.isfinite(r)

@@ -46,13 +46,13 @@ FURNITURE = [
 BASKET = dict(x=3.45, y=2.55, sx=0.30, sy=0.22, h=0.09, t=0.008)
 HOME = (0.45, 2.55, -math.pi / 2)
 
-# pickable objects: half sizes (m), mass (kg), friction, grasp width across the jaws (m)
+# pickable objects: length of the long side (m), half sizes (m), mass (kg), friction, grasp width across the jaws (m)
 OBJECTS = {
-    'block': dict(cn='积木', type='box', size=(0.02, 0.02, 0.02), mass=0.030, friction=0.5, width=0.04, rgba='0.31 0.62 0.88 1'),
-    'ball': dict(cn='网球', type='sphere', size=(0.0335,), mass=0.058, friction=0.6, width=0.067, rgba='0.84 0.91 0.29 1'),
-    'remote': dict(cn='遥控器', type='box', size=(0.075, 0.0225, 0.01), mass=0.090, friction=0.4, width=0.045, rgba='0.86 0.84 0.92 1'),
-    'car': dict(cn='玩具车', type='box', size=(0.045, 0.022, 0.015), mass=0.060, friction=0.4, width=0.044, rgba='0.95 0.69 0.18 1'),
-    'sock': dict(cn='卷好的袜子', type='ellipsoid', size=(0.045, 0.030, 0.024), mass=0.040, friction=0.8, width=0.06, rgba='0.89 0.28 0.24 1'),
+    'block': dict(length=0.04, cn='积木', type='box', size=(0.02, 0.02, 0.02), mass=0.030, friction=0.5, width=0.04, rgba='0.31 0.62 0.88 1'),
+    'ball': dict(length=0.067, cn='网球', type='sphere', size=(0.0335,), mass=0.058, friction=0.6, width=0.067, rgba='0.84 0.91 0.29 1'),
+    'remote': dict(length=0.15, cn='遥控器', type='box', size=(0.075, 0.0225, 0.01), mass=0.090, friction=0.4, width=0.045, rgba='0.86 0.84 0.92 1'),
+    'car': dict(length=0.09, cn='玩具车', type='box', size=(0.045, 0.022, 0.015), mass=0.060, friction=0.4, width=0.044, rgba='0.95 0.69 0.18 1'),
+    'sock': dict(length=0.09, cn='卷好的袜子', type='ellipsoid', size=(0.045, 0.030, 0.024), mass=0.040, friction=0.8, width=0.06, rgba='0.89 0.28 0.24 1'),
 }
 OBJ_HALF_H = {'block': 0.02, 'ball': 0.0335, 'remote': 0.01, 'car': 0.015, 'sock': 0.024}
 

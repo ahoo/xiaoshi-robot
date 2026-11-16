@@ -4,12 +4,14 @@ import math
 import numpy as np
 
 from arm import ArmIK
-from model import OBJECTS, OBJ_HALF_H
+from model import OBJECTS, OBJ_HALF_H, P
 from robot import GRIP_CLOSED, Q_CARRY
 
 IK = ArmIK()
 PINCH_MIN_Z = 0.025        # keeps the fingertips clear of the floor
 HOLD_MIN = GRIP_CLOSED + 0.10   # jaw angle above this means something at least ~1 cm thick is between the jaws
+SOFT_GRIP = 0.4               # N*m while closing on the floor
+TILT_ABORT = 0.10             # rad of chassis tilt at which a grasp is abandoned
 CLEAR = 0.007              # gap left between the fixed jaw and the object before closing
 
 
@@ -46,7 +48,7 @@ def to_chassis(robot, p_world, pose):
     return np.array([c * dx + s * dy, -s * dx + c * dy, p_world[2]])
 
 
-def plan_grasp(rel, kind):
+def plan_grasp(rel, kind, mis=0.0):
     """rel: object centre in the chassis frame (z = height above floor). Returns joint waypoints and jaw angles, or None.
 
     Two constraints of this hardware shape the plan:
@@ -56,6 +58,11 @@ def plan_grasp(rel, kind):
       therefore always close along the line from the shoulder to the object, and it is the base's job to stand where
       that line crosses the object's narrow side."""
     o = OBJECTS[kind]; w = o['width']
+    # `mis` = angle between the jaw line and the object's narrow axis. A long object that is not square to the jaws
+    # is wider across them, so the jaws must open for that width or they come down on top of it.
+    w_open = w if kind in ('ball', 'block') else w * math.cos(mis) + o['length'] * abs(math.sin(mis))
+    if w_open + CLEAR + 0.02 > 0.10:
+        return None
     depth = 0.075 if kind == 'ball' else 0.0626          # a ball is held nearer the fingertips, where the jaws open wider
     q_c = jaw_angle_for_gap(w, depth)                    # jaw angle when both faces touch the object
     beta = q_c / 2
@@ -69,7 +76,7 @@ def plan_grasp(rel, kind):
     _, a, xg = IK.fk(q)
     if xg @ u < 0:                                       # fixed jaw must be on the robot side
         return None
-    touch = c - (w / 2) * xg - (depth - 0.0626) * a      # pinch site (on the fixed jaw face) when that face touches the object
+    touch = c - (w_open / 2) * xg - (depth - 0.0626) * a      # pinch site (on the fixed jaw face) when that face touches the object
     touch[2] = max(touch[2], PINCH_MIN_Z)
     back = touch - CLEAR * u
     q_touch, e0, p0 = IK.solve(touch, approach=ap, yaw=yaw, seed=q)
@@ -84,31 +91,42 @@ def plan_grasp(rel, kind):
         seed, e, p = IK.solve(touch + [0, 0, dz], approach=ap, yaw=yaw, seed=seed); lift.append(seed); errs.append(e); perr.append(p)
     if max(perr) > 0.004 or max(errs) > 0.03:
         return None
-    return dict(approach=approach, grasp=q_grasp, touch=q_touch, lift=lift, open=jaw_angle_for_gap(w + CLEAR + 0.02, 0.08), expect=q_c)
+    return dict(approach=approach, grasp=q_grasp, touch=q_touch, lift=lift, open=jaw_angle_for_gap(w_open + CLEAR + 0.02, 0.08), expect=q_c)
 
 
 def grasp(robot, plan, log=None):
     """Executes a planned top-down grasp. Returns True if the jaw stopped on something and still holds it after lifting."""
     robot.set_arm(grip=plan['open'], speed=1.2)
     robot.set_arm(q5=plan['approach'][0]); yield from wait_arm(robot)
-    for q in plan['approach'][1:] + [plan['grasp']]:
-        robot.set_arm(q5=q, speed=0.6); yield from wait_arm(robot, tol=0.015)
-    robot.set_arm(q5=plan['touch'], speed=0.3); yield from wait_arm(robot, tol=0.015)     # slide the fixed jaw up to the object
+    for q, speed in [(q, 0.6) for q in plan['approach'][1:] + [plan['grasp']]] + [(plan['touch'], 0.3)]:   # last step slides the fixed jaw up to the object
+        robot.set_arm(q5=q, speed=speed)
+        for _ in range(200):
+            yield
+            if robot.tilt() > 0.045:                 # the arm is pressing on something and lifting the chassis: back off
+                if log: log('手臂压到东西了，抬起重来')
+                robot.set_arm(q5=plan['approach'][0], speed=1.0); yield from wait_arm(robot)
+                return False
+            if robot.arm_done(0.015): break
     yield from wait(robot, 0.15)
-    robot.set_arm(grip=GRIP_CLOSED)
+    # close gently while the object is still on the floor: at full torque the jaw can press down hard enough to
+    # lever this 2.3 kg robot off its front wheels
+    robot.set_grip_torque(SOFT_GRIP); robot.set_arm(grip=GRIP_CLOSED)
     last = 9.0
     for _ in range(100):                        # close until the jaw stalls
         yield
         q = robot.joints()[5]
-        if abs(q - last) < 0.0006 and robot.arm_cmd[5] <= GRIP_CLOSED + 0.02:
+        if (abs(q - last) < 0.0006 and robot.arm_cmd[5] <= GRIP_CLOSED + 0.02) or robot.tilt() > TILT_ABORT:
             break
         last = q
-    if robot.joints()[5] < HOLD_MIN:            # jaws closed (almost) completely: nothing in between
-        if log: log('夹爪合拢到底，没夹到东西')
+    if robot.joints()[5] < HOLD_MIN or robot.tilt() > TILT_ABORT:
+        if log: log('机身被顶起，松手重来' if robot.tilt() > TILT_ABORT else '夹爪合拢到底，没夹到东西')
+        robot.set_arm(grip=0.5); yield from wait(robot, 0.3)
+        robot.set_grip_torque(P['gripper_torque'])
         robot.set_arm(q5=plan['lift'][1], grip=0.3, speed=1.0); yield from wait_arm(robot)
         return False
-    for q in plan['lift']:
-        robot.set_arm(q5=q, speed=0.4); yield from wait_arm(robot)
+    robot.set_arm(q5=plan['lift'][0], speed=0.4); yield from wait_arm(robot)
+    robot.set_grip_torque(P['gripper_torque'])   # off the floor: squeeze properly
+    robot.set_arm(q5=plan['lift'][1], speed=0.4); yield from wait_arm(robot)
     yield from wait(robot, 0.3)
     if robot.joints()[5] < HOLD_MIN:
         if log: log('抬起时物体滑脱')

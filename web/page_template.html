@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小拾取物机器人</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 布局：切割垫工作台。上方是物理仿真录像和四个关键数字，下方是贴在垫子上的试验报告纸。 */
+  --mat-deep:#0f2a25; --mat-line:#3f7d6c; --grid:rgba(255,255,255,.035);
+  --ink:#eef0e4; --ink-dim:#a4bdb1;
+  --orange:#ff6b2c; --orange-ink:#1c0c03;
+  --paper:#f1eee2; --paper-ink:#1b2b27; --paper-dim:#586a63; --paper-line:#d2ccb8; --kraft:#c9a374;
+  --good:#1f7a4d; --bad:#b3400f;
+  --f-display:"ZCOOL QingKe HuangYou","Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --f-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background-color:var(--mat-deep);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:40px 40px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:24px 16px 64px;display:flex;flex-direction:column;gap:20px}
+:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+a{color:inherit;text-decoration-color:var(--orange);text-decoration-thickness:2px;text-underline-offset:3px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(52px,8vw,84px);line-height:.9;margin:0;letter-spacing:.06em;color:var(--paper)}
+h1 span{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;color:var(--orange);vertical-align:top;margin-left:10px}
+.tag{margin:16px 0 0;color:var(--ink-dim);max-width:52em}
+
+.bench{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.stage{border:1px solid var(--mat-line);border-radius:6px;overflow:hidden;background:#0c221e}
+.stage video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#0c221e}
+.stage p{margin:0;padding:10px 14px;font-size:13px;color:var(--ink-dim);border-top:1px solid var(--mat-line)}
+.nums{display:grid;gap:12px}
+.num{border:1px solid var(--mat-line);border-radius:6px;background:rgba(12,34,30,.72);padding:12px 14px}
+.num b{display:block;font-family:var(--f-mono);font-weight:500;font-size:30px;line-height:1.15;color:var(--paper);font-variant-numeric:tabular-nums}
+.num b small{font-size:15px;color:var(--ink-dim);margin-left:6px}
+.num span{font-size:13px;color:var(--ink-dim)}
+
+.sheets{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:20px;margin-top:12px}
+.sheet{grid-column:span 12;background:var(--paper);color:var(--paper-ink);border-radius:2px;padding:26px 26px 24px;position:relative;box-shadow:0 1px 0 rgba(0,0,0,.3),0 18px 30px -20px rgba(0,0,0,.7)}
+.sheet::before{content:"";position:absolute;top:-9px;left:28px;width:74px;height:20px;background:var(--kraft);opacity:.82;transform:rotate(-2deg)}
+.sheet.half{grid-column:span 6}
+.sheet h2{font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1.1;letter-spacing:.06em;margin:0 0 14px;text-wrap:balance}
+.sheet h3{font-size:15px;font-weight:700;margin:0 0 4px}
+.sheet p{margin:0 0 10px;max-width:46em}
+.sheet .note{font-size:13px;color:var(--paper-dim);max-width:none;margin:12px 0 0}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.three p{font-size:14px;color:var(--paper-dim);margin:0}
+.three h3{padding-top:10px;border-top:3px solid var(--orange)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+table.wide{min-width:680px}
+th,td{text-align:left;padding:8px 12px 8px 0;border-bottom:1px solid var(--paper-line);vertical-align:top}
+thead th{font-weight:700;border-bottom:2px solid var(--paper-ink);white-space:nowrap}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-size:13px;white-space:nowrap}
+td.good{color:var(--good);font-weight:500} td.bad{color:var(--bad);font-weight:500}
+ul.plain{margin:0;padding-left:1.1em;font-size:14px;display:grid;gap:7px}
+ol.find{margin:0;padding:0;list-style:none;counter-reset:s;display:grid;gap:12px}
+ol.find li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px;font-size:14px}
+ol.find li::before{content:counter(s);font-family:var(--f-mono);font-size:13px;width:24px;height:24px;border:1.5px solid var(--paper-ink);border-radius:50%;display:grid;place-items:center;margin-top:1px}
+ol.find b{display:block}
+ol.find span{color:var(--paper-dim)}
+pre{margin:0;padding:14px;background:#1b2b27;color:#eef0e4;border-radius:3px;overflow-x:auto;font-family:var(--f-mono);font-size:13px;line-height:1.6}
+code{font-family:var(--f-mono);font-size:.92em}
+@media(max-width:940px){.bench{grid-template-columns:1fr}.nums{grid-template-columns:repeat(2,minmax(0,1fr))}.three{grid-template-columns:1fr}.sheet.half{grid-column:span 12}}
+@media(max-width:560px){.sheet{padding:22px 18px}.num b{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>小拾<span>v0.2 物理仿真版</span></h1>
+    <p class="tag">LeKiwi 三全向轮底盘 + SO-101 机械臂（5 轴 + 夹爪）+ 激光雷达。这一版不再是概念动画：下面每个数字都来自 MuJoCo 物理引擎里的随机试验，代码、模型和原始结果都在 <a href="https://github.com/ahoo/xiaoshi-robot">ahoo/xiaoshi-robot</a>。</p>
+  </header>
+
+  <section class="bench">
+    <div class="stage">
+      <video controls muted playsinline preload="metadata" poster="episode.jpg" src="episode.mp4" aria-label="一次完整取物试验的仿真录像，5 倍速"></video>
+      <p>一次完整试验的录像，5 倍速（{{VIDEO_NOTE}}）。左：俯视；右上：跟拍；右下：机器人自己用雷达建的地图。</p>
+    </div>
+    <div class="nums">
+      <div class="num"><b>{{STD_DELIVERED}}<small>{{STD_PCT}}</small></b><span>标准条件下送进收纳筐的物体，{{STD_N}} 次随机试验</span></div>
+      <div class="num"><b>{{GRASP_TAPE}}<small>{{GRASP_TAPE_PCT}}</small></b><span>台架单次抓取成功，夹爪贴防滑胶带</span></div>
+      <div class="num"><b>{{GRASP_BARE}}<small>{{GRASP_BARE_PCT}}</small></b><span>同样的抓取，不贴胶带</span></div>
+      <div class="num"><b>{{STD_TIME}}<small>秒/件</small></b><span>标准条件下平均每送达一件的用时</span></div>
+    </div>
+  </section>
+
+  <section class="sheets">
+    <article class="sheet">
+      <h2>你问的三件事</h2>
+      <div class="three">
+        <div><h3>为什么只有两个轮子</h3><p>改成了三个全向轮。底盘现在能横着走，站位偏了可以平移修正，也能绕到物体的任意一侧去夹。仿真里的轮子带 48 个真实的小滚子，靠摩擦驱动，不是画出来的。</p></div>
+        <div><h3>自由度不够</h3><p>换成 SO-101：肩部水平旋转、肩抬、肘、腕俯仰、腕旋转，再加夹爪。仿真也查出它仍然缺一个腕部偏航，所以长条形物体要靠底盘绕到窄边一侧，这一点已经写进控制器。</p></div>
+        <div><h3>怎么保证落地</h3><p>保证不了，但可以把风险量出来。硬件全部是能买到的套件；仿真用官方物理模型和真实舵机力矩上限；每个仿真数字在下面的验收表里都对应一项你能在桌上做的实测。</p></div>
+      </div>
+    </article>
+
+    <article class="sheet">
+      <h2>整机任务：随机摆 5 件东西，全程自主</h2>
+      <p>每次试验随机摆放积木、网球、遥控器、玩具车、卷好的袜子各一件，再随机加 0–2 个纸箱。机器人从没有地图开始，自己建图、找物体、夹起来、送进收纳筐，限时 10 分钟。</p>
+      <div class="tablewrap"><table class="wide">
+        <thead><tr><th>条件</th><th class="n">试验次数</th><th class="n">送达</th><th class="n">五件全送达</th><th class="n">每件用时</th><th class="n">抓取失败/尝试</th><th class="n">途中掉落</th><th class="n">碰撞</th></tr></thead>
+        <tbody>{{TRIAL_ROWS}}</tbody>
+      </table></div>
+      <h3 style="margin-top:18px">没送达的那些是怎么回事</h3>
+      <ul class="plain">{{FAIL_ROWS}}</ul>
+      <p class="note">碰撞 = 机器人任何部位碰到墙或家具的次数。原始记录和每次试验的事件日志在仓库的 <code>results/trials.json</code>。</p>
+    </article>
+
+    <article class="sheet half">
+      <h2>台架：抓取</h2>
+      <p>机器人停好，物体放在正前方 20–26 cm，位置误差 4 mm、朝向误差约 9°，夹起后举 2 秒算成功。每格 {{GRASP_N}} 次。</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>物体</th><th class="n">贴胶带</th><th class="n">不贴</th></tr></thead>
+        <tbody>{{GRASP_ROWS}}</tbody>
+      </table></div>
+      <p class="note">夹爪是一片绕轴摆动的，张开后两片成 V 形、口朝下，夹东西全靠摩擦。圆的、大的物体对摩擦最敏感。</p>
+    </article>
+
+    <article class="sheet half">
+      <h2>台架：底盘</h2>
+      <p>收臂状态下给定速度跑 4 秒（含 0.4 秒加速段），看实际速度。</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>指令</th><th class="n">实际</th><th class="n">机身最大倾斜</th></tr></thead>
+        <tbody>{{BASE_ROWS}}</tbody>
+      </table></div>
+      <p class="note">最后一行故意超速：舵机到了转速上限，底盘最高就是这个速度。仿真里滚子是理想的，里程计几乎不漂；实物会漂，这是验收表里要量的一项。</p>
+    </article>
+
+    <article class="sheet">
+      <h2>物理仿真查出来的六件事</h2>
+      <ol class="find">
+        <li><div><b>夹爪必须贴防滑胶带</b><span>不贴的话网球 {{BARE_BALL}} 成功，贴了是 {{TAPE_BALL}}。整机试验里不贴胶带的送达率从 {{STD_PCT}} 掉到 {{BARE_PCT}}。</span></div></li>
+        <li><div><b>夹爪要歪着下去</b><span>摆动式夹爪张开时两个指尖不一样高，垂直往下夹扁的东西会一边压住一边够不着。把夹爪倾斜半个张角，两个指尖才齐平。第一版仿真遥控器 0/4，改后 {{TAPE_REMOTE}}。</span></div></li>
+        <li><div><b>5 轴臂要靠底盘补一个自由度</b><span>没有腕部偏航，夹爪只能沿肩到物体的连线开合。控制器让底盘先绕到长条物体的窄边一侧再伸手。</span></div></li>
+        <li><div><b>雷达会把自己夹着的东西当成墙</b><span>搬运时物体正好在雷达扫描面上，机器人以为前方 20 cm 有障碍，原地打转了 50 秒。加了机身范围滤波后消失。真机一定会遇到同样的问题。</span></div></li>
+        <li><div><b>舵机指令不能跳变</b><span>底盘速度直接给阶跃，机身前翘近 8°；机械臂按 50 Hz 给台阶指令，电机有四分之一时间在力矩上限附近。加了加速度限制和插值后恢复正常。</span></div></li>
+        <li><div><b>矮东西雷达看不见</b><span>雷达扫描面离地 20 cm。地上的小物件只有相机看见并记进地图后才会被绕开，没看见的会被压过去。</span></div></li>
+      </ol>
+    </article>
+
+    <article class="sheet half">
+      <h2>哪些是真物理</h2>
+      <ul class="plain">
+        <li>轮子、滚子和地面的接触与摩擦，底盘靠摩擦力前进。</li>
+        <li>舵机力矩上限 2.94 N·m（STS3215 12 V 堵转值），转速上限由官方模型的阻尼给出。</li>
+        <li>机械臂的质量、惯量、关节限位，来自 SO-101 官方模型。</li>
+        <li>夹爪与物体的接触：夹不稳会滑、会掉、会被碰倒。</li>
+        <li>雷达：240 线射线投射，1 cm 噪声，会被自己的手臂挡住。</li>
+      </ul>
+    </article>
+
+    <article class="sheet half">
+      <h2>哪些是假设</h2>
+      <ul class="plain">
+        <li>定位：真实位姿加 1.5 cm / 1° 的慢变噪声，代替激光定位算法。</li>
+        <li>识别：相机视野内且不被遮挡的物体一定认得出、不认错，位置带 5 mm + 1.5% 距离的噪声。</li>
+        <li>收纳筐位置事先告诉机器人。</li>
+        <li>底盘、电池等的重量是估的（整机约 2.35 kg），滚子没有轴承间隙。</li>
+        <li>打印件不变形、舵机没有回差、袜子用一个偏软的椭球代替。</li>
+      </ul>
+      <p class="note">这些假设每一条在验收表里都有对应的实测项。测出来不一样，就改参数重跑。</p>
+    </article>
+
+    <article class="sheet">
+      <h2>实物验收表</h2>
+      <p>按顺序做。前一项不过就先别做后一项。「仿真值」是这次试验的结果，「通过」是我建议的门槛。</p>
+      <div class="tablewrap"><table class="wide">
+        <thead><tr><th>#</th><th>测什么</th><th>怎么测</th><th>仿真值</th><th>通过</th></tr></thead>
+        <tbody>{{VALID_ROWS}}</tbody>
+      </table></div>
+    </article>
+
+    <article class="sheet half">
+      <h2>要买的东西</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>部件</th><th>标价</th></tr></thead>
+        <tbody>
+          <tr><td>LeKiwi 底盘套件（12 V 版，含电池、全向轮、舵机、打印件）</td><td class="n">约 $226–299</td></tr>
+          <tr><td>SO-101 机械臂，12 V 版（主从一对的套件；只需要从动臂）</td><td class="n">约 $312–433</td></tr>
+          <tr><td>LD19 激光雷达（D300 / D500 套件）</td><td class="n">约 $69–104</td></tr>
+          <tr><td>Raspberry Pi 5、两个 USB 相机</td><td class="n">未查价</td></tr>
+          <tr><td>夹爪防滑胶带、雷达支架铜柱</td><td class="n">几美元</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">2026 年 11 月各零售页面的标价，不含运费。来源：<a href="https://www.robotshop.com/products/seeedstudio-lekiwi-kit-12v-mobile-base-w-3d-printed-parts-battery">RobotShop</a>、<a href="https://rcdrone.top/products/lekiwi-kit12v-version-mobile-base-with-3d-printed-parts-and-battery">RCDrone</a>、<a href="https://openelab.com/products/seeed-studio-so-arm101-pro-assembled-kit-lerobot-6dof-robotic-arm">OpenELAB</a>、<a href="https://www.robotshop.com/products/hiwonder-ld19-d500-lidar-developer-kit-360-dtof-laser-scanner-supports-ros1-2-raspberry-pi-jetson-nano">RobotShop LD19</a>。细节见仓库 <code>docs/bom.md</code>。</p>
+    </article>
+
+    <article class="sheet half">
+      <h2>自己跑一遍</h2>
+      <pre>git clone https://github.com/ahoo/xiaoshi-robot
+cd xiaoshi-robot
+pip install mujoco numpy scipy imageio imageio-ffmpeg pillow
+cd sim
+python test_base.py        # 底盘台架
+python test_grasp.py 10    # 抓取台架
+python episode.py 4        # 一次完整试验，打印事件日志
+python run_trials.py       # 全部随机试验
+python render_video.py 4   # 生成录像</pre>
+      <p class="note">硬件参数集中在 <code>sim/model.py</code> 顶部的 <code>P</code>，传感器噪声在 <code>sim/controller.py</code> 顶部。实测后改这两处重跑。</p>
+    </article>
+
+    <article class="sheet">
+      <h2>还没做的</h2>
+      <ul class="plain">
+        <li>没有跑真的识别模型和真的激光定位，这两块目前是带噪声的理想传感器。它们是实物上最可能拉低成功率的地方。</li>
+        <li>没有模拟会动的障碍（人、宠物），也没有地毯、门槛。</li>
+        <li>贴墙 12 cm 以内的物体没有测；长条物体窄边朝墙时现在会直接放弃。</li>
+        <li>样本量不大：标准条件 {{STD_N}} 次，其他条件 {{OTHER_N}}。差几个百分点不要当真。</li>
+        <li>第一版的概念演示页保留在仓库 <code>web/concept-v0.1/</code>，它不是物理仿真，仅作对照。</li>
+      </ul>
+    </article>
+  </section>
+</div>
+</body>
+</html>
