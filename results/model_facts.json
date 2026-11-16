@@ -1,0 +1,7 @@
+{
+ "robot_mass": 2.3290059999999997,
+ "arm_mass": 0.632006,
+ "wheel_mass": 0.13400000000000006,
+ "lidar_self_hits": 9,
+ "lidar_rays": 240
+}

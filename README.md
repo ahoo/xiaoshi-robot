@@ -32,7 +32,7 @@ cd sim
 python test_base.py          # 底盘台架，几十秒
 python test_grasp.py 10      # 抓取台架，每种物体 10 次 × 两种夹爪摩擦
 python episode.py 4          # 第 4 号随机布局跑一次，打印事件日志和成绩
-python run_trials.py         # 全部随机试验（双核约 20 分钟）
+python run_trials.py         # 全部 40 次随机试验（双核约 45 分钟）
 MUJOCO_GL=egl python render_video.py 4    # 录像，需要能离屏渲染的环境
 python ../web/build_page.py  # 用 results/ 里的数字重新生成页面和 docs/validation.md
 ```

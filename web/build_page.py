@@ -81,11 +81,12 @@ def main():
     valid_rows = ''.join(f'<tr><td class="n">{i + 1}</td><td>{a}</td><td>{b}</td><td>{c}</td><td>{d}</td></tr>' for i, (a, b, c, d) in enumerate(valid))
 
     round_rows = ''
-    for fn, name in (('trials_round1.json', '第一轮：初版控制器'), ('trials_round2.json', '第二轮：加了轻合、近看再对位、远侧净空检查'), ('trials.json', '第三轮：加了防撞层（当前版本）')):
-        eps = [e for e in json.load(open(R(fn)))['episodes'] if e['condition'] == 'standard']
+    for fn, name in (('trials_round1.json', '第一轮：初版控制器'), ('trials_round2.json', '第二轮：轻合夹爪、近看再对位、远侧净空检查'),
+                     ('trials_round3.json', '第三轮：加了只看雷达、只管平移的防撞层'), ('trials.json', '第四轮：防撞层按真实外形算，也管转身（当前版本）')):
+        alle = json.load(open(R(fn)))['episodes']; eps = [e for e in alle if e['condition'] == 'standard']
         d = sum(e['delivered'] for e in eps); tot = sum(e['total'] for e in eps)
-        round_rows += (f'<tr><td>{name}</td><td class="n">{d}/{tot}</td><td class="n">{sum(e["collisions"] for e in eps)}</td>'
-                       f'<td class="n">{sum(e["max_tilt"] > 3 for e in eps)}/{len(eps)}</td><td class="n">{max(e["max_tilt"] for e in eps):.0f}°</td></tr>')
+        round_rows += (f'<tr><td>{name}</td><td class="n">{d}/{tot}</td><td class="n">{sum(e["collisions"] > 0 for e in alle)} 次试验</td>'
+                       f'<td class="n">{sum(e["max_tilt"] > 30 for e in alle)}</td><td class="n">{sum(e["max_tilt"] > 3 for e in alle)}/{len(alle)}</td></tr>')
     video = json.load(open(R('episode.json')))
     rep = {
         'VIDEO_NOTE': f'第 {video["seed"]} 号随机布局，仿真时间 {video["sim_time"] / 60:.1f} 分钟，送达 {video["delivered"]}/{video["total"]}',
@@ -94,7 +95,7 @@ def main():
         'TRIAL_ROWS': trial_rows, 'FAIL_ROWS': fail_rows, 'GRASP_N': str(gt['block'][1]), 'GRASP_ROWS': grasp_rows, 'BASE_ROWS': base_rows,
         'BARE_BALL': f'{gb["ball"][0]}/{gb["ball"][1]}', 'TAPE_BALL': f'{gt["ball"][0]}/{gt["ball"][1]}', 'BARE_PCT': pct(bj['d'], bj['tot']),
         'TAPE_REMOTE': f'{gt["remote"][0]}/{gt["remote"][1]}', 'VALID_ROWS': valid_rows, 'OTHER_N': f'{nw["n"]} 次和 {bj["n"]} 次',
-        'ROUND_ROWS': round_rows,
+        'ROUND_ROWS': round_rows, 'NO_STANCE': f'{sum(v.get("no_stance", 0) for v in G["1.0"].values())}',
         'ROBOT_MASS': f'{M["robot_mass"]:.2f}',
         'BARE_GF': f'{bj["gf"]}/{bj["ga"]}', 'STD_GF': f'{s["gf"]}/{s["ga"]}', 'STD_TILT': f'{s["tilt"]}/{s["n"]}', 'STD_COLL': str(s['coll']),
     }

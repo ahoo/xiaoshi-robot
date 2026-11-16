@@ -30,21 +30,24 @@ def _font(size):
 
 
 def draw_map(agent, robot):
+    """The robot's occupancy map, drawn as seen from above with the same orientation as the overview camera
+    (x grows to the left, y grows downwards)."""
     lo = agent.lo; img = np.zeros((GY, GX, 3), np.uint8)
     img[lo == 0] = COL['unk']; img[lo < 0] = COL['free']; img[lo > 0] = COL['paper']
-    im = Image.fromarray(img).resize(SIDE, Image.NEAREST); d = ImageDraw.Draw(im); k = SIDE[0] / (GX * CS)
+    im = Image.fromarray(img[:, ::-1]).resize(SIDE, Image.NEAREST); d = ImageDraw.Draw(im); k = SIDE[0] / (GX * CS)
+    X = lambda x: (GX * CS - x) * k
     if agent.scan is not None:
         lx, ly, a, rr = agent.scan
-        for x, y in zip(lx + np.cos(a) * rr, ly + np.sin(a) * rr): d.point((x * k, y * k), fill=COL['warn'])
-    b = BASKET; d.rectangle([(b['x'] - b['sx'] / 2) * k, (b['y'] - b['sy'] / 2) * k, (b['x'] + b['sx'] / 2) * k, (b['y'] + b['sy'] / 2) * k], outline=COL['orange'], width=2)
+        for x, y in zip(lx + np.cos(a) * rr, ly + np.sin(a) * rr): d.point((X(x), y * k), fill=COL['warn'])
+    b = BASKET; d.rectangle([X(b['x'] + b['sx'] / 2), (b['y'] - b['sy'] / 2) * k, X(b['x'] - b['sx'] / 2), (b['y'] + b['sy'] / 2) * k], outline=COL['orange'], width=2)
     x, y, th = agent.pose()
-    if agent.path: d.line([(x * k, y * k)] + [(p[0] * k, p[1] * k) for p in agent.path[1:]], fill=COL['orange'], width=2)
+    if agent.path: d.line([(X(x), y * k)] + [(X(p[0]), p[1] * k) for p in agent.path[1:]], fill=COL['orange'], width=2)
     for j, e in agent.memory.items():
         if e['status'] != 'pending': continue
-        r = 5; d.ellipse([e['x'] * k - r, e['y'] * k - r, e['x'] * k + r, e['y'] * k + r], fill=OBJ_COL[e['kind']], outline=COL['unk'])
-        if j == agent.target: d.ellipse([e['x'] * k - 9, e['y'] * k - 9, e['x'] * k + 9, e['y'] * k + 9], outline=COL['orange'], width=2)
-    r = 0.14 * k; d.ellipse([x * k - r, y * k - r, x * k + r, y * k + r], fill=COL['paper'])
-    d.line([(x * k, y * k), ((x + 0.2 * math.cos(th)) * k, (y + 0.2 * math.sin(th)) * k)], fill=COL['orange'], width=3)
+        r = 5; d.ellipse([X(e['x']) - r, e['y'] * k - r, X(e['x']) + r, e['y'] * k + r], fill=OBJ_COL[e['kind']], outline=COL['unk'])
+        if j == agent.target: d.ellipse([X(e['x']) - 9, e['y'] * k - 9, X(e['x']) + 9, e['y'] * k + 9], outline=COL['orange'], width=2)
+    r = 0.14 * k; d.ellipse([X(x) - r, y * k - r, X(x) + r, y * k + r], fill=COL['paper'])
+    d.line([(X(x), y * k), (X(x + 0.2 * math.cos(th)), (y + 0.2 * math.sin(th)) * k)], fill=COL['orange'], width=3)
     return im
 
 

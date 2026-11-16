@@ -16,12 +16,19 @@ from scipy.ndimage import distance_transform_edt
 
 from model import BASKET, FURNITURE, HOME, OBJECTS, OBJ_HALF_H, P, ROOM_H, ROOM_W
 from robot import LIDAR_RANGE, Q_CARRY
-from skills import carry_pose, grasp, holding, place, plan_grasp, wait, wait_arm
+from skills import carry_pose, grasp, holding, misalignment, place, plan_grasp, wait, wait_arm
 
 CS, GX, GY = 0.05, 80, 60
 CCS, CGX, CGY = 0.25, 16, 12
 PASS = 0.215                 # m: a cell is drivable if the nearest mapped obstacle cell is at least this far (0.14 to the wheel rims, plus cell size, pose error and margin)
-STOP_R = 0.215               # m: collision monitor radius around the robot centre, checked against the live scan
+SAFE_R = 0.45                # m: obstacle points within this radius are checked by the safety layer
+BODY_R = 0.15                # m: chassis + wheel rims, as a circle
+ARM_BOX = (0.035, 0.228, 0.04)   # folded arm footprint in the chassis frame: x from, x to, half width (measured from the meshes)
+HELD_BOX = (0.035, 0.245, 0.08)  # the same with a payload hanging under the gripper
+SAFE_GAP = 0.02              # m: the safety layer never lets a motion bring any part of the robot closer than this
+MAP_PT_MARGIN = 0.02         # m: allowance for a mapped cell centre lying behind the obstacle surface it stands for
+SAFE_HORIZON = (0.15, 0.3)   # s: look-ahead of the safety layer; 0.3 s covers stopping from full speed under the wheel ramp
+ARM_SWEEP, HELD_SWEEP = 0.228, 0.258   # m: radius swept by the folded arm when the robot turns on the spot (empty / holding)
 V_MAX, W_MAX = 0.18, 1.0
 CAM_HFOV, CAM_RANGE = math.radians(44), 2.2
 STANDOFF = 0.235             # robot centre to object when grasping
@@ -43,7 +50,7 @@ class Agent:
         self.cov = np.zeros((CGY, CGX), bool)
         self.memory = {}
         self.noise = np.zeros(3)
-        self.close_pts = np.zeros((0, 2)); self.min_range = 9.0; self.blocked_t = -9.0
+        self.scan_pts = np.zeros((0, 2)); self.map_pts = np.zeros((0, 2)); self.blocked = 0; self.held = False; self.basket_blocked_t = -99.0
         self.path = None; self.scan = None; self.state = '启动'; self.target = None; self.log_lines = []
         self.stats = dict(grasp_attempts=0, grasp_fail=0, dropped=0, missed_place=0, replans=0, stuck=0, collisions=0, floor_touch=0, max_tilt=0.0, dist=0.0)
         self._tick = 0; self._last_xy = np.array(robot.true_pose()[:2]); self._coll_t = -9.0; self._floor_t = -9.0
@@ -96,10 +103,17 @@ class Agent:
             ok = (hi >= 0) & (hi < GX) & (hj >= 0) & (hj < GY)
             flat = np.unique(hj[ok] * GX + hi[ok])
             lo[flat] = np.minimum(lo[flat].astype(int) + 6, 20).astype(np.int8)
-            # points close to the robot, in the robot frame, for the collision monitor
-            qx, qy = lx + np.cos(a) * rr - x, ly + np.sin(a) * rr - y; dq = np.hypot(qx, qy); close = dq < STOP_R
-            self.close_pts = np.stack([qx[close] / dq[close], qy[close] / dq[close]], 1) if close.any() else np.zeros((0, 2))
-            self.min_range = float(dq.min())
+            wx_, wy_ = lx + np.cos(a) * rr, ly + np.sin(a) * rr
+            near = np.hypot(wx_ - x, wy_ - y) < SAFE_R
+            self.scan_pts = np.stack([wx_[near], wy_[near]], 1)
+        else:
+            self.scan_pts = np.zeros((0, 2))
+        # mapped obstacle cells near the robot (world frame). The folded arm hides a strip in front of the lidar, and
+        # anything seen there earlier is still in the map, so the safety layer uses both.
+        i0, i1 = max(0, int((x - SAFE_R) / CS)), min(GX, int((x + SAFE_R) / CS) + 1)
+        j0, j1 = max(0, int((y - SAFE_R) / CS)), min(GY, int((y + SAFE_R) / CS) + 1)
+        jj, ii = np.nonzero(self.lo[j0:j1, i0:i1] > 0)
+        self.map_pts = np.stack([(ii + i0 + 0.5) * CS, (jj + j0 + 0.5) * CS], 1)
         self._sense_camera()
 
     def _sense_camera(self):
@@ -165,6 +179,7 @@ class Agent:
                 if 0 <= i < GX and 0 <= j < GY: occ[j, i] = True
         for j, i in self._basket_cells: occ[j, i] = True
         D = distance_transform_edt(~np.pad(occ, 1, constant_values=True))[1:-1, 1:-1] * CS
+        self.D_tall = distance_transform_edt(~np.pad(self.lo > 0, 1, constant_values=True))[1:-1, 1:-1] * CS
         if ignore is not None and ignore in self.memory:
             # the target is not a wall, but the robot must not drive over it on the way to its far side:
             # keep the robot centre at least 19.5 cm away (the grasp stance is at 23.5 cm)
@@ -237,14 +252,48 @@ class Agent:
     def stop(self):
         self.r.set_twist(0, 0, 0)
 
+    def _clearance(self, P, box=None):
+        """Distance (m) from points P (N x 2, chassis frame) to the robot's outline: body circle plus the folded arm."""
+        x0, x1, hw = box or (HELD_BOX if self.held else ARM_BOX)
+        c_body = np.hypot(P[:, 0], P[:, 1]) - BODY_R
+        dx = np.maximum(np.maximum(x0 - P[:, 0], P[:, 0] - x1), 0.0); dy = np.maximum(np.abs(P[:, 1]) - hw, 0.0)
+        return np.minimum(c_body, np.hypot(dx, dy))
+
+    def cmd(self, vx, vy, wz):
+        """Send a body twist through the safety layer. Every 20 ms it predicts where nearby obstacle points end up
+        relative to the robot after 0.25 s and 0.5 s of the commanded motion; if any would come closer to the outline
+        than SAFE_GAP (or closer than it already is), it falls back to a gentler command, finally to standing still.
+        Rotation matters as much as translation: the folded arm sweeps a wider circle than the body."""
+        x, y, th = self.pose()
+        W = [self.scan_pts, self.map_pts]
+        if not any(len(w) for w in W):
+            self.r.set_twist(vx, vy, wz); return
+        c, s = math.cos(th), math.sin(th)
+        P = np.vstack([w for w in W if len(w)]) - [x, y]
+        P = np.stack([c * P[:, 0] + s * P[:, 1], -s * P[:, 0] + c * P[:, 1]], 1)
+        margin = np.concatenate([np.zeros(len(self.scan_pts)), np.full(len(self.map_pts), MAP_PT_MARGIN)])
+        now = self._clearance(P) - margin
+        keep = now < 0.12
+        if not keep.any():
+            self.r.set_twist(vx, vy, wz); self.blocked = 0; return
+        P, now, margin = P[keep], now[keep], margin[keep]
+        floor_ = np.minimum(now, SAFE_GAP) - 0.002
+        for k, (cx, cy, cw) in enumerate(((vx, vy, wz), (vx, vy, 0.0), (0.5 * vx, 0.5 * vy, 0.0), (0.0, 0.0, wz), (0.0, 0.0, 0.0))):
+            ok = True
+            for dt in SAFE_HORIZON:
+                a = -cw * dt; ca, sa = math.cos(a), math.sin(a)
+                Q = P - [cx * dt, cy * dt]
+                Q = np.stack([ca * Q[:, 0] - sa * Q[:, 1], sa * Q[:, 0] + ca * Q[:, 1]], 1)
+                if (self._clearance(Q) - margin < floor_).any(): ok = False; break
+            if ok:
+                self.r.set_twist(cx, cy, cw); self.blocked = self.blocked + 1 if k else 0
+                return
+        self.r.set_twist(0.0, 0.0, 0.0); self.blocked += 1
+
     def drive_world(self, vwx, vwy, th_des):
         x, y, th = self.pose()
-        # collision monitor: whatever the map says, never move towards something the lidar sees this close right now
-        for ux, uy in self.close_pts:
-            toward = vwx * ux + vwy * uy
-            if toward > 0: vwx -= toward * ux; vwy -= toward * uy; self.blocked_t = self.r.t
         c, s = math.cos(th), math.sin(th)
-        self.r.set_twist(c * vwx + s * vwy, -s * vwx + c * vwy, float(np.clip(2.2 * wrap(th_des - th), -W_MAX, W_MAX)))
+        self.cmd(c * vwx + s * vwy, -s * vwx + c * vwy, float(np.clip(2.2 * wrap(th_des - th), -W_MAX, W_MAX)))
 
     def goto(self, goal_fn, ignore=None, check=None, timeout=150.0):
         """Plan and drive to one of the goals produced by goal_fn(D). Returns the goal reached, or None.
@@ -285,7 +334,8 @@ class Agent:
                 now = np.array([x, y])
                 if np.linalg.norm(now - prog_xy) < 0.04:
                     self.stats['stuck'] += 1; self.log('原地卡住，后退重新规划')
-                    self.r.set_twist(-0.08, 0, 0); yield from wait(self.r, 1.2); self.stop(); t_plan = -9.0
+                    for _ in range(60): self.cmd(-0.08, 0, 0); yield
+                    self.stop(); t_plan = -9.0
                 prog_t, prog_xy = self.r.t, now
             yield
         if goal[2] is not None and goal[3] <= 0.036:
@@ -306,37 +356,52 @@ class Agent:
         self.stop(); yield from wait(self.r, 0.4)
 
     def spin(self, turns=1.0):
-        if self.min_range < 0.27: return           # too close to something for the folded arm to swing round safely
-        acc = 0.0; last = self.pose()[2]
-        while acc < 2 * math.pi * turns:
-            self.r.set_twist(0, 0, 0.9); yield
+        acc = 0.0; last = self.pose()[2]; t0 = self.r.t
+        while acc < 2 * math.pi * turns and self.r.t - t0 < 2 * math.pi * turns / 0.9 + 3.0:
+            self.cmd(0, 0, 0.9); yield
+            if self.blocked > 50: break               # the arm would hit something: look around another time
             th = self.pose()[2]; acc += abs(wrap(th - last)); last = th
         self.stop(); yield from wait(self.r, 0.3)
 
     # ------------------------------------------------------------------ task pieces
+    def pose_ok(self, px, py, heading, box, sweep):
+        """Can the robot stand at (px, py) and turn by +-sweep around `heading` without the folded arm touching mapped furniture?"""
+        i0, i1 = max(0, int((px - 0.4) / CS)), min(GX, int((px + 0.4) / CS) + 1)
+        j0, j1 = max(0, int((py - 0.4) / CS)), min(GY, int((py + 0.4) / CS) + 1)
+        jj, ii = np.nonzero(self.lo[j0:j1, i0:i1] > 0)
+        if not len(ii): return True
+        Q = np.stack([(ii + i0 + 0.5) * CS - px, (jj + j0 + 0.5) * CS - py], 1)
+        for h in np.linspace(heading - sweep, heading + sweep, 7):
+            c, s = math.cos(h), math.sin(h)
+            B = np.stack([c * Q[:, 0] + s * Q[:, 1], -s * Q[:, 0] + c * Q[:, 1]], 1)
+            if (self._clearance(B, box) - MAP_PT_MARGIN < 0.03).any(): return False
+        return True
+
     def standoffs(self, e, D):
         kind = e['kind']
-        if kind == 'ball': dirs = [k * math.pi / 6 for k in range(12)]
-        elif kind == 'block': dirs = [e['yaw'] + k * math.pi / 2 for k in range(4)]
+        if kind in ('ball', 'block'): dirs = [e['yaw'] + k * math.pi / 6 for k in range(12)]   # a cube can be taken across a diagonal too: the jaws open for it
         else: dirs = [e['yaw'] + math.pi / 2, e['yaw'] - math.pi / 2]
-        for extra in ((0.0,), (0.14, -0.14)):
-            out = []
-            for a0 in dirs:
-                for da in extra:
-                    a = a0 + da
-                    px, py = e['x'] + STANDOFF * math.cos(a), e['y'] + STANDOFF * math.sin(a)
-                    # the moving jaw swings out on the far side of the object: that space must be empty too
-                    fx, fy = e['x'] - 0.11 * math.cos(a), e['y'] - 0.11 * math.sin(a)
-                    if self._dat(D, px, py) >= PASS and self._dat(D, fx, fy) >= 0.075: out.append((px, py, wrap(a + math.pi), 0.0))
-            if out: return out
-        return []
+        # Square-on stances plus ones turned 0.10 rad either way (still under the re-stand threshold). All of them go to
+        # A*, which picks whichever it can reach: a valid square-on stance on the far side of the object is no use.
+        out = []
+        for a0 in dirs:
+            for da in (0.0, 0.10, -0.10):
+                a = a0 + da
+                px, py = e['x'] + STANDOFF * math.cos(a), e['y'] + STANDOFF * math.sin(a)
+                # the moving jaw swings out on the far side of the object: that space must be empty too
+                fx, fy = e['x'] - 0.11 * math.cos(a), e['y'] - 0.11 * math.sin(a)
+                # and the folded arm must have room to turn a little there without touching furniture
+                if self._dat(D, px, py) >= PASS and self._dat(D, fx, fy) >= 0.075 and self.pose_ok(px, py, a + math.pi, ARM_BOX, 0.3):
+                    out.append((px, py, wrap(a + math.pi), 0.0))
+        return out
 
     def basket_standoffs(self, D):
         b = BASKET; out = []
         for nx, ny, half in ((0, -1, b['sy'] / 2), (0, 1, b['sy'] / 2), (-1, 0, b['sx'] / 2), (1, 0, b['sx'] / 2)):
             d = half + 0.25
             px, py = b['x'] + nx * d, b['y'] + ny * d
-            if self._dat(D, px, py) >= PASS: out.append((px, py, math.atan2(-ny, -nx), 0.0))
+            h = math.atan2(-ny, -nx)
+            if self._dat(D, px, py) >= PASS and self.pose_ok(px, py, h, HELD_BOX, 0.5): out.append((px, py, h, 0.0))
         return out
 
     def measure_close(self, k):
@@ -366,12 +431,9 @@ class Agent:
             nx, ny = x + math.cos(th) * rel[0] - math.sin(th) * rel[1], y + math.sin(th) * rel[0] + math.cos(th) * rel[1]
             moved = math.hypot(nx - e['x'], ny - e['y'])
             e.update(x=nx, y=ny, yaw=wrap(yaw_rel + th), sigma=CLOSE_SIGMA + LOC_SIGMA_XY)
-            mis = 0.0
-            if e['kind'] not in ('ball', 'block'):
-                radial = math.atan2(rel[1], rel[0] - 0.069)
-                mis = abs(wrap(2 * (yaw_rel + math.pi / 2 - radial))) / 2
+            mis = misalignment(rel, yaw_rel, e['kind'])
             # the first stance was computed from a far-away look; now that the object is seen up close, re-stand if it is off
-            if restand < 4 and (mis > 0.14 or moved > 0.03 or abs(rel[1]) > 0.06):
+            if restand < 4 and ((mis > 0.14 and e['kind'] != 'block') or moved > 0.03 or abs(rel[1]) > 0.06):
                 restand += 1; continue
             plan = plan_grasp(rel, e['kind'], mis)
             if plan is None:
@@ -389,7 +451,7 @@ class Agent:
             if tries >= 3:
                 e['fails'] += 1; e['retry_at'] = r.t + 40 * e['fails']; e['why'] = '连续 3 次没夹住'
                 self.log(f'{cn} 连续 3 次没夹住，先跳过'); return False
-        e['status'] = 'held'; self.state = '搬运'; self.log(f'夹住 {cn}，送往收纳筐')
+        e['status'] = 'held'; self.held = True; self.state = '搬运'; self.log(f'夹住 {cn}，送往收纳筐')
         goal = yield from self.goto(self.basket_standoffs, check=lambda: None if holding(r, plan) else 'dropped')
         if goal is None:
             if self.abort == 'dropped':
@@ -424,6 +486,7 @@ class Agent:
         yield from carry_pose(r, speed=1.0); r.set_arm(grip=0.3)
         x, y, th = self.pose()
         e.update(status='pending', x=x + 0.25 * math.cos(th), y=y + 0.25 * math.sin(th), sigma=0.03, retry_at=r.t + 5)
+        self.basket_blocked_t = r.t
         # whatever sits closest to the basket is probably what blocks the way in: deal with that first
         cands = [(math.hypot(o['x'] - BASKET['x'], o['y'] - BASKET['y']), j) for j, o in self.memory.items() if o['status'] == 'pending' and j != k]
         if cands: self.priority = min(cands)[1]
@@ -453,6 +516,7 @@ class Agent:
         if p is not None:
             e = self.memory.get(p)
             if e and e['status'] == 'pending' and e['retry_at'] <= self.r.t: return p
+            if self.r.t - self.basket_blocked_t < 25.0: return None   # no point picking up anything else yet
             self.priority = None
         for k, e in self.memory.items():
             if e['status'] == 'pending' and e['retry_at'] <= self.r.t:
@@ -468,7 +532,7 @@ class Agent:
         while self.r.t < T_MAX:
             k = self.pick()
             if k is not None:
-                yield from self.fetch(k); self.target = None
+                yield from self.fetch(k); self.target = None; self.held = False
                 continue
             more = yield from self.explore_step()
             if not more:

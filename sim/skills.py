@@ -48,6 +48,24 @@ def to_chassis(robot, p_world, pose):
     return np.array([c * dx + s * dy, -s * dx + c * dy, p_world[2]])
 
 
+def misalignment(rel, yaw_rel, kind):
+    """Angle (rad) between the jaw closing line and the object's best grasp axis. The jaws always close along the
+    line from the shoulder to the object (5-axis arm, no wrist yaw), so this is what the base has to fix by standing elsewhere.
+    Long objects should be gripped across their narrow side (symmetry 180 deg); the cube across any face (symmetry 90 deg)."""
+    if kind == 'ball':
+        return 0.0
+    radial = math.atan2(rel[1], rel[0] - 0.069)
+    if kind == 'block':
+        m = abs(wrap(4 * (yaw_rel - radial))) / 4
+    else:
+        m = abs(wrap(2 * (yaw_rel + math.pi / 2 - radial))) / 2
+    return m
+
+
+def wrap(a):
+    return (a + math.pi) % (2 * math.pi) - math.pi
+
+
 def plan_grasp(rel, kind, mis=0.0):
     """rel: object centre in the chassis frame (z = height above floor). Returns joint waypoints and jaw angles, or None.
 
@@ -60,7 +78,12 @@ def plan_grasp(rel, kind, mis=0.0):
     o = OBJECTS[kind]; w = o['width']
     # `mis` = angle between the jaw line and the object's narrow axis. A long object that is not square to the jaws
     # is wider across them, so the jaws must open for that width or they come down on top of it.
-    w_open = w if kind in ('ball', 'block') else w * math.cos(mis) + o['length'] * abs(math.sin(mis))
+    if kind == 'ball':
+        w_open = w
+    elif kind == 'block':
+        w_open = w * (math.cos(mis) + math.sin(mis))           # a cube turned by `mis` is wider across the jaws
+    else:
+        w_open = w * math.cos(mis) + o['length'] * abs(math.sin(mis))
     if w_open + CLEAR + 0.02 > 0.10:
         return None
     depth = 0.075 if kind == 'ball' else 0.0626          # a ball is held nearer the fingertips, where the jaws open wider
