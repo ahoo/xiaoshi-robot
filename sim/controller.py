@@ -1,11 +1,10 @@
-"""Autonomous fetch controller: lidar mapping, A* planning, holonomic path following, grasp and place.
+"""Autonomous fetch controller: lidar SLAM, A* planning, holonomic path following, grasp and place.
 
-The control code only reads what a real robot could read: lidar ranges, joint feedback, wheel encoders, a pose
-estimate and camera detections. Two of those are *sensor models* fed from simulator ground truth plus noise, because
-this project does not simulate images or scan matching:
-  * pose estimate  = true pose + slowly varying noise (stands in for lidar localisation such as AMCL)
-  * camera objects = true object pose + range-dependent noise, only inside the field of view and with line of sight
-Their noise levels are parameters below and are things to measure on the real robot.
+The control code only uses what the real robot has: wheel encoders (with calibration error and slip), lidar
+ranges, joint feedback, and the front RGB-D camera. Localisation is lidar scan matching against the robot's own map
+(localization.py); objects are found and measured in rendered depth images (perception.py). The only remaining
+idealisation in sensing is the per-pixel object labels (see perception.py). Ground truth is read only by the score
+sheet in after_step(), never to make a decision.
 """
 import heapq
 import math
@@ -17,6 +16,8 @@ from scipy.ndimage import distance_transform_edt
 from model import BASKET, FURNITURE, HOME, OBJECTS, OBJ_HALF_H, P, ROOM_H, ROOM_W
 from robot import LIDAR_RANGE, Q_CARRY
 from skills import carry_pose, grasp, holding, misalignment, place, plan_grasp, wait, wait_arm
+from localization import Localizer
+from perception import FrontCamera
 
 CS, GX, GY = 0.05, 80, 60
 CCS, CGX, CGY = 0.25, 16, 12
@@ -30,12 +31,8 @@ MAP_PT_MARGIN = 0.02         # m: allowance for a mapped cell centre lying behin
 SAFE_HORIZON = (0.15, 0.3)   # s: look-ahead of the safety layer; 0.3 s covers stopping from full speed under the wheel ramp
 ARM_SWEEP, HELD_SWEEP = 0.228, 0.258   # m: radius swept by the folded arm when the robot turns on the spot (empty / holding)
 V_MAX, W_MAX = 0.18, 1.0
-CAM_HFOV, CAM_RANGE = math.radians(44), 2.2
+CAM_RANGE = 1.6             # m: beyond this the smallest object (4 cm cube) is under MIN_PX pixels, so 'seen' stops here
 STANDOFF = 0.235             # robot centre to object when grasping
-LOC_SIGMA_XY, LOC_SIGMA_TH = 0.015, math.radians(1.0)
-DET_SIGMA0, DET_SIGMA_K = 0.005, 0.015       # camera position noise: 5 mm + 1.5 % of range
-CLOSE_SIGMA, YAW_SIGMA = 0.004, 0.10         # close-range position noise; yaw noise of a far-away look
-CLOSE_YAW_SIGMA = 0.05                       # yaw noise of the close-range look
 T_MAX = 600.0
 
 
@@ -49,15 +46,14 @@ class Agent:
         self.lo = np.zeros((GY, GX), np.int8)
         self.cov = np.zeros((CGY, CGX), bool)
         self.memory = {}
-        self.noise = np.zeros(3)
+        self.loc = Localizer(robot.true_pose(), CS, (GX * CS, GY * CS))   # starts docked at a known pose; after that, lidar + odometry only
+        self.cam = FrontCamera(robot, np.random.default_rng(seed + 11)); self.visible = {}; self._ncam = 0
+        self.loc_err = []                                  # (position error m, heading error rad) once a second, for the score sheet
         self.scan_pts = np.zeros((0, 2)); self.map_pts = np.zeros((0, 2)); self.blocked = 0; self.held = False; self.basket_blocked_t = -99.0
         self.path = None; self.scan = None; self.state = '启动'; self.target = None; self.log_lines = []
         self.stats = dict(grasp_attempts=0, grasp_fail=0, dropped=0, missed_place=0, replans=0, stuck=0, collisions=0, floor_touch=0, max_tilt=0.0, dist=0.0)
         self._tick = 0; self._last_xy = np.array(robot.true_pose()[:2]); self._coll_t = -9.0; self._floor_t = -9.0
         m = robot.m
-        self._world_group = np.array([1, 0, 0, 0, 0, 0], dtype=np.uint8)
-        self._geomid = np.zeros(1, dtype=np.int32)
-        self._obj_geom = [mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, f'obj{i}') for i in range(len(robot.objects))]
         self._floor = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, 'floor')
         self._basket_cells = [(j, i) for j in range(GY) for i in range(GX)
                               if abs((i + 0.5) * CS - BASKET['x']) <= BASKET['sx'] / 2 and abs((j + 0.5) * CS - BASKET['y']) <= BASKET['sy'] / 2]
@@ -70,24 +66,23 @@ class Agent:
         if self.verbose: print(f'{self.r.t:6.1f}s  {msg}')
 
     def pose(self):
-        x, y, th = self.r.true_pose()
-        return x + self.noise[0], y + self.noise[1], th + self.noise[2]
-
-    def _los(self, p0, p1, target_geom=-1):
-        v = np.asarray(p1, float) - p0; d = np.linalg.norm(v)
-        if d < 1e-6: return True
-        dist = mujoco.mj_ray(self.r.m, self.r.d, np.asarray(p0, float), v / d, self._world_group, 1, -1, self._geomid)
-        return dist < 0 or dist >= d - 0.03 or self._geomid[0] == target_geom
+        x, y, th = self.loc.est
+        return float(x), float(y), float(th)
 
     def sense(self):
         r = self.r
-        sig = np.array([LOC_SIGMA_XY, LOC_SIGMA_XY, LOC_SIGMA_TH])
-        self.noise = 0.97 * self.noise + math.sqrt(1 - 0.97 ** 2) * sig * self.rng.normal(size=3)
-        x, y, th = self.pose()
-        # --- lidar -> occupancy log-odds
-        if self.state in ('抓取', '放置'):          # the arm is out in front of the lidar: do not map it
-            self._sense_camera(); return
+        self._ncam += 1
+        cam_now = self._ncam % 3 == 1                 # camera at 3.3 Hz, lidar at 10 Hz
+        # --- lidar: correct the pose against the map, then update the map from the corrected pose
+        if self.state in ('抓取', '放置'):          # the arm is out in front of the lidar: neither match nor map
+            if cam_now: self._sense_camera()
+            return
         ang, rng_ = r.lidar()
+        f = np.isfinite(rng_)
+        spx, spy = P['lidar_pos'][0] + rng_[f] * np.cos(ang[f]), rng_[f] * np.sin(ang[f])
+        self.loc.correct(spx, spy)
+        self.loc.add_scan(spx, spy)
+        x, y, th = self.pose()
         lx, ly = x + math.cos(th) * P['lidar_pos'][0], y + math.sin(th) * P['lidar_pos'][0]
         fin = np.isfinite(rng_); a = ang[fin] + th; rr = rng_[fin]
         self.scan = (lx, ly, a, rr)
@@ -114,44 +109,53 @@ class Agent:
         j0, j1 = max(0, int((y - SAFE_R) / CS)), min(GY, int((y + SAFE_R) / CS) + 1)
         jj, ii = np.nonzero(self.lo[j0:j1, i0:i1] > 0)
         self.map_pts = np.stack([(ii + i0 + 0.5) * CS, (jj + j0 + 0.5) * CS], 1)
-        self._sense_camera()
+        if cam_now: self._sense_camera()
 
     def _sense_camera(self):
-        """Camera: coverage and object detections (ground truth + noise, gated by field of view and line of sight)."""
+        """Front RGB-D camera: which floor cells it has looked at, and object detections put on the map."""
         r = self.r
-        tx, ty, tth = r.true_pose()
-        cam = np.array([tx + math.cos(tth) * 0.108, ty + math.sin(tth) * 0.108, 0.126])
-        for j in range(CGY):
-            for i in range(CGX):
-                if self.cov[j, i]: continue
-                cx, cy = (i + 0.5) * CCS, (j + 0.5) * CCS; d = math.hypot(cx - cam[0], cy - cam[1])
-                if d < 0.3 or (d < CAM_RANGE and abs(wrap(math.atan2(cy - cam[1], cx - cam[0]) - tth)) < CAM_HFOV and self._los(cam, [cx, cy, 0.05])):
-                    self.cov[j, i] = True
+        x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th)
+        dets = self.cam.detect()
+        # coverage: unseen floor cells whose centre is in the image, not hidden behind anything, and close enough
+        cells = [(j, i) for j in range(CGY) for i in range(CGX) if not self.cov[j, i]]
+        if cells:
+            W_ = np.array([((i + 0.5) * CCS, (j + 0.5) * CCS) for j, i in cells]) - [x, y]
+            B = np.stack([c * W_[:, 0] + s_ * W_[:, 1], -s_ * W_[:, 0] + c * W_[:, 1], np.zeros(len(W_))], 1)
+            dist = np.hypot(B[:, 0], B[:, 1])
+            seen = self.cam.floor_visible(B) & (dist < CAM_RANGE)
+            for (j, i), sn, dd in zip(cells, seen, dist):
+                if sn or dd < 0.3: self.cov[j, i] = True
         self.visible = {}
-        for k in range(len(r.objects)):
+        for k, dt in dets.items():
+            rel = dt['rel']
+            if rel[2] > 0.10: continue                      # up in the air: the object in our own gripper
+            mx, my = x + c * rel[0] - s_ * rel[1], y + s_ * rel[0] + c * rel[1]
+            if self._in_basket((mx, my, 0.0), margin=0.03): continue
+            kind = r.objects[k][0]; cn = OBJECTS[kind]['cn']
             e = self.memory.get(k)
-            if e and e['status'] in ('held', 'delivered'): continue
-            p = r.obj_pos(k); d = math.hypot(p[0] - cam[0], p[1] - cam[1])
-            if d > CAM_RANGE or d < 0.05 or abs(wrap(math.atan2(p[1] - cam[1], p[0] - cam[0]) - tth)) > CAM_HFOV: continue
-            if self._in_basket(p) or not self._los(cam, p, self._obj_geom[k]): continue
-            s = DET_SIGMA0 + DET_SIGMA_K * d
-            # a detection is relative to the robot, so it inherits the robot's own pose error when put on the map
-            mx, my = p[0] + self.noise[0] + self.rng.normal(0, s), p[1] + self.noise[1] + self.rng.normal(0, s)
-            myaw = r.obj_yaw(k) + self.rng.normal(0, YAW_SIGMA)
-            self.visible[k] = d
+            if e and e['status'] == 'held': continue
+            if e and e['status'] == 'delivered':
+                self.log(f'看见 {cn} 在筐外的地上，重新去拿'); e.update(status='pending', retry_at=0.0)
+            yaw = wrap(dt['yaw4'] + th)
+            sig = 0.008 + 0.007 * dt['dist']                 # detector error (bench) plus localisation error
+            self.visible[k] = dt['dist']
             if e is None:
-                self.memory[k] = dict(kind=r.objects[k][0], x=mx, y=my, yaw=myaw, sigma=s, status='pending', retry_at=0.0, fails=0)
-                self.log(f'识别到 {OBJECTS[r.objects[k][0]]["cn"]}，距离 {d:.2f} m')
-            elif s <= e['sigma'] * 1.1 or math.hypot(mx - e['x'], my - e['y']) > 3 * e['sigma'] + 0.03:
-                e.update(x=mx, y=my, yaw=myaw, sigma=s)
+                self.memory[k] = dict(kind=kind, x=mx, y=my, yaw=yaw, sigma=sig, status='pending', retry_at=0.0, fails=0)
+                self.log(f'识别到 {cn}，距离 {dt["dist"]:.2f} m')
+            elif sig <= e['sigma'] * 1.1 or math.hypot(mx - e['x'], my - e['y']) > 3 * e['sigma'] + 0.03:
+                e.update(x=mx, y=my, yaw=yaw, sigma=sig)
 
-    def _in_basket(self, p):
-        return abs(p[0] - BASKET['x']) < BASKET['sx'] / 2 and abs(p[1] - BASKET['y']) < BASKET['sy'] / 2 and p[2] < BASKET['h'] + 0.03
+    def _in_basket(self, p, margin=0.0):
+        return abs(p[0] - BASKET['x']) < BASKET['sx'] / 2 + margin and abs(p[1] - BASKET['y']) < BASKET['sy'] / 2 + margin and p[2] < BASKET['h'] + 0.03
 
     def after_step(self):
         """Called after every 20 ms physics step: sensors at 10 Hz, plus bookkeeping for the score sheet (ground truth)."""
         r = self.r; self._tick += 1
+        self.loc.predict(r.odom)
         if self._tick % 5 == 0: self.sense()
+        if self._tick % 50 == 0:
+            tx, ty, tth = r.true_pose(); ex, ey, eth = self.loc.est
+            self.loc_err.append((math.hypot(ex - tx, ey - ty), abs(wrap(eth - tth))))
         xy = np.array(r.true_pose()[:2]); self.stats['dist'] += float(np.linalg.norm(xy - self._last_xy)); self._last_xy = xy
         tilt = math.degrees(r.tilt())
         if tilt > 3 and tilt > self.stats['max_tilt'] + 0.5 and r.t - getattr(self, '_tilt_t', -9) > 2: self._tilt_t = r.t; self.log('机身倾斜超过 3°（%s）' % self.state)
@@ -278,7 +282,12 @@ class Agent:
             self.r.set_twist(vx, vy, wz); self.blocked = 0; return
         P, now, margin = P[keep], now[keep], margin[keep]
         floor_ = np.minimum(now, SAFE_GAP) - 0.002
-        for k, (cx, cy, cw) in enumerate(((vx, vy, wz), (vx, vy, 0.0), (0.5 * vx, 0.5 * vy, 0.0), (0.0, 0.0, wz), (0.0, 0.0, 0.0))):
+        # sliding: drop only the part of the velocity that points at the closest obstacle, keep the part along it
+        cl = P[np.argmin(now)]; nrm = cl / max(np.hypot(*cl), 1e-6)
+        toward = vx * nrm[0] + vy * nrm[1]
+        sx, sy = (vx - toward * nrm[0], vy - toward * nrm[1]) if toward > 0 else (vx, vy)
+        cands = ((vx, vy, wz), (vx, vy, 0.0), (sx, sy, wz), (sx, sy, 0.0), (0.5 * sx, 0.5 * sy, 0.0), (0.0, 0.0, wz), (0.0, 0.0, 0.0))
+        for k, (cx, cy, cw) in enumerate(cands):
             ok = True
             for dt in SAFE_HORIZON:
                 a = -cw * dt; ca, sa = math.cos(a), math.sin(a)
@@ -405,13 +414,14 @@ class Agent:
         return out
 
     def measure_close(self, k):
-        """Close-range look at the object right before grasping. Returns its centre in the chassis frame, or None."""
-        r = self.r; p = r.obj_pos(k); x, y, th = r.true_pose()
-        c, s = math.cos(th), math.sin(th); dx, dy = p[0] - x, p[1] - y
-        rel = np.array([c * dx + s * dy, -s * dx + c * dy, p[2]])
-        if not (0.13 < rel[0] < 0.42 and abs(rel[1]) < 0.16 and p[2] < 0.08): return None
-        rel[:2] += self.rng.normal(0, CLOSE_SIGMA, 2)
-        return rel, wrap(r.obj_yaw(k) + self.rng.normal(0, CLOSE_YAW_SIGMA) - th)
+        """Close look with the front camera right before grasping. Returns (centre in the chassis frame, long-axis
+        heading in the chassis frame), or None if the object is not where it should be."""
+        dets = self.cam.detect()
+        d = dets.get(k)
+        if d is None or d['n_px'] < 60: return None
+        rel = np.array(d['rel'], float); rel[2] = OBJ_HALF_H[self.r.objects[k][0]]
+        if not (0.13 < rel[0] < 0.42 and abs(rel[1]) < 0.16): return None
+        return rel, d['yaw4']
 
     def fetch(self, k):
         r = self.r; e = self.memory[k]; cn = OBJECTS[e['kind']]['cn']; self.target = k
@@ -430,7 +440,7 @@ class Agent:
             x, y, th = self.pose()
             nx, ny = x + math.cos(th) * rel[0] - math.sin(th) * rel[1], y + math.sin(th) * rel[0] + math.cos(th) * rel[1]
             moved = math.hypot(nx - e['x'], ny - e['y'])
-            e.update(x=nx, y=ny, yaw=wrap(yaw_rel + th), sigma=CLOSE_SIGMA + LOC_SIGMA_XY)
+            e.update(x=nx, y=ny, yaw=wrap(yaw_rel + th), sigma=0.012)
             mis = misalignment(rel, yaw_rel, e['kind'])
             # the first stance was computed from a far-away look; now that the object is seen up close, re-stand if it is off
             if restand < 4 and ((mis > 0.14 and e['kind'] != 'block') or moved > 0.03 or abs(rel[1]) > 0.06):
@@ -470,11 +480,13 @@ class Agent:
         ux, uy = bx / dist, by / dist; wx, wy = x + ux * reach, y + uy * reach
         rel = (c * (wx - x) + s * (wy - y), -s * (wx - x) + c * (wy - y))
         ok = yield from place(r, rel, BASKET['h'], self.log)
+        if not ok:                                   # could not reach over the rim from here: set it down, try later
+            yield from self.put_down(k); return False
         yield from wait(r, 0.5)
-        if self._in_basket(r.obj_pos(k)):
-            e['status'] = 'delivered'; self.log(f'{cn} 已放进收纳筐'); return True
-        self.stats['missed_place'] += 1; self.log(f'{cn} 没落进筐里'); del self.memory[k]; self.cov[:] = False
-        return False
+        # The robot assumes it went in. If it bounced out, the camera will see it on the floor later and reopen it.
+        e['status'] = 'delivered'; self.log(f'{cn} 已放进收纳筐')
+        if not self._in_basket(r.obj_pos(k)): self.stats['missed_place'] += 1      # score sheet only
+        return True
 
     def put_down(self, k):
         """Set a held object on the floor in front of the robot and remember where it is."""

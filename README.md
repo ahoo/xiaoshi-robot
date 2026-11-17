@@ -16,10 +16,12 @@
 | `sim/robot.py` | 驱动层接口：底盘速度、关节目标、雷达、里程计 |
 | `sim/arm.py` | 5 轴机械臂逆运动学 |
 | `sim/skills.py` | 抓取、搬运、放置 |
-| `sim/controller.py` | 自主控制器：雷达建图、A* 规划、全向跟踪、任务调度。传感器噪声在顶部 |
+| `sim/controller.py` | 自主控制器：建图、A* 规划、全向跟踪、防撞层、任务调度。决策时不读仿真真值 |
+| `sim/localization.py` | 雷达扫描匹配定位（里程计预测 + 对自建地图的相关匹配） |
+| `sim/perception.py` | 前置 RGB-D 相机：渲染深度图，从像素算物体位置和朝向 |
 | `sim/episode.py` | 一次完整试验（随机布局 → 自主运行 → 成绩单） |
 | `sim/run_trials.py` | 批量随机试验 → `results/trials.json` |
-| `sim/test_base.py`、`sim/test_grasp.py` | 底盘和抓取的台架测试 |
+| `sim/test_base.py`、`sim/test_grasp.py`、`sim/test_perception.py` | 底盘、抓取、相机识别的台架测试 |
 | `sim/render_video.py` | 把一次试验渲染成录像 |
 | `third_party/so101/` | SO-101 官方 MuJoCo 模型（Apache-2.0，来自 TheRobotStudio/SO-ARM100） |
 | `web/` | 结果页面的模板和生成脚本；`web/concept-v0.1/` 是第一版概念演示，不是物理仿真 |
@@ -31,8 +33,9 @@ pip install mujoco numpy scipy imageio imageio-ffmpeg pillow
 cd sim
 python test_base.py          # 底盘台架，几十秒
 python test_grasp.py 10      # 抓取台架，每种物体 10 次 × 两种夹爪摩擦
+python test_perception.py     # 相机识别台架：五种物体 × 四个距离
 python episode.py 4          # 第 4 号随机布局跑一次，打印事件日志和成绩
-python run_trials.py         # 全部 40 次随机试验（双核约 45 分钟）
+python run_trials.py         # 全部 40 次随机试验（双核约 2 小时，渲染相机图像占了一半时间）
 MUJOCO_GL=egl python render_video.py 4    # 录像，需要能离屏渲染的环境
 python ../web/build_page.py  # 用 results/ 里的数字重新生成页面和 docs/validation.md
 ```
@@ -41,14 +44,13 @@ python ../web/build_page.py  # 用 results/ 里的数字重新生成页面和 do
 
 ## 哪些是真物理，哪些是假设
 
-**真物理**：轮子、滚子和地面的接触摩擦；舵机力矩上限（STS3215 12 V 堵转 2.94 N·m）；机械臂质量、惯量、限位；夹爪与物体的接触；雷达射线投射。
+**真物理和真算法**：轮子、滚子和地面的接触摩擦；舵机力矩上限（STS3215 12 V 堵转 2.94 N·m）；机械臂质量、惯量、限位；夹爪与物体的接触；雷达射线投射；带轮径误差和打滑的里程计；雷达扫描匹配定位；从渲染深度图里算物体位置和朝向。控制器做决策时不读仿真真值。
 
 **假设**（每条在验收表里都有对应实测项）：
 
-- 定位用「真实位姿 + 1.5 cm / 1° 噪声」代替激光定位算法。
-- 识别用「视野内且无遮挡就认出，位置带噪声」代替识别模型。
-- 收纳筐位置事先已知。
-- 底盘、电池等的重量是估的。
+- 哪些像素属于哪个物体用 MuJoCo 的分割图直接给，相当于不漏检、不认错的检测模型。
+- 开机时停在充电座上，起点已知；收纳筐位置事先已知。
+- 底盘、电池等的重量是估的；里程计误差和深度噪声的大小是按常见硬件估的。
 
 ## 参考
 

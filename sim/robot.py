@@ -20,6 +20,8 @@ LIDAR_RAYS = 240
 LIDAR_RANGE = 6.0
 LIDAR_MIN = 0.12               # returns closer than this to the sensor are the robot itself
 LIDAR_NOISE = 0.01             # metres, 1 sigma
+ODOM_SCALE = 0.015             # 1 sigma: effective radius error of each omni wheel (calibration, roller wear)
+ODOM_SLIP = 0.03               # 1 sigma: per-step multiplicative slip noise on each wheel's travel
 FOOTPRINT = (-0.05, 0.27, 0.10)  # lidar self-filter box in the chassis frame (folded arm plus payload): x min, x max, |y| max
 
 Q_CARRY = np.array([0.002, -0.393, 0.733, 1.523, 0.002])   # pinch 0.16 m ahead, 0.19 m up; a held object clears the shoulder and the deck
@@ -69,6 +71,7 @@ class Robot:
         self._geomgroup = np.array([1, 0, 0, 1, 0, 0], dtype=np.uint8)
         self._ray_dist = np.zeros(LIDAR_RAYS); self._ray_geom = np.zeros(LIDAR_RAYS, dtype=np.int32)
         self.odom = np.zeros(3)                  # dead-reckoned pose from wheel encoders (starts at the true pose)
+        self.wheel_scale = 1 + self.rng.normal(0, ODOM_SCALE, 3)   # each wheel's real radius differs from the nominal one
         self.peak_torque = np.zeros(9); self.torque_sq = np.zeros(9); self.n_steps = 0; self.sat_steps = np.zeros(9)
         self._flim = self.m.actuator_forcerange[:9, 1].copy()
         mujoco.mj_forward(m, self.d)
@@ -155,7 +158,8 @@ class Robot:
             self.sat_steps += f > 0.8 * self._flim
         # odometry from wheel encoders
         wq = d.qpos[self.wheel_qadr]
-        tw = wheels_to_twist((wq - self._last_wheel_q) / CTRL_DT); self._last_wheel_q = wq.copy()
+        dw = (wq - self._last_wheel_q) * self.wheel_scale * (1 + self.rng.normal(0, ODOM_SLIP, 3)); self._last_wheel_q = wq.copy()
+        tw = wheels_to_twist(dw / CTRL_DT)
         th = self.odom[2] + 0.5 * tw[2] * CTRL_DT
         self.odom[0] += (math.cos(th) * tw[0] - math.sin(th) * tw[1]) * CTRL_DT
         self.odom[1] += (math.sin(th) * tw[0] + math.cos(th) * tw[1]) * CTRL_DT

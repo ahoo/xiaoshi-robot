@@ -63,16 +63,30 @@ def main():
         return f'{(g[0] if k != "sideways" else g[1]):.3f} m/s'
     base_rows = ''.join(f'<tr><td>{lab[k]}</td><td class="n">{got(k)}</td><td class="n">{B[k]["tilt_deg"]:.2f}°</td></tr>' for k in lab)
 
+    # ideal sensors (round 4) vs real localisation and detection (round 5), same layouts
+    R4 = json.load(open(R('trials_round4.json')))['episodes']
+    sensor_rows = ''
+    for n in agg:
+        e4 = [e for e in R4 if e['condition'] == n]; e5 = [e for e in T['episodes'] if e['condition'] == n]
+        d4, t4 = sum(e['delivered'] for e in e4), sum(e['total'] for e in e4); d5, t5 = sum(e['delivered'] for e in e5), sum(e['total'] for e in e5)
+        sensor_rows += (f'<tr><td>{COND[n].split("：")[0]}</td><td class="n">{d4}/{t4}（{pct(d4, t4)}）</td><td class="n">{d5}/{t5}（{pct(d5, t5)}）</td>'
+                        f'<td class="n">{sum(e["sim_time"] for e in e4) / max(d4, 1):.0f} → {sum(e["sim_time"] for e in e5) / max(d5, 1):.0f} 秒</td></tr>')
+    allep = T['episodes']
+    loc_mean = sum(e['loc_err_mean'] for e in allep) / len(allep); loc_max = max(e['loc_err_max'] for e in allep)
+    head_max = max(e['loc_head_err_max_deg'] for e in allep); odom = sum(e['odom_err'] for e in allep) / len(allep)
+    PB = json.load(open(R('perception_bench.json')))
+    det_near = sum(PB[k]['0.235']['pos_err_mean'] for k in PB) / len(PB) * 1000; det_far = sum(PB[k]['1.5']['pos_err_mean'] for k in PB) / len(PB) * 1000
     nw, bj = agg['near_walls'], agg['bare_jaws']
     valid = [
         ('称重', '整机和机械臂分别上秤', f'整机 {M["robot_mass"]:.2f} kg，其中机械臂 {M["arm_mass"]:.2f} kg', '差 10% 以上就改 <code>model.py</code> 的 <code>P</code> 重跑'),
         ('底盘速度', '指令 0.15 m/s，前进、横移各跑 4 秒，量实际位移', f'前进 {B["forward"]["got"][0]:.3f}，横移 {B["sideways"]["got"][1]:.3f} m/s', '在指令的 ±10% 以内'),
         ('原地旋转', '指令 0.8 rad/s 转 4 秒，量转过的角度', f'{B["spin"]["got"][2]:.2f} rad/s', '±10% 以内'),
         ('最高速度', '指令 0.4 m/s', f'到 {B["overspeed"]["got"][0]:.2f} m/s 饱和', '记下实测值，写回 <code>MAX_WHEEL_SPEED</code>'),
-        ('里程计漂移', '走一个 1 m 的正方形回到起点，量闭合误差', f'台架接近 0（滚子是理想的）；整机试验平均 {s["odom"]:.2f} m / {s["dist"]:.0f} m 行程', '只做记录。实物一定更大，所以定位必须靠雷达'),
+        ('里程计漂移', '走一个 1 m 的正方形回到起点，量闭合误差', f'按 1.5% 轮径误差、3% 打滑建模：整机试验单靠里程计平均漂 {s["odom"]:.1f} m / {s["dist"]:.0f} m 行程', '只做记录，实测值写回 <code>robot.py</code> 的 <code>ODOM_SCALE</code>、<code>ODOM_SLIP</code>'),
         ('雷达自遮挡', '收臂状态原地采一圈，数被机身滤波丢掉的点', f'{M["lidar_self_hits"]}/{M["lidar_rays"]} 线', '正前方盲区不超过仿真值 + 10 线'),
-        ('定位精度', '在 3 个已知点用卷尺核对定位输出', '假设 1.5 cm、1°', '不超过假设值；超过就把实测值写进 <code>controller.py</code> 重跑'),
-        ('相机定位', '物体放在 0.25 m 和 1.5 m 处，核对相机给出的位置', '假设近处 4 mm，1.5 m 处 2.8 cm', '同上'),
+        ('定位精度', '跑一局取放，途中停 5 次，每次用卷尺核对定位输出', f'扫描匹配：平均 {100 * loc_mean:.1f} cm，最大 {100 * loc_max:.1f} cm，航向最大 {head_max:.1f}°', '平均不超过 3 cm；超了先查雷达安装和自遮挡滤波'),
+        ('相机定位', '五种物体分别放在 0.25 m 和 1.5 m 处，核对相机算出的位置和朝向', f'近处平均 {det_near:.1f} mm，1.5 m 处 {det_far:.0f} mm（<code>test_perception.py</code>）', '近处不超过 6 mm，否则抓取会落偏'),
+        ('检测模型', '房间里摆满五种物体拍 50 张，数漏检和认错', '仿真里用分割图代替，不会漏也不会错', '只做记录：这是仿真唯一还没建模的识别误差'),
         ('单物体抓取', '机器人停稳，物体在正前方 20–26 cm，五种各 10 次', '贴胶带：' + '，'.join(f'{CN[k].split("（")[0]} {gt[k][0]}/{gt[k][1]}' for k in CN), '每种不比仿真少 2 次以上'),
         ('胶带对照', '撕掉胶带，网球夹 10 次', f'{gb["ball"][0]}/{gb["ball"][1]}', '应该明显变差。如果没变差，说明仿真的摩擦假设偏保守'),
         ('整机任务', '4×3 m 场地摆 5 件，离墙 ≥30 cm，做 10 次', f'送达 {pct(s["d"], s["tot"])}，每件 {s["t"]:.0f} 秒，{s["n"]} 次试验共碰撞 {s["coll"]} 次', '送达率不低于仿真 15 个百分点，没有倾翻'),
@@ -82,11 +96,13 @@ def main():
 
     round_rows = ''
     for fn, name in (('trials_round1.json', '第一轮：初版控制器'), ('trials_round2.json', '第二轮：轻合夹爪、近看再对位、远侧净空检查'),
-                     ('trials_round3.json', '第三轮：加了只看雷达、只管平移的防撞层'), ('trials.json', '第四轮：防撞层按真实外形算，也管转身（当前版本）')):
+                     ('trials_round3.json', '第三轮：加了只看雷达、只管平移的防撞层'), ('trials_round4.json', '第四轮：防撞层按真实外形算，也管转身'),
+                     ('trials_round5.json', '第五轮：定位和识别换成真算法'), ('trials.json', '第六轮：防撞层加上贴着障碍滑行（当前版本）')):
         alle = json.load(open(R(fn)))['episodes']; eps = [e for e in alle if e['condition'] == 'standard']
         d = sum(e['delivered'] for e in eps); tot = sum(e['total'] for e in eps)
         round_rows += (f'<tr><td>{name}</td><td class="n">{d}/{tot}</td><td class="n">{sum(e["collisions"] > 0 for e in alle)} 次试验</td>'
-                       f'<td class="n">{sum(e["max_tilt"] > 30 for e in alle)}</td><td class="n">{sum(e["max_tilt"] > 3 for e in alle)}/{len(alle)}</td></tr>')
+                       f'<td class="n">{sum(e["max_tilt"] > 30 for e in alle)}</td><td class="n">{sum(e["max_tilt"] > 3 for e in alle)}/{len(alle)}</td>'
+                       f'<td class="n">{sum(e["stuck"] for e in alle)}</td></tr>')
     video = json.load(open(R('episode.json')))
     rep = {
         'VIDEO_NOTE': f'第 {video["seed"]} 号随机布局，仿真时间 {video["sim_time"] / 60:.1f} 分钟，送达 {video["delivered"]}/{video["total"]}',
@@ -95,6 +111,9 @@ def main():
         'TRIAL_ROWS': trial_rows, 'FAIL_ROWS': fail_rows, 'GRASP_N': str(gt['block'][1]), 'GRASP_ROWS': grasp_rows, 'BASE_ROWS': base_rows,
         'BARE_BALL': f'{gb["ball"][0]}/{gb["ball"][1]}', 'TAPE_BALL': f'{gt["ball"][0]}/{gt["ball"][1]}', 'BARE_PCT': pct(bj['d'], bj['tot']),
         'TAPE_REMOTE': f'{gt["remote"][0]}/{gt["remote"][1]}', 'VALID_ROWS': valid_rows, 'OTHER_N': f'{nw["n"]} 次和 {bj["n"]} 次',
+        'SENSOR_ROWS': sensor_rows, 'ODOM_DRIFT': f'{odom:.1f}', 'LOC_MEAN': f'{100 * loc_mean:.1f}', 'LOC_MAX': f'{100 * loc_max:.1f}',
+        'HEAD_MAX': f'{head_max:.1f}', 'DET_NEAR': f'{det_near:.1f}', 'DET_FAR': f'{det_far:.0f}',
+        'STUCK5': str(sum(e['stuck'] for e in json.load(open(R('trials_round5.json')))['episodes'])), 'STUCK6': str(sum(e['stuck'] for e in T['episodes'])),
         'ROUND_ROWS': round_rows, 'NO_STANCE': f'{sum(v.get("no_stance", 0) for v in G["1.0"].values())}',
         'ROBOT_MASS': f'{M["robot_mass"]:.2f}',
         'BARE_GF': f'{bj["gf"]}/{bj["ga"]}', 'STD_GF': f'{s["gf"]}/{s["ga"]}', 'STD_TILT': f'{s["tilt"]}/{s["n"]}', 'STD_COLL': str(s['coll']),

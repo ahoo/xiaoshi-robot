@@ -68,6 +68,10 @@ def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=
     res = dict(seed=seed, clearance=clearance, n_boxes=len(boxes), delivered=sum(v == '已送达' for v in outcome.values()), total=len(objs), outcome=outcome,
                sim_time=round(robot.t, 1), finished=agent.state == '完成', wall_time=round(time.time() - t0, 1),
                odom_err=round(float(math.hypot(robot.odom[0] - x, robot.odom[1] - y)), 3),
+               loc_err_mean=round(float(np.mean([e[0] for e in agent.loc_err])), 4) if agent.loc_err else None,
+               loc_err_max=round(float(np.max([e[0] for e in agent.loc_err])), 4) if agent.loc_err else None,
+               loc_head_err_max_deg=round(math.degrees(float(np.max([e[1] for e in agent.loc_err]))), 2) if agent.loc_err else None,
+               scan_matches=agent.loc.n_match, scan_skips=agent.loc.n_skip,
                peak_torque=[round(float(v), 2) for v in robot.peak_torque], rms_torque=[round(float(v), 2) for v in np.sqrt(robot.torque_sq / robot.n_steps)],
                time_above_80pct=[round(float(v), 4) for v in robot.sat_steps / robot.n_steps], **{k: (round(v, 2) if isinstance(v, float) else v) for k, v in agent.stats.items()})
     if pad_friction is not None: model.P['pad_friction'] = 1.0

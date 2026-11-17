@@ -2,7 +2,8 @@
 
   python test_grasp.py [trials_per_object]
 
-Position/yaw noise stands in for camera error. Run with grip tape (pad friction 1.0) and bare PLA jaws (0.35).
+The object's position and heading come from the same RGB-D detector the controller uses (perception.py).
+Run with grip tape (pad friction 1.0) and bare PLA jaws (0.35).
 """
 import json
 import math
@@ -12,10 +13,10 @@ import numpy as np
 
 import model
 from model import OBJECTS, OBJ_HALF_H
+from perception import FrontCamera
 from robot import Robot
-from skills import carry_pose, grasp, holding, misalignment, plan_grasp, to_chassis, wait
+from skills import carry_pose, grasp, holding, misalignment, plan_grasp, wait
 
-POS_NOISE = 0.004      # m, 1 sigma: wrist-camera localisation error assumed by the controller
 ALIGN_NOISE = 0.15     # rad, 1 sigma: how far the object's narrow axis is from the shoulder-object line
 RESTAND_MIS = 0.14     # rad: the controller re-stands above this measured misalignment (controller.py)
 
@@ -32,17 +33,21 @@ def one(kind, seed, pad_friction):
     # measures exactly what the full runs count as a grasp attempt.
     for tries in range(8):
         r_obj = rng.uniform(0.205, 0.265); bearing = rng.uniform(-0.3, 0.3); off = rng.normal(0, ALIGN_NOISE)
-        pos_noise = rng.normal(0, POS_NOISE, 2); yaw_noise = rng.normal(0, 0.05)
         rel0 = np.array([r_obj * math.cos(bearing), r_obj * math.sin(bearing)])
         yaw_rel = math.atan2(rel0[1], rel0[0] - 0.069) + (0 if kind == 'block' else math.pi / 2) + off
         c, s_ = math.cos(rpose[2]), math.sin(rpose[2])
         robot = Robot([(kind, rpose[0] + c * rel0[0] - s_ * rel0[1], rpose[1] + s_ * rel0[0] + c * rel0[1], rpose[2] + yaw_rel)], seed=seed, robot_pose=rpose)
         for _ in range(30): robot.step()                 # 0.6 s: let the object and the robot settle
-        rel = to_chassis(robot, robot.obj_pos(0) + np.append(pos_noise, 0), robot.true_pose())
-        mis = misalignment(rel, robot.obj_yaw(0) - robot.true_pose()[2] + yaw_noise, kind)
-        plan = plan_grasp(rel, kind, mis)
-        if abs(rel[1]) <= 0.06 and (kind in ('ball', 'block') or mis < RESTAND_MIS) and plan is not None:
-            break
+        # the close look: the same RGB-D detector the controller uses (perception.py), not ground truth
+        det = FrontCamera(robot, np.random.default_rng(seed * 10 + tries)).detect().get(0)
+        plan = None
+        if det is not None and det['n_px'] >= 60:
+            rel = np.array(det['rel'], float); rel[2] = OBJ_HALF_H[kind]
+            mis = misalignment(rel, det['yaw4'], kind)
+            plan = plan_grasp(rel, kind, mis)
+            if abs(rel[1]) <= 0.06 and (kind in ('ball', 'block') or mis < RESTAND_MIS) and plan is not None:
+                break
+            plan = None
     logs = [] if plan is not None else ['8 个站位都不满足下手条件']
 
     def script():
