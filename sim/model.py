@@ -10,6 +10,8 @@ import xml.etree.ElementTree as ET
 import mujoco
 import numpy as np
 
+import objects as objects_lib
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 SO101_DIR = os.path.join(HERE, '..', 'third_party', 'so101')
 
@@ -45,17 +47,6 @@ FURNITURE = [
 ]
 BASKET = dict(x=3.45, y=2.55, sx=0.30, sy=0.22, h=0.09, t=0.008)
 HOME = (0.45, 2.55, -math.pi / 2)
-
-# pickable objects: length of the long side (m), half sizes (m), mass (kg), friction, grasp width across the jaws (m)
-OBJECTS = {
-    'block': dict(length=0.04, cn='积木', type='box', size=(0.02, 0.02, 0.02), mass=0.030, friction=0.5, width=0.04, rgba='0.31 0.62 0.88 1'),
-    'ball': dict(length=0.067, cn='网球', type='sphere', size=(0.0335,), mass=0.058, friction=0.6, width=0.067, rgba='0.84 0.91 0.29 1'),
-    'remote': dict(length=0.15, cn='遥控器', type='box', size=(0.075, 0.0225, 0.01), mass=0.090, friction=0.4, width=0.045, rgba='0.86 0.84 0.92 1'),
-    'car': dict(length=0.09, cn='玩具车', type='box', size=(0.045, 0.022, 0.015), mass=0.060, friction=0.4, width=0.044, rgba='0.95 0.69 0.18 1'),
-    'sock': dict(length=0.09, cn='卷好的袜子', type='ellipsoid', size=(0.045, 0.030, 0.024), mass=0.040, friction=0.8, width=0.06, rgba='0.89 0.28 0.24 1'),
-}
-OBJ_HALF_H = {'block': 0.02, 'ball': 0.0335, 'remote': 0.01, 'car': 0.015, 'sock': 0.024}
-
 
 def _quat_z(a):
     return f'{math.cos(a / 2):.6f} 0 0 {math.sin(a / 2):.6f}'
@@ -127,17 +118,8 @@ def _attrs(s):
     return out
 
 
-def _object_xml(name, kind, x, y, yaw):
-    o = OBJECTS[kind]
-    size = ' '.join(str(v) for v in o['size'])
-    extra = 'condim="6" friction="%s 0.005 0.0015"' % o['friction'] if kind == 'ball' else 'condim="4" friction="%s 0.01 0.0001"' % o['friction']
-    soft = ' solref="0.012 1"' if kind == 'sock' else ''
-    return (f'<body name="{name}" pos="{x:.4f} {y:.4f} {OBJ_HALF_H[kind] + 0.002:.4f}" quat="{_quat_z(yaw)}"><freejoint name="{name}"/>'
-            f'<geom name="{name}" type="{o["type"]}" size="{size}" mass="{o["mass"]}" rgba="{o["rgba"]}" {extra}{soft}/></body>')
-
-
 def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET):
-    """objects: list of (kind, x, y, yaw). Returns MJCF text. World frame: x right, y 'down' the room plan, z up."""
+    """objects: list of (kind, x, y, yaw, spec) with spec from objects.sample(). Returns MJCF text. World frame: x right, y 'down' the room plan, z up."""
     defaults, assets, arm_body, arm_acts = _arm_parts()
     R = P['wheel_radius']
     lx, ly, lz = P['lidar_pos']
@@ -159,7 +141,8 @@ def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET):
     for k, (dx, dy, hx, hy) in enumerate([(0, -(b['sy'] / 2 - t / 2), b['sx'] / 2, t / 2), (0, b['sy'] / 2 - t / 2, b['sx'] / 2, t / 2),
                                           (-(b['sx'] / 2 - t / 2), 0, t / 2, b['sy'] / 2), (b['sx'] / 2 - t / 2, 0, t / 2, b['sy'] / 2)]):
         bk.append(f'<geom name="basket_w{k}" type="box" pos="{b["x"] + dx} {b["y"] + dy} {hh}" size="{hx} {hy} {hh}" rgba="1 0.42 0.17 1"/>')
-    objs = '\n'.join(_object_xml(f'obj{i}', k, x, y, yaw) for i, (k, x, y, yaw) in enumerate(objects))
+    parts = [objects_lib.xml(f'obj{i}', spec, x, y, yaw) for i, (k, x, y, yaw, spec) in enumerate(objects)]
+    objs = '\n'.join(b for _, b in parts); obj_assets = ''.join(a for a, _ in parts)
     wheels = '\n'.join(_wheel_xml(i, a) for i, a in enumerate(P['wheel_angles']))
     wheel_acts = '\n'.join(f'<velocity name="wheel{i}" joint="wheel{i}" kv="3" ctrlrange="-7 7" forcerange="{-P["servo_stall"]} {P["servo_stall"]}"/>' for i in range(3))
     rx, ry, rth = robot_pose
@@ -184,6 +167,7 @@ def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET):
     <texture name="mat" type="2d" builtin="checker" rgb1="0.122 0.314 0.271" rgb2="0.135 0.335 0.29" mark="edge" markrgb="0.3 0.52 0.46" width="256" height="256"/>
     <material name="mat" texture="mat" texuniform="true" texrepeat="2 2" reflectance="0"/>
     {assets}
+    {obj_assets}
   </asset>
   <worldbody>
     <light pos="1 1 4" dir="0.15 0.1 -1" directional="true" diffuse="0.55 0.55 0.52" castshadow="true"/>

@@ -1,19 +1,21 @@
 """Object detection from the front RGB-D camera, rendered by MuJoCo.
 
 What is real here: the images. Objects are only found if enough of their pixels are visible (resolution, distance,
-occlusion by furniture or by the robot's own arm all count), their position comes from back-projecting noisy depth
-pixels, and their orientation from the shape of those points on the floor.
+occlusion by furniture or by the robot's own arm all count). Everything the robot learns about an object comes from
+back-projecting noisy depth pixels: where it is, how tall it is, its outline seen from above, its long axis.
+Nothing is known in advance about what the object is or how big it is.
 
-What is assumed: the per-pixel class labels. A segmentation render stands in for a trained detector that labels
-every visible pixel of a known object correctly and never labels anything else. Each object class appears once per
-room, so the class is also the object's identity.
+What is assumed: the instance masks. A segmentation render stands in for a class-agnostic instance segmentation
+model ("this blob of pixels is one thing lying on the floor") that never misses, merges or splits objects. It does
+not say what the object is, and it gives no identity across frames: matching detections to remembered objects is
+the controller's job, by position.
 """
 import math
 
 import mujoco
 import numpy as np
 
-from model import OBJECTS
+from scipy.spatial import ConvexHull, QhullError
 
 W, H = 320, 240
 MIN_PX = 25                  # fewer visible pixels than this: not detected
@@ -34,8 +36,13 @@ class FrontCamera:
         d = robot.d; Rb = d.xmat[robot.chassis].reshape(3, 3); pb = d.xpos[robot.chassis]
         Rc = d.cam_xmat[self.cam].reshape(3, 3); pc = d.cam_xpos[self.cam]
         self.R_bc = Rb.T @ Rc; self.t_bc = Rb.T @ (pc - pb); self.t_bc[2] += pb[2]    # z measured from the floor
-        self.obj_geom = {mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, f'obj{i}'): i for i in range(len(robot.objects))}
-        self.kinds = [o[0] for o in robot.objects]
+        # pixel label (geom id) -> object instance, through the geom's top-level body
+        self.geom2obj = np.full(m.ngeom, -1)
+        roots = {mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, f'obj{i}'): i for i in range(len(robot.objects))}
+        for gid in range(m.ngeom):
+            self.geom2obj[gid] = roots.get(int(m.body_rootid[m.geom_bodyid[gid]]), -1)
+        self.basket_geoms = np.array([mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, n) for n in ('basket_floor', 'basket_w0', 'basket_w1', 'basket_w2', 'basket_w3')])
+        self.basket_obs = None
         self.depth = None
 
     def capture(self):
@@ -53,46 +60,45 @@ class FrontCamera:
         return P @ self.R_bc.T + self.t_bc
 
     def detect(self):
-        """Returns {object index: dict(rel=centre in chassis frame, yaw=long-axis heading in chassis frame or None, n_px, dist)}."""
+        """List of detections, each a dict in the chassis frame (x forward, y left, z up from the floor):
+        rel (centre of the visible outline, z = half the height), top (height), bottom (lowest visible point: above ~4 cm
+        it is not lying on the floor), hull (outline seen from above, k x 2), pts (up to 400 visible surface points, N x 3),
+        heading (long axis), elong (long/short), width (narrowest outline width), n_px, dist, cut (touches the image edge)."""
         self.capture()
-        out = {}
-        for gid, k in self.obj_geom.items():
-            mask = self.label == gid
+        out = []
+        bm = np.isin(self.label, self.basket_geoms); nb = int(bm.sum()); self.basket_obs = None
+        if nb >= 80:
+            vv, uu = np.nonzero(bm); Pb = self.points_body(bm); Pb = Pb[np.isfinite(Pb).all(1)]
+            self.basket_obs = dict(pts=Pb, n_px=nb, cut=bool(vv.max() >= H - 2 or uu.min() <= 1 or uu.max() >= W - 2))
+        inst = np.where(self.label >= 0, self.geom2obj[np.maximum(self.label, 0)], -1)
+        for k in np.unique(inst[inst >= 0]):
+            mask = inst == k
             n = int(mask.sum())
             if n < MIN_PX: continue
-            P = self.points_body(mask)
-            P = P[np.isfinite(P).all(1)]
+            P = self.points_body(mask); P = P[np.isfinite(P).all(1)]
             if len(P) < MIN_PX: continue
-            # Only the side facing the camera is visible, so the centre of all points is pulled towards the robot.
-            # Seen from above, the top face (or the top cap of a round object) is complete: use it for centre and heading.
-            zt = np.percentile(P[:, 2], 97)
-            top = P[P[:, 2] >= zt - 0.012]
-            if len(top) < 8: top = P[P[:, 2] >= np.percentile(P[:, 2], 60)]
-            yaw, elong = _heading(top[:, :2] if len(top) >= 10 else P[:, :2])
-            # Along the line of sight, take the near edge (the best-seen part) and add the class's known half size in
-            # that direction; across it, the visible points are symmetric, so their mean is the centre.
-            ux, uy = np.mean(P[:, 0]) - self.t_bc[0], np.mean(P[:, 1]) - self.t_bc[1]
-            un = math.hypot(ux, uy); ux, uy = ux / un, uy / un
-            along = P[:, 0] * ux + P[:, 1] * uy; across = -P[:, 0] * uy + P[:, 1] * ux
-            h = _half_extent(self.kinds[k], math.atan2(uy, ux) - yaw)
-            hc = _half_extent(self.kinds[k], math.atan2(uy, ux) + math.pi / 2 - yaw)
             vv, uu = np.nonzero(mask)
-            lo_ = lambda v: np.partition(v, 2)[2]     # robust extremes: ignore the two most extreme pixels
-            hi_ = lambda v: np.partition(v, -3)[-3]
-            if vv.max() >= H - 2:                    # near end runs off the bottom of the image: use the far edge
-                ca = hi_(along) - h
-            else:
-                ca = lo_(along) + h
-            # Across the line of sight both outline edges of a convex object are visible: take their midpoint.
-            # Image left = robot's left = +across; an edge cut off by the image border is replaced by the other one.
-            cut_l, cut_r = uu.min() <= 1, uu.max() >= W - 2
-            if cut_l and not cut_r: cc = lo_(across) + hc
-            elif cut_r and not cut_l: cc = hi_(across) - hc
-            else: cc = 0.5 * (lo_(across) + hi_(across))
-            c = np.array([ca * ux - cc * uy, ca * uy + cc * ux, np.median(P[:, 2])])
+            top = float(np.percentile(P[:, 2], 98))
+            xy = P[:, :2]
+            heading, elong = _heading(xy)
+            try:
+                hull = xy[ConvexHull(xy).vertices]
+            except (QhullError, ValueError):
+                hull = xy[[np.argmin(xy[:, 0]), np.argmax(xy[:, 0]), np.argmin(xy[:, 1]), np.argmax(xy[:, 1])]]
+            c = 0.5 * (hull.min(0) + hull.max(0))
             dist = float(np.hypot(c[0] - self.t_bc[0], c[1] - self.t_bc[1]))
-            out[k] = dict(rel=c, yaw=yaw if elong > 1.25 else None, yaw4=yaw, n_px=n, dist=dist, cut=bool(vv.max() >= H - 2 or cut_l or cut_r))
+            pts = P if len(P) <= 400 else P[np.linspace(0, len(P) - 1, 400).astype(int)]
+            out.append(dict(rel=np.array([c[0], c[1], top / 2]), top=top, bottom=float(np.percentile(P[:, 2], 2)), hull=hull, pts=pts, heading=heading, elong=elong,
+                            width=min_width(hull), n_px=n, dist=dist, cut=bool(vv.max() >= H - 2 or uu.min() <= 1 or uu.max() >= W - 2)))
         return out
+
+    def sees_load(self, p_pinch):
+        """Is something hanging in the gripper? p_pinch: the gripper's pinch point (chassis frame, from joint feedback).
+        Used when the jaw has closed to its stop: a squashed soft object and an empty gripper then read the same angle."""
+        for d in self.detect():
+            if d['bottom'] > 0.03 and math.hypot(d['rel'][0] - p_pinch[0], d['rel'][1] - p_pinch[1]) < 0.07:
+                return True
+        return False
 
     def floor_visible(self, pts_body):
         """For floor points (chassis frame, z=0): is each one inside the image and not hidden behind something?"""
@@ -122,12 +128,13 @@ def _heading(xy):
     return float(a), float(max(l1[i], l2[i]) / max(min(l1[i], l2[i]), 1e-3))
 
 
-def _half_extent(kind, phi):
-    """Half size of a known object class along a horizontal direction at angle phi from the object's long axis."""
-    o = OBJECTS[kind]; a = o['size'][0]
-    if o['type'] == 'sphere':
-        return a
-    b = o['size'][1]
-    if o['type'] == 'ellipsoid':
-        return math.sqrt((a * math.cos(phi)) ** 2 + (b * math.sin(phi)) ** 2)
-    return a * abs(math.cos(phi)) + b * abs(math.sin(phi))
+def min_width(hull):
+    """Narrowest width of a 2-D outline (over directions every 3 degrees)."""
+    p = hull @ _CS
+    return float((p.max(0) - p.min(0)).min())
+
+
+def extent_along(hull, u):
+    """(near, far) of an outline along the unit direction u."""
+    t = hull @ np.asarray(u)
+    return float(t.min()), float(t.max())

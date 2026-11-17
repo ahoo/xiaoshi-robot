@@ -39,7 +39,7 @@ def draw_map(agent, robot):
     if agent.scan is not None:
         lx, ly, a, rr = agent.scan
         for x, y in zip(lx + np.cos(a) * rr, ly + np.sin(a) * rr): d.point((X(x), y * k), fill=COL['warn'])
-    b = BASKET; d.rectangle([X(b['x'] + b['sx'] / 2), (b['y'] - b['sy'] / 2) * k, X(b['x'] - b['sx'] / 2), (b['y'] + b['sy'] / 2) * k], outline=COL['orange'], width=2)
+    b = agent.basket; d.rectangle([X(b['x'] + b['sx'] / 2), (b['y'] - b['sy'] / 2) * k, X(b['x'] - b['sx'] / 2), (b['y'] + b['sy'] / 2) * k], outline=COL['orange'], width=2)
     x, y, th = agent.pose()
     if agent.path: d.line([(X(x), y * k)] + [(X(p[0]), p[1] * k) for p in agent.path[1:]], fill=COL['orange'], width=2)
     for j, e in agent.memory.items():
@@ -69,7 +69,7 @@ def main(seed=4, clearance=0.30, out='../results/episode.mp4'):
         frame.paste(Image.fromarray(main_img), (0, 0)); frame.paste(Image.fromarray(side_img), (MAIN[0], 0)); frame.paste(draw_map(agent, robot), (MAIN[0], SIDE[1]))
         d = ImageDraw.Draw(frame)
         d.text((MAIN[0] + 8, 6), '跟拍', font=f_small, fill=COL['paper']); d.text((MAIN[0] + 8, SIDE[1] + 6), '机器人自己建的地图', font=f_small, fill=COL['paper'])
-        done = sum(agent._in_basket(robot.obj_pos(i)) for i in range(len(robot.objects)))
+        done = sum(agent._in_basket_world(robot.obj_pos(i)) for i in range(len(robot.objects)))
         y0 = MAIN[1] + 14
         d.text((20, y0), agent.state, font=f_big, fill=COL['orange'])
         d.text((150, y0 + 10), f'仿真时间 {int(robot.t // 60):02d}:{int(robot.t % 60):02d}   已送达 {done}/{len(robot.objects)}   5 倍速   MuJoCo 物理仿真', font=f_mid, fill=COL['paper'])

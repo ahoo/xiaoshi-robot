@@ -3,8 +3,10 @@
 The control code only uses what the real robot has: wheel encoders (with calibration error and slip), lidar
 ranges, joint feedback, and the front RGB-D camera. Localisation is lidar scan matching against the robot's own map
 (localization.py); objects are found and measured in rendered depth images (perception.py). The only remaining
-idealisation in sensing is the per-pixel object labels (see perception.py). Ground truth is read only by the score
-sheet in after_step(), never to make a decision.
+idealisation in sensing is the per-pixel instance masks (see perception.py). They say neither what an object is nor
+which one it was last time: the controller remembers objects by where they are, and knows each one only by the
+points the camera has seen on it. Ground truth is read only by the score sheet (after_step, _score_*), never to make
+a decision.
 """
 import heapq
 import math
@@ -13,9 +15,11 @@ import mujoco
 import numpy as np
 from scipy.ndimage import distance_transform_edt
 
-from model import BASKET, FURNITURE, HOME, OBJECTS, OBJ_HALF_H, P, ROOM_H, ROOM_W
-from robot import LIDAR_RANGE, Q_CARRY
-from skills import carry_pose, grasp, holding, misalignment, place, plan_grasp, wait, wait_arm
+from scipy.spatial import ConvexHull, QhullError
+
+from model import BASKET, HOME, P
+from robot import LIDAR_RANGE
+from skills import ELONG, best_band, carry_pose, grasp, holding, pinch_now, place, plan_grasp, wait, wait_arm
 from localization import Localizer
 from perception import FrontCamera
 
@@ -32,7 +36,9 @@ SAFE_HORIZON = (0.15, 0.3)   # s: look-ahead of the safety layer; 0.3 s covers s
 ARM_SWEEP, HELD_SWEEP = 0.228, 0.258   # m: radius swept by the folded arm when the robot turns on the spot (empty / holding)
 V_MAX, W_MAX = 0.18, 1.0
 CAM_RANGE = 1.6             # m: beyond this the smallest object (4 cm cube) is under MIN_PX pixels, so 'seen' stops here
-STANDOFF = 0.235             # robot centre to object when grasping
+STANDOFFS = (0.235, 0.25, 0.265)   # robot centre to the middle of the strip the jaws close on: preferred, then farther back
+KEEP = 0.19                  # m: on the way to a target, the robot centre keeps this far from its outline
+ASSOC = 0.10                 # m: a detection this close to a remembered object is taken to be that object
 T_MAX = 600.0
 
 
@@ -45,7 +51,7 @@ class Agent:
         self.r = robot; self.rng = np.random.default_rng(seed + 7); self.verbose = verbose
         self.lo = np.zeros((GY, GX), np.int8)
         self.cov = np.zeros((CGY, CGX), bool)
-        self.memory = {}
+        self.memory = {}; self._next_id = 1; self.priority = None; self.score_events = []
         self.loc = Localizer(robot.true_pose(), CS, (GX * CS, GY * CS))   # starts docked at a known pose; after that, lidar + odometry only
         self.cam = FrontCamera(robot, np.random.default_rng(seed + 11)); self.visible = {}; self._ncam = 0
         self.loc_err = []                                  # (position error m, heading error rad) once a second, for the score sheet
@@ -55,8 +61,10 @@ class Agent:
         self._tick = 0; self._last_xy = np.array(robot.true_pose()[:2]); self._coll_t = -9.0; self._floor_t = -9.0
         m = robot.m
         self._floor = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, 'floor')
-        self._basket_cells = [(j, i) for j in range(GY) for i in range(GX)
-                              if abs((i + 0.5) * CS - BASKET['x']) <= BASKET['sx'] / 2 and abs((j + 0.5) * CS - BASKET['y']) <= BASKET['sy'] / 2]
+        # Where the basket is, in the robot's own map. It starts from where the user said it is, and is then corrected
+        # every time the camera sees it, so it stays consistent with the map even if the map as a whole has drifted.
+        self.basket = dict(BASKET); self.basket_seen = 0
+        self._set_basket(BASKET['x'], BASKET['y'])
         self._cx, self._cy = np.meshgrid((np.arange(GX) + 0.5) * CS, (np.arange(GY) + 0.5) * CS)
         self.sense()
 
@@ -74,7 +82,7 @@ class Agent:
         self._ncam += 1
         cam_now = self._ncam % 3 == 1                 # camera at 3.3 Hz, lidar at 10 Hz
         # --- lidar: correct the pose against the map, then update the map from the corrected pose
-        if self.state in ('抓取', '放置'):          # the arm is out in front of the lidar: neither match nor map
+        if self.state in ('抓取', '放置', '放下'):   # the arm is out in front of the lidar: neither match nor map
             if cam_now: self._sense_camera()
             return
         ang, rng_ = r.lidar()
@@ -113,9 +121,10 @@ class Agent:
 
     def _sense_camera(self):
         """Front RGB-D camera: which floor cells it has looked at, and object detections put on the map."""
-        r = self.r
         x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th)
         dets = self.cam.detect()
+        if self.cam.basket_obs is not None and not self.cam.basket_obs['cut']:
+            self._update_basket(self.cam.basket_obs['pts'])
         # coverage: unseen floor cells whose centre is in the image, not hidden behind anything, and close enough
         cells = [(j, i) for j in range(CGY) for i in range(CGX) if not self.cov[j, i]]
         if cells:
@@ -126,27 +135,123 @@ class Agent:
             for (j, i), sn, dd in zip(cells, seen, dist):
                 if sn or dd < 0.3: self.cov[j, i] = True
         self.visible = {}
-        for k, dt in dets.items():
-            rel = dt['rel']
-            if rel[2] > 0.10: continue                      # up in the air: the object in our own gripper
-            mx, my = x + c * rel[0] - s_ * rel[1], y + s_ * rel[0] + c * rel[1]
-            if self._in_basket((mx, my, 0.0), margin=0.03): continue
-            kind = r.objects[k][0]; cn = OBJECTS[kind]['cn']
-            e = self.memory.get(k)
-            if e and e['status'] == 'held': continue
-            if e and e['status'] == 'delivered':
-                self.log(f'看见 {cn} 在筐外的地上，重新去拿'); e.update(status='pending', retry_at=0.0)
-            yaw = wrap(dt['yaw4'] + th)
+        if self.state in ('抓取', '放置', '放下'): return       # the arm is in front of the camera, and the target is being handled
+        seen = set()
+        for dt in dets:
+            if dt['bottom'] > 0.04: continue               # not lying on the floor: the load in our own gripper
+            o = self._to_world(dt, x, y, th)
+            if self._in_basket((o['x'], o['y'], 0.0), margin=0.03): continue
+            k = self._associate(o['x'], o['y'])
+            if k is not None: seen.add(k)
+            # only whole views are used to learn about an object: one cut by the image edge has a shifted outline
+            if dt['cut'] or dt['n_px'] < 40: continue
             sig = 0.008 + 0.007 * dt['dist']                 # detector error (bench) plus localisation error
+            if k is None:
+                k = self._next_id; self._next_id += 1; seen.add(k)
+                self.memory[k] = dict(id=k, status='pending', retry_at=0.0, fails=0, miss=0, sigma=sig, **o)
+                self.log(f'发现{self._name(self.memory[k], True)}，距离 {dt["dist"]:.2f} m')
+            else:
+                e = self.memory[k]
+                if e['status'] == 'delivered':
+                    self.log(f'{self._name(e)} 那里的地上还有东西，重新去拿'); e.update(status='pending', retry_at=0.0)
+                if sig <= e['sigma'] * 1.1: e.update(sigma=sig, **o)
             self.visible[k] = dt['dist']
-            if e is None:
-                self.memory[k] = dict(kind=kind, x=mx, y=my, yaw=yaw, sigma=sig, status='pending', retry_at=0.0, fails=0)
-                self.log(f'识别到 {cn}，距离 {dt["dist"]:.2f} m')
-            elif sig <= e['sigma'] * 1.1 or math.hypot(mx - e['x'], my - e['y']) > 3 * e['sigma'] + 0.03:
-                e.update(x=mx, y=my, yaw=yaw, sigma=sig)
+        for k in seen:
+            if k in self.memory: self.memory[k]['miss'] = 0
+        # Negative evidence: the floor where a remembered object should be is in plain view and nothing is there.
+        # (Pushed away by a wheel, or a duplicate.) Only between 0.35 and 1.2 m: closer, a flat object hardly hides
+        # the floor point under it; farther, too few pixels.
+        for k, e in list(self.memory.items()):
+            if k in seen or e['status'] != 'pending' or k == self.target: continue
+            wx_, wy_ = e['x'] - x, e['y'] - y
+            B = np.array([[c * wx_ + s_ * wy_, -s_ * wx_ + c * wy_, 0.0]])
+            if 0.35 < math.hypot(B[0, 0], B[0, 1]) < 1.2 and self.cam.floor_visible(B)[0]:
+                e['miss'] += 1
+                if e['miss'] >= 2:
+                    self.log(f'{self._name(e)} 不在原处了，从记忆里去掉'); del self.memory[k]
+                    if self.priority == k: self.priority = None
+        # two memories of one object (seen from two sides before the views agreed): keep the better measured one
+        pend = [(k, e) for k, e in self.memory.items() if e['status'] == 'pending']
+        for i, (k1, e1) in enumerate(pend):
+            for k2, e2 in pend[i + 1:]:
+                if k1 in self.memory and k2 in self.memory and math.hypot(e1['x'] - e2['x'], e1['y'] - e2['y']) < 0.07:
+                    drop = k2 if (k1 == self.target or (e1['sigma'] <= e2['sigma'] and k2 != self.target)) else k1
+                    del self.memory[drop]
+                    if self.priority == drop: self.priority = None
+
+    def _to_world(self, dt, x, y, th):
+        """A detection (chassis frame) as map-frame measurements of the object: centre, outline, surface points, size."""
+        c, s_ = math.cos(th), math.sin(th)
+        T = lambda Q: np.stack([x + c * Q[:, 0] - s_ * Q[:, 1], y + s_ * Q[:, 0] + c * Q[:, 1]], 1)
+        ctr = T(np.asarray(dt['rel'][None, :2]))[0]; hull = T(np.asarray(dt['hull']))
+        pts = np.column_stack([T(dt['pts']), dt['pts'][:, 2]])
+        # The far side is hidden from the camera; mirror the seen outline through its centre to cover it.
+        both = np.vstack([hull, 2 * ctr - hull])
+        try: outline = both[ConvexHull(both).vertices]
+        except (QhullError, ValueError): outline = both
+        hd = wrap(dt['heading'] + th); a = np.array([math.cos(hd), math.sin(hd)]); b = np.array([-a[1], a[0]])
+        L = float(np.ptp(outline @ a)); Wd = float(np.ptp(outline @ b))
+        return dict(x=float(ctr[0]), y=float(ctr[1]), heading=hd, elong=dt['elong'], top=dt['top'], pts=pts, outline=outline,
+                    size=(L, Wd, dt['top']), dirs=None)
+
+    def _associate(self, mx, my):
+        best = None
+        for k, e in self.memory.items():
+            if e['status'] == 'held': continue
+            d = math.hypot(mx - e['x'], my - e['y'])
+            if d < max(ASSOC, 3 * e['sigma'] + 0.03) and (best is None or d < best[0]): best = (d, k)
+        return None if best is None else best[1]
+
+    @staticmethod
+    def _name(e, size=False):
+        if not size: return f'物体#{e["id"]}'
+        L, Wd, H = (100 * v for v in e['size'])
+        return f'物体#{e["id"]}（约 {L:.0f}×{Wd:.0f} cm，高 {H:.0f} cm）'
+
+    def _set_basket(self, bx, by):
+        b = self.basket; b['x'], b['y'] = bx, by
+        self._basket_cells = [(j, i) for j in range(GY) for i in range(GX)
+                              if abs((i + 0.5) * CS - bx) <= b['sx'] / 2 and abs((j + 0.5) * CS - by) <= b['sy'] / 2]
+        # the rim as points, for the safety layer (it is below the lidar, so the scan never shows it)
+        hx, hy = b['sx'] / 2, b['sy'] / 2
+        ex = np.arange(-hx, hx + 1e-9, 0.02); ey = np.arange(-hy, hy + 1e-9, 0.02)
+        self.basket_pts = np.vstack([np.stack([bx + ex, by - hy + 0 * ex], 1), np.stack([bx + ex, by + hy + 0 * ex], 1),
+                                     np.stack([bx - hx + 0 * ey, by + ey], 1), np.stack([bx + hx + 0 * ey, by + ey], 1)])
+
+    def _update_basket(self, pts_body):
+        """Camera points on the basket (chassis frame) -> basket centre in the map, smoothed over sightings."""
+        x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th)
+        wx = x + c * pts_body[:, 0] - s_ * pts_body[:, 1]; wy = y + s_ * pts_body[:, 0] + c * pts_body[:, 1]
+        b = self.basket; est = []
+        for v, size, me in ((wx, b['sx'], x), (wy, b['sy'], y)):
+            lo, hi = np.percentile(v, [1, 99])
+            if abs((hi - lo) - size) < 0.03: est.append(0.5 * (lo + hi))          # both sides seen
+            elif me < 0.5 * (lo + hi): est.append(lo + size / 2)                    # only the near side is reliable
+            else: est.append(hi - size / 2)
+        if math.hypot(est[0] - b['x'], est[1] - b['y']) > 0.5: return            # not plausible: ignore
+        a = 1.0 if self.basket_seen == 0 else 0.2
+        self._set_basket(b['x'] + a * (est[0] - b['x']), b['y'] + a * (est[1] - b['y'])); self.basket_seen += 1
+
+    @staticmethod
+    def _outline(e):
+        """Outline of a remembered floor object (map frame) as measured by the camera. The safety layer keeps the
+        wheels off it: below the lidar, the object is otherwise invisible to it."""
+        return e['outline']
 
     def _in_basket(self, p, margin=0.0):
-        return abs(p[0] - BASKET['x']) < BASKET['sx'] / 2 + margin and abs(p[1] - BASKET['y']) < BASKET['sy'] / 2 + margin and p[2] < BASKET['h'] + 0.03
+        """Inside the basket as the robot believes it to be (map frame)."""
+        b = self.basket
+        return abs(p[0] - b['x']) < b['sx'] / 2 + margin and abs(p[1] - b['y']) < b['sy'] / 2 + margin and p[2] < b['h'] + 0.03
+
+    @staticmethod
+    def _in_basket_world(p):
+        """Inside the real basket (world frame, ground truth): for the score sheet only."""
+        return abs(p[0] - BASKET['x']) < BASKET['sx'] / 2 and abs(p[1] - BASKET['y']) < BASKET['sy'] / 2 and p[2] < BASKET['h'] + 0.03
+
+    def _score_held_obj(self):
+        """Score sheet only (ground truth): which real object is in the gripper."""
+        p = self.r.pinch_pos()
+        return int(np.argmin([np.linalg.norm(self.r.obj_pos(i) - p) for i in range(len(self.r.objects))]))
 
     def after_step(self):
         """Called after every 20 ms physics step: sensors at 10 Hz, plus bookkeeping for the score sheet (ground truth)."""
@@ -177,18 +282,21 @@ class Agent:
     # ------------------------------------------------------------------ planning
     def costmap(self, ignore=None):
         occ = self.lo > 0
-        for k, e in self.memory.items():
-            if k != ignore and e['status'] == 'pending':
-                i, j = int(e['x'] / CS), int(e['y'] / CS)
-                if 0 <= i < GX and 0 <= j < GY: occ[j, i] = True
         for j, i in self._basket_cells: occ[j, i] = True
         D = distance_transform_edt(~np.pad(occ, 1, constant_values=True))[1:-1, 1:-1] * CS
-        self.D_tall = distance_transform_edt(~np.pad(self.lo > 0, 1, constant_values=True))[1:-1, 1:-1] * CS
+        # Objects on the floor are low: only the chassis can touch them, so the robot centre has to keep KEEP from
+        # their outlines, not a full PASS from the cells they are in.
+        ol = [e['outline'] for k, e in self.memory.items() if k != ignore and e['status'] == 'pending']
+        if ol:
+            ol = np.vstack(ol)
+            D = np.minimum(D, np.min(np.hypot(self._cx[..., None] - ol[:, 0], self._cy[..., None] - ol[:, 1]), -1) + (PASS - KEEP))
+        self.D_base = D
         if ignore is not None and ignore in self.memory:
             # the target is not a wall, but the robot must not drive over it on the way to its far side:
-            # keep the robot centre at least 19.5 cm away (the grasp stance is at 23.5 cm)
-            e = self.memory[ignore]
-            D = np.minimum(D, np.hypot(self._cx - e['x'], self._cy - e['y']) + (PASS - 0.195))
+            # keep the robot centre at least KEEP from its outline
+            ol = self.memory[ignore]['outline']
+            dmin = np.min(np.hypot(self._cx[..., None] - ol[:, 0], self._cy[..., None] - ol[:, 1]), -1)
+            D = np.minimum(D, dmin + (PASS - KEEP))
         return D
 
     def astar(self, D, goals):
@@ -269,18 +377,22 @@ class Agent:
         than SAFE_GAP (or closer than it already is), it falls back to a gentler command, finally to standing still.
         Rotation matters as much as translation: the folded arm sweeps a wider circle than the body."""
         x, y, th = self.pose()
-        W = [self.scan_pts, self.map_pts]
+        lowp = np.vstack([self.basket_pts] + [self._outline(e) for e in self.memory.values() if e['status'] == 'pending'])
+        bp = lowp[np.hypot(lowp[:, 0] - x, lowp[:, 1] - y) < SAFE_R]
+        W = [self.scan_pts, self.map_pts, bp]
         if not any(len(w) for w in W):
             self.r.set_twist(vx, vy, wz); return
         c, s = math.cos(th), math.sin(th)
         P = np.vstack([w for w in W if len(w)]) - [x, y]
         P = np.stack([c * P[:, 0] + s * P[:, 1], -s * P[:, 0] + c * P[:, 1]], 1)
-        margin = np.concatenate([np.zeros(len(self.scan_pts)), np.full(len(self.map_pts), MAP_PT_MARGIN)])
-        now = self._clearance(P) - margin
+        margin = np.concatenate([np.zeros(len(self.scan_pts)), np.full(len(self.map_pts), MAP_PT_MARGIN), np.full(len(bp), 0.01)])
+        low = np.concatenate([np.zeros(len(self.scan_pts) + len(self.map_pts), bool), np.ones(len(bp), bool)])
+        clear = lambda Q, lw: np.where(lw, np.hypot(Q[:, 0], Q[:, 1]) - BODY_R, self._clearance(Q))   # low points: only the body can hit them
+        now = clear(P, low) - margin
         keep = now < 0.12
         if not keep.any():
             self.r.set_twist(vx, vy, wz); self.blocked = 0; return
-        P, now, margin = P[keep], now[keep], margin[keep]
+        P, now, margin, low = P[keep], now[keep], margin[keep], low[keep]
         floor_ = np.minimum(now, SAFE_GAP) - 0.002
         # sliding: drop only the part of the velocity that points at the closest obstacle, keep the part along it
         cl = P[np.argmin(now)]; nrm = cl / max(np.hypot(*cl), 1e-6)
@@ -293,7 +405,7 @@ class Agent:
                 a = -cw * dt; ca, sa = math.cos(a), math.sin(a)
                 Q = P - [cx * dt, cy * dt]
                 Q = np.stack([ca * Q[:, 0] - sa * Q[:, 1], sa * Q[:, 0] + ca * Q[:, 1]], 1)
-                if (self._clearance(Q) - margin < floor_).any(): ok = False; break
+                if (clear(Q, low) - margin < floor_).any(): ok = False; break
             if ok:
                 self.r.set_twist(cx, cy, cw); self.blocked = self.blocked + 1 if k else 0
                 return
@@ -307,7 +419,7 @@ class Agent:
     def goto(self, goal_fn, ignore=None, check=None, timeout=150.0):
         """Plan and drive to one of the goals produced by goal_fn(D). Returns the goal reached, or None.
         `check` is called every tick; if it returns a string the motion is aborted with that reason."""
-        t0 = self.r.t; t_plan = -9.0; fails = 0; goal = None; path = None; wp = 1
+        t0 = self.r.t; t_plan = -9.0; fails = 0; goal = None; path = None; wp = 1; self.abort = None
         prog_t, prog_xy = self.r.t, np.array(self.pose()[:2])
         while True:
             if self.r.t - t0 > timeout: self.stop(); return None
@@ -386,26 +498,60 @@ class Agent:
             if (self._clearance(B, box) - MAP_PT_MARGIN < 0.03).any(): return False
         return True
 
-    def standoffs(self, e, D):
-        kind = e['kind']
-        if kind in ('ball', 'block'): dirs = [e['yaw'] + k * math.pi / 6 for k in range(12)]   # a cube can be taken across a diagonal too: the jaws open for it
-        else: dirs = [e['yaw'] + math.pi / 2, e['yaw'] - math.pi / 2]
-        # Square-on stances plus ones turned 0.10 rad either way (still under the re-stand threshold). All of them go to
-        # A*, which picks whichever it can reach: a valid square-on stance on the far side of the object is no use.
+    def grasp_dirs(self, e):
+        """Which sides the object can be taken from. The jaws always close along the line from the robot to the
+        object (no wrist yaw), so for each side to stand on, measure the object along that line inside a
+        finger-wide strip (skills.best_band) using the points the camera has seen on it. Keep the sides whose
+        narrowest strip fits the gripper and is within 12 mm of the best side: across a banana, not along it; any side
+        of a ball; the narrow arm of an L. Returns [(strip length, side angle, jaw direction u, band)]."""
+        if e.get('dirs') is not None: return e['dirs']
+        rel = np.column_stack([e['pts'][:, 0] - e['x'], e['pts'][:, 1] - e['y'], e['pts'][:, 2]])
+        # Jaw lines every 15 deg (plus square to the long axis). One jaw line can be used from either end, and both
+        # ends get the same score: the camera has mostly seen one side, so measuring it again from the other end
+        # would only add that bias, and the side that is free of furniture is often the far one.
+        angs = [k * math.pi / 12 for k in range(12)]
+        if e['elong'] >= ELONG: angs += [(e['heading'] + math.pi / 2 + da) % math.pi for da in (0.0, 0.1, -0.1)]
+        bad = e.get('bad', [])
         out = []
-        for a0 in dirs:
-            for da in (0.0, 0.10, -0.10):
-                a = a0 + da
-                px, py = e['x'] + STANDOFF * math.cos(a), e['y'] + STANDOFF * math.sin(a)
-                # the moving jaw swings out on the far side of the object: that space must be empty too
-                fx, fy = e['x'] - 0.11 * math.cos(a), e['y'] - 0.11 * math.sin(a)
-                # and the folded arm must have room to turn a little there without touching furniture
-                if self._dat(D, px, py) >= PASS and self._dat(D, fx, fy) >= 0.075 and self.pose_ok(px, py, a + math.pi, ARM_BOX, 0.3):
-                    out.append((px, py, wrap(a + math.pi), 0.0))
+        for a in angs:
+            u = np.array([-math.cos(a), -math.sin(a)])
+            b = best_band(rel, u)
+            if b is None: continue
+            near, far, off, lw, sc = b
+            for side, uu, bb in ((a, u, b), (a + math.pi, -u, (-far, -near, -off, lw, sc))):
+                if any(abs(wrap(side - b_)) < 0.35 for b_ in bad): continue      # tried from about here and could not
+                out.append((sc, wrap(side), uu, bb))
+        if out:   # tier 0: the best sides (within 1 cm of score); tier 1: any side where some strip fits the gripper
+            smin = min(o[0] for o in out); out = sorted([(0 if o[0] <= smin + 0.010 else 1,) + o for o in out], key=lambda o: o[:2])
+        e['dirs'] = out
+        return out
+
+    def standoffs(self, e, D, max_tier=0):
+        """Grasp stances for the best sides (tier 0), or for every side where the gripper fits (max_tier=1; also used
+        when no best side can be stood at). All of them go to A*, which picks whichever it can reach."""
+        out = []; ol = e['outline']
+        for tier, _, a, u, (near, far, off, _, _) in self.grasp_dirs(e):
+            if tier > max_tier: break
+            v = np.array([-u[1], u[0]])
+            t = np.array([e['x'], e['y']]) + 0.5 * (near + far) * u + off * v     # middle of the strip the jaws close on
+            # the moving jaw swings out on the far side of the object: that space must be free of furniture
+            fx, fy = t + (0.5 * (far - near) + 0.09) * u
+            if self._dat(self.D_base, fx, fy) < 0.075: continue
+            h = math.atan2(u[1], u[0])
+            # The chassis must not touch the object itself (checked exactly, not on the 5 cm grid). When the best strip
+            # is at the edge of something bulky (a plush toy's arm), stand back a little: the arm reaches 26.5 cm.
+            for dist in STANDOFFS:
+                px, py = t - dist * u
+                if np.min(np.hypot(ol[:, 0] - px, ol[:, 1] - py)) < 0.18: continue
+                # the folded arm must have room to turn a little there without touching furniture
+                if self._dat(self.D_base, px, py) >= PASS and self.pose_ok(px, py, h, ARM_BOX, 0.3):
+                    out.append((float(px), float(py), h, 0.0))
+                break
+        if not out and max_tier == 0: return self.standoffs(e, D, 1)
         return out
 
     def basket_standoffs(self, D):
-        b = BASKET; out = []
+        b = self.basket; out = []
         for nx, ny, half in ((0, -1, b['sy'] / 2), (0, 1, b['sy'] / 2), (-1, 0, b['sx'] / 2), (1, 0, b['sx'] / 2)):
             d = half + 0.25
             px, py = b['x'] + nx * d, b['y'] + ny * d
@@ -413,44 +559,54 @@ class Agent:
             if self._dat(D, px, py) >= PASS and self.pose_ok(px, py, h, HELD_BOX, 0.5): out.append((px, py, h, 0.0))
         return out
 
-    def measure_close(self, k):
-        """Close look with the front camera right before grasping. Returns (centre in the chassis frame, long-axis
-        heading in the chassis frame), or None if the object is not where it should be."""
-        dets = self.cam.detect()
-        d = dets.get(k)
-        if d is None or d['n_px'] < 60: return None
-        rel = np.array(d['rel'], float); rel[2] = OBJ_HALF_H[self.r.objects[k][0]]
-        if not (0.13 < rel[0] < 0.42 and abs(rel[1]) < 0.16): return None
-        return rel, d['yaw4']
+    def measure_close(self, e):
+        """Close look with the front camera right before grasping: the detection nearest where the object should be,
+        or None if there is nothing there."""
+        x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th)
+        ex, ey = c * (e['x'] - x) + s_ * (e['y'] - y), -s_ * (e['x'] - x) + c * (e['y'] - y)
+        cands = [d for d in self.cam.detect() if d['n_px'] >= 60 and d['bottom'] < 0.04]
+        if not cands: return None
+        d = min(cands, key=lambda d: math.hypot(d['rel'][0] - ex, d['rel'][1] - ey))
+        if math.hypot(d['rel'][0] - ex, d['rel'][1] - ey) > 0.08: return None
+        if not (0.13 < d['rel'][0] < 0.42 and abs(d['rel'][1]) < 0.16): return None
+        return d
 
     def fetch(self, k):
-        r = self.r; e = self.memory[k]; cn = OBJECTS[e['kind']]['cn']; self.target = k
+        r = self.r; e = self.memory[k]; cn = self._name(e); self.target = k
+        if not self.grasp_dirs(e):
+            e['fails'] += 1; e['retry_at'] = r.t + 40 * e['fails']; e.pop('bad', None); e['dirs'] = None
+            e['why'] = '找不到能下手的地方' if e['fails'] > 1 else '比夹爪开口宽'
+            self.log(f'{cn} 从哪边量都比夹爪开口宽，先跳过'); return False
         tries = 0; restand = 0
         while True:
             self.state = '导航'; self.log(f'前往 {cn}' + (f'（第 {tries + 1} 次）' if tries else ''))
             goal = yield from self.goto(lambda D: self.standoffs(e, D), ignore=k)
+            if goal is None and self.abort == 'no_path':       # the best sides are cut off: try the others too
+                goal = yield from self.goto(lambda D: self.standoffs(e, D, 1), ignore=k)
             if goal is None:
                 e['fails'] += 1; e['retry_at'] = r.t + 30 * e['fails']; e['why'] = '够不到' if self.abort == 'no_path' else '导航超时'
                 self.log(f'{cn} {e["why"]}，先跳过'); return False
             self.state = '抓取'
-            m = self.measure_close(k)
-            if m is None:
-                self.log(f'{cn} 不在预期位置，重新找'); del self.memory[k]; self.cov[:] = False; return False
-            rel, yaw_rel = m
-            x, y, th = self.pose()
-            nx, ny = x + math.cos(th) * rel[0] - math.sin(th) * rel[1], y + math.sin(th) * rel[0] + math.cos(th) * rel[1]
-            moved = math.hypot(nx - e['x'], ny - e['y'])
-            e.update(x=nx, y=ny, yaw=wrap(yaw_rel + th), sigma=0.012)
-            mis = misalignment(rel, yaw_rel, e['kind'])
-            # the first stance was computed from a far-away look; now that the object is seen up close, re-stand if it is off
-            if restand < 4 and ((mis > 0.14 and e['kind'] != 'block') or moved > 0.03 or abs(rel[1]) > 0.06):
-                restand += 1; continue
-            plan = plan_grasp(rel, e['kind'], mis)
+            d = self.measure_close(e)
+            if d is None:
+                self.log(f'{cn} 不在预期位置，重新找'); self.memory.pop(k, None); self.cov[:] = False; return False
+            o = self._to_world(d, *self.pose())
+            moved = math.hypot(o['x'] - e['x'], o['y'] - e['y'])
+            e.update(sigma=0.012, **o)
+            plan = plan_grasp(d)
+            # the stance was chosen from a farther look; now that the object is seen up close, re-stand if it is off
+            if restand < 4 and (moved > 0.04 or abs(d['rel'][1]) > 0.06 or plan is None):
+                restand += 1
+                if plan is None:
+                    x, y, _ = self.pose(); e.setdefault('bad', []).append(math.atan2(y - e['y'], x - e['x'])); e['dirs'] = None
+                    self.log('从这边下不了手，换个站位')
+                    if not self.grasp_dirs(e): restand = 99
+                continue
             if plan is None:
-                if restand < 4: restand += 1; self.log('手臂够不到这个位置，换个站位'); continue
-                e['fails'] += 1; e['retry_at'] = r.t + 40 * e['fails']; e['why'] = '手臂够不到'; self.log(f'{cn} 手臂够不到，先跳过'); return False
+                e['fails'] += 1; e['retry_at'] = r.t + 40 * e['fails']; e['why'] = '找不到能下手的地方'; e.pop('bad', None); e['dirs'] = None
+                self.log(f'{cn} 找不到能下手的地方，先跳过'); return False
             self.stats['grasp_attempts'] += 1; tries += 1
-            ok = yield from grasp(r, plan, self.log)
+            ok = yield from grasp(r, plan, self.log, look=lambda: self.cam.sees_load(pinch_now(r)))
             if ok:
                 yield from carry_pose(r)
                 ok = holding(r, plan)
@@ -458,6 +614,9 @@ class Agent:
             if ok: break
             self.stats['grasp_fail'] += 1
             r.set_arm(grip=0.3); yield from carry_pose(r, speed=1.0); yield from wait(r, 0.6)
+            # next attempt from another side, if there is one: a different contact geometry, not the same failure again
+            x, y, _ = self.pose(); e.setdefault('bad', []).append(math.atan2(y - e['y'], x - e['x'])); e['dirs'] = None
+            if not self.grasp_dirs(e): e.pop('bad', None); e['dirs'] = None
             if tries >= 3:
                 e['fails'] += 1; e['retry_at'] = r.t + 40 * e['fails']; e['why'] = '连续 3 次没夹住'
                 self.log(f'{cn} 连续 3 次没夹住，先跳过'); return False
@@ -471,36 +630,39 @@ class Agent:
                 return False
             self.log(f'去收纳筐的路不通，先把 {cn} 放回地上')
             yield from self.put_down(k); return False
-        self.state = '放置'
+        self.state = '放置'; held_true = self._score_held_obj()
         x, y, th = self.pose()
-        bx, by = BASKET['x'] - x, BASKET['y'] - y; dist = math.hypot(bx, by)
-        half = BASKET['sx'] / 2 if abs(math.cos(goal[2])) > 0.7 else BASKET['sy'] / 2
+        bx, by = self.basket['x'] - x, self.basket['y'] - y; dist = math.hypot(bx, by)
+        half = self.basket['sx'] / 2 if abs(math.cos(goal[2])) > 0.7 else self.basket['sy'] / 2
         reach = float(np.clip(dist - half + 0.05, 0.24, 0.31))      # drop 5 cm inside the near wall
         c, s = math.cos(th), math.sin(th)
         ux, uy = bx / dist, by / dist; wx, wy = x + ux * reach, y + uy * reach
         rel = (c * (wx - x) + s * (wy - y), -s * (wx - x) + c * (wy - y))
-        ok = yield from place(r, rel, BASKET['h'], self.log)
+        ok = yield from place(r, rel, self.basket['h'], self.log)
         if not ok:                                   # could not reach over the rim from here: set it down, try later
             yield from self.put_down(k); return False
         yield from wait(r, 0.5)
         # The robot assumes it went in. If it bounced out, the camera will see it on the floor later and reopen it.
         e['status'] = 'delivered'; self.log(f'{cn} 已放进收纳筐')
-        if not self._in_basket(r.obj_pos(k)): self.stats['missed_place'] += 1      # score sheet only
+        ok_true = self._in_basket_world(r.obj_pos(held_true))                      # score sheet only from here
+        if not ok_true: self.stats['missed_place'] += 1
+        self.score_events.append((round(r.t, 1), 'place', r.objects[held_true][0], bool(ok_true)))
         return True
 
     def put_down(self, k):
         """Set a held object on the floor in front of the robot and remember where it is."""
         from skills import IK
-        r = self.r; e = self.memory[k]
+        r = self.r; e = self.memory[k]; self.state = '放下'
         q, _, _ = IK.solve([0.25, 0, 0.06])
         r.set_arm(q5=q, speed=0.6); yield from wait_arm(r)
         r.set_arm(grip=1.0); yield from wait(r, 0.6)
         yield from carry_pose(r, speed=1.0); r.set_arm(grip=0.3)
         x, y, th = self.pose()
-        e.update(status='pending', x=x + 0.25 * math.cos(th), y=y + 0.25 * math.sin(th), sigma=0.03, retry_at=r.t + 5)
+        nx, ny = x + 0.25 * math.cos(th), y + 0.25 * math.sin(th); sh = np.array([nx - e['x'], ny - e['y']])
+        e.update(status='pending', x=nx, y=ny, outline=e['outline'] + sh, pts=e['pts'] + np.append(sh, 0.0), dirs=None, sigma=0.03, retry_at=r.t + 5)
         self.basket_blocked_t = r.t
         # whatever sits closest to the basket is probably what blocks the way in: deal with that first
-        cands = [(math.hypot(o['x'] - BASKET['x'], o['y'] - BASKET['y']), j) for j, o in self.memory.items() if o['status'] == 'pending' and j != k]
+        cands = [(math.hypot(o['x'] - self.basket['x'], o['y'] - self.basket['y']), j) for j, o in self.memory.items() if o['status'] == 'pending' and j != k]
         if cands: self.priority = min(cands)[1]
 
     def explore_step(self):
@@ -524,7 +686,7 @@ class Agent:
 
     def pick(self):
         x, y, _ = self.pose(); best = None
-        p = getattr(self, 'priority', None)
+        p = self.priority
         if p is not None:
             e = self.memory.get(p)
             if e and e['status'] == 'pending' and e['retry_at'] <= self.r.t: return p

@@ -1,9 +1,10 @@
-"""Bench test of grasp physics: robot parked, object on the floor in front of it, pick it up and hold it for 2 s.
+"""Bench test of grasping unknown objects: robot parked, one object on the floor in front of it, pick it up and hold
+it for 2 s. Every trial draws a new random object of the given kind (objects.py).
 
-  python test_grasp.py [trials_per_object]
+  python test_grasp.py [trials_per_kind]      ->  results/grasp_bench.json
 
-The object's position and heading come from the same RGB-D detector the controller uses (perception.py).
-Run with grip tape (pad friction 1.0) and bare PLA jaws (0.35).
+Everything the planner knows about the object comes from the front RGB-D camera (perception.py).
+Run with grip tape on the jaws (pad friction 1.0) and bare PLA jaws (0.35). Soft objects use fabric friction either way.
 """
 import json
 import math
@@ -12,47 +13,47 @@ import sys
 import numpy as np
 
 import model
-from model import OBJECTS, OBJ_HALF_H
+import objects as O
 from perception import FrontCamera
 from robot import Robot
-from skills import carry_pose, grasp, holding, misalignment, plan_grasp, wait
+from skills import carry_pose, grasp, holding, pinch_now, plan_grasp, wait
 
-ALIGN_NOISE = 0.15     # rad, 1 sigma: how far the object's narrow axis is from the shoulder-object line
-RESTAND_MIS = 0.14     # rad: the controller re-stands above this measured misalignment (controller.py)
+ALIGN_NOISE = 0.15     # rad, 1 sigma: how far a long object's long axis is from square to the jaw line after the base has lined up
+LONG = ('car', 'banana', 'sock')   # kinds whose long axis is the body x axis; the base lines up with these
 
 
 def one(kind, seed, pad_friction):
     rng = np.random.default_rng(seed)
     model.P['pad_friction'] = pad_friction
+    spec = O.sample(kind, rng)
     rpose = (2.2, 1.05, rng.uniform(-3.1, 3.1))          # open floor, at least 0.7 m from any furniture
-    # Where the base ends up relative to the object: 0.235 m +- servo and localisation error, a little off to the side,
-    # and the object's narrow axis off the jaw line by ALIGN_NOISE. After the object has settled the robot takes the
-    # same close look as the controller and applies the same test (controller.fetch): grasp only if the object is within
-    # 6 cm of the centre line, a long object is within RESTAND_MIS of square, and the grasp planner finds a solution.
-    # Otherwise the controller would move to a new stance; here the stance is redrawn (at most 8 times). So this bench
-    # measures exactly what the full runs count as a grasp attempt.
+    # Where the base ends up relative to the object: 0.235 m +- servo and localisation error, a little off to the side.
+    # After the object has settled, the robot takes the same close look as the controller and applies the same test:
+    # grasp only if the object is within 6 cm of the centre line and the planner finds a finger-wide strip of it that
+    # fits the gripper. Otherwise the controller would move to a new stance; here the stance is redrawn.
     for tries in range(8):
-        r_obj = rng.uniform(0.205, 0.265); bearing = rng.uniform(-0.3, 0.3); off = rng.normal(0, ALIGN_NOISE)
+        r_obj = rng.uniform(0.205, 0.265); bearing = rng.uniform(-0.3, 0.3)
         rel0 = np.array([r_obj * math.cos(bearing), r_obj * math.sin(bearing)])
-        yaw_rel = math.atan2(rel0[1], rel0[0] - 0.069) + (0 if kind == 'block' else math.pi / 2) + off
+        rad = math.atan2(rel0[1], rel0[0] - 0.069)
+        yaw_rel = rad + math.pi / 2 + rng.normal(0, ALIGN_NOISE) if kind in LONG else rng.uniform(-math.pi, math.pi)
         c, s_ = math.cos(rpose[2]), math.sin(rpose[2])
-        robot = Robot([(kind, rpose[0] + c * rel0[0] - s_ * rel0[1], rpose[1] + s_ * rel0[0] + c * rel0[1], rpose[2] + yaw_rel)], seed=seed, robot_pose=rpose)
+        robot = Robot([(kind, rpose[0] + c * rel0[0] - s_ * rel0[1], rpose[1] + s_ * rel0[0] + c * rel0[1], rpose[2] + yaw_rel, spec)],
+                      seed=seed, robot_pose=rpose)
         for _ in range(30): robot.step()                 # 0.6 s: let the object and the robot settle
-        # the close look: the same RGB-D detector the controller uses (perception.py), not ground truth
-        det = FrontCamera(robot, np.random.default_rng(seed * 10 + tries)).detect().get(0)
+        cam = FrontCamera(robot, np.random.default_rng(seed * 10 + tries))
+        dets = [d for d in cam.detect() if d['n_px'] >= 60 and d['top'] < 0.10]
         plan = None
-        if det is not None and det['n_px'] >= 60:
-            rel = np.array(det['rel'], float); rel[2] = OBJ_HALF_H[kind]
-            mis = misalignment(rel, det['yaw4'], kind)
-            plan = plan_grasp(rel, kind, mis)
-            if abs(rel[1]) <= 0.06 and (kind in ('ball', 'block') or mis < RESTAND_MIS) and plan is not None:
+        if dets:
+            det = min(dets, key=lambda d: abs(d['rel'][1]))
+            plan = plan_grasp(det)
+            if abs(det['rel'][1]) <= 0.06 and plan is not None:
                 break
             plan = None
     logs = [] if plan is not None else ['8 个站位都不满足下手条件']
 
     def script():
         if plan is None: return False
-        ok = yield from grasp(robot, plan, logs.append)
+        ok = yield from grasp(robot, plan, logs.append, look=lambda: cam.sees_load(pinch_now(robot)))
         if not ok: return False
         yield from carry_pose(robot)
         yield from wait(robot, 2.0)
@@ -64,16 +65,16 @@ def one(kind, seed, pad_friction):
             next(g); robot.step()
     except StopIteration as e:
         claimed = bool(e.value)
-    held = robot.obj_pos(0)[2] > 0.10 and np.linalg.norm(robot.obj_pos(0) - robot.pinch_pos()) < 0.08
-    return dict(kind=kind, held=bool(held), claimed=claimed, logs=logs, stances=tries + 1, peak_arm_torque=[float(v) for v in robot.peak_torque[3:9]],
-                rms_arm_torque=[float(v) for v in np.sqrt(robot.torque_sq[3:9] / robot.n_steps)], sat_frac=[float(v) for v in robot.sat_steps[3:9] / robot.n_steps], t=robot.t)
+    held = robot.obj_pos(0)[2] > 0.08 and np.linalg.norm(robot.obj_pos(0) - robot.pinch_pos()) < 0.10
+    return dict(kind=kind, held=bool(held), claimed=claimed, logs=logs, stances=tries + 1, size=spec['radius'],
+                peak_arm_torque=[float(v) for v in robot.peak_torque[3:9]])
 
 
-def run(n=8, frictions=(1.0, 0.35), verbose=True):
+def run(n=10, frictions=(1.0, 0.35), verbose=True, kinds=O.KINDS):
     out = {}
     for mu in frictions:
         out[str(mu)] = {}
-        for kind in OBJECTS:
+        for kind in kinds:
             res = [one(kind, 100 + i, mu) for i in range(n)]
             tried = [r for r in res if r['logs'] != ['8 个站位都不满足下手条件']]
             ok = sum(r['held'] for r in tried); wrong = sum(r['held'] != r['claimed'] for r in tried)
@@ -81,15 +82,15 @@ def run(n=8, frictions=(1.0, 0.35), verbose=True):
             for r in tried:
                 if not r['held']:
                     k = (r['logs'] or ['夹起后掉落'])[-1]; why[k] = why.get(k, 0) + 1
-            peak = np.max([r['peak_arm_torque'] for r in res], axis=0); rms = np.max([r['rms_arm_torque'] for r in res], axis=0); sat = np.max([r['sat_frac'] for r in res], axis=0)
-            out[str(mu)][kind] = dict(success=ok, n=len(tried), no_stance=n - len(tried), failures=why, misjudged=wrong, peak_arm_torque=[round(float(v), 2) for v in peak], rms_arm_torque=[round(float(v), 2) for v in rms], time_above_80pct=[round(float(v), 4) for v in sat])
+            peak = np.max([r['peak_arm_torque'] for r in res], axis=0)
+            out[str(mu)][kind] = dict(success=ok, n=len(tried), no_stance=n - len(tried), failures=why, misjudged=wrong,
+                                      peak_arm_torque=[round(float(v), 2) for v in peak])
             if verbose:
-                fails = why
-                print(f'pad mu={mu} {OBJECTS[kind]["cn"]:<6} {ok}/{len(tried)} held (+{n - len(tried)} no stance) | self-check wrong {wrong} | shoulder_lift torque peak {peak[1]:.2f} rms {rms[1]:.2f}, elbow peak {peak[2]:.2f} rms {rms[2]:.2f} N*m, >80% stall {100 * sat[:5].max():.1f}% of time | {fails}')
+                print(f'pad mu={mu} {O.TYPES[kind]["cn"]:<8} {ok}/{len(tried)} held (+{n - len(tried)} no stance) | self-check wrong {wrong} | {why}', flush=True)
     model.P['pad_friction'] = 1.0
     return out
 
 
 if __name__ == '__main__':
-    n = int(sys.argv[1]) if len(sys.argv) > 1 else 8
+    n = int(sys.argv[1]) if len(sys.argv) > 1 else 10
     json.dump(run(n), open('../results/grasp_bench.json', 'w'), ensure_ascii=False, indent=1)
