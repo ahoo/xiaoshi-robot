@@ -96,9 +96,16 @@ class FrontCamera:
         """Is something hanging in the gripper? p_pinch: the gripper's pinch point (chassis frame, from joint feedback).
         Used when the jaw has closed to its stop: a squashed soft object and an empty gripper then read the same angle."""
         for d in self.detect():
-            if d['bottom'] > 0.03 and math.hypot(d['rel'][0] - p_pinch[0], d['rel'][1] - p_pinch[1]) < 0.07:
+            # off the floor, under the gripper, and reaching up to the jaws (not something lying in the basket below)
+            if d['bottom'] > 0.03 and d['top'] > p_pinch[2] - 0.04 and math.hypot(d['rel'][0] - p_pinch[0], d['rel'][1] - p_pinch[1]) < 0.07:
                 return True
         return False
+
+    def top_under(self, p_pinch):
+        """Highest top among things off the floor right under the gripper (0 if none). Called before and after a small
+        lift of the open gripper: a thing that rises with it is stuck to the jaws."""
+        tops = [d['top'] for d in self.detect() if d['bottom'] > 0.02 and math.hypot(d['rel'][0] - p_pinch[0], d['rel'][1] - p_pinch[1]) < 0.08]
+        return max(tops, default=0.0)
 
     def floor_visible(self, pts_body):
         """For floor points (chassis frame, z=0): is each one inside the image and not hidden behind something?"""

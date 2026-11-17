@@ -638,7 +638,7 @@ class Agent:
         c, s = math.cos(th), math.sin(th)
         ux, uy = bx / dist, by / dist; wx, wy = x + ux * reach, y + uy * reach
         rel = (c * (wx - x) + s * (wy - y), -s * (wx - x) + c * (wy - y))
-        ok = yield from place(r, rel, self.basket['h'], self.log)
+        ok = yield from place(r, rel, self.basket['h'], self.log, peek=lambda: self.cam.top_under(pinch_now(r)))
         if not ok:                                   # could not reach over the rim from here: set it down, try later
             yield from self.put_down(k); return False
         yield from wait(r, 0.5)

@@ -23,7 +23,9 @@ TYPES = {
 }
 KINDS = list(TYPES)
 # compliant contact for soft things; priority 2 makes these parameters win over the gripper pads' stiff ones
-SOFT = 'priority="2" condim="6" friction="0.8 0.02 0.02" solref="0.015 1" solimp="0.6 0.95 0.006"'   # squeezed at full grip: ~25-50 % thinner
+# Soft surface, firmer core (stuffing packs down as it is squeezed): compliant for the first ~8 mm, then much stiffer.
+# With a softer core a 10 g toy sank 16 mm into the finger pad at full grip and stayed wedged there after release.
+SOFT = 'priority="2" condim="6" friction="0.8 0.02 0.02" solref="0.015 1" solimp="0.6 0.99 0.008"'
 HINGE_SOFT = 'damping="0.0008" armature="0.000002"'
 
 

@@ -216,18 +216,33 @@ def carry_pose(robot, speed=0.6):
     robot.set_arm(q5=Q_CARRY, speed=speed); yield from wait_arm(robot)
 
 
-def place(robot, rel_xy, rim_z, log=None):
-    """Reach over the basket rim at rel_xy (chassis frame), lower, open, retreat."""
+def place(robot, rel_xy, rim_z, log=None, peek=None):
+    """Reach over the basket rim at rel_xy (chassis frame), lower, open, retreat. A squashed soft object can stay
+    stuck to the jaws after they open. peek() (front camera) gives the top of whatever is under the gripper; it is read
+    before and after lifting the open gripper 3 cm, and if it rose with the gripper, the gripper shakes it off."""
     r = math.hypot(rel_xy[0], rel_xy[1])
     hi = np.array([rel_xy[0], rel_xy[1], rim_z + 0.10]); lo = np.array([rel_xy[0], rel_xy[1], rim_z + 0.045])
     q_hi, e1, p1 = IK.solve(hi, approach=(0.5 * rel_xy[0] / r, 0.5 * rel_xy[1] / r, -1))
     q_lo, e2, p2 = IK.solve(lo, approach=(0.5 * rel_xy[0] / r, 0.5 * rel_xy[1] / r, -1), seed=q_hi)
+    q_mid, _, _ = IK.solve(lo + [0, 0, 0.03], approach=(0.5 * rel_xy[0] / r, 0.5 * rel_xy[1] / r, -1), seed=q_lo)
     if max(p1, p2) > 0.01:
         if log: log('放置点够不到')
         return False
     robot.set_arm(q5=q_hi, speed=1.0); yield from wait_arm(robot)
     robot.set_arm(q5=q_lo, speed=0.6); yield from wait_arm(robot)
     robot.set_arm(grip=1.0); yield from wait(robot, 0.7)
+    for _ in range(3 if peek is not None else 0):
+        t0 = peek()
+        robot.set_arm(q5=q_mid, speed=0.6); yield from wait_arm(robot)
+        t1 = peek()
+        # It let go if nothing was hanging there, or whatever was there stayed put. Something that rose with the
+        # gripper, or rose out of the picture, is stuck to the jaws.
+        if t0 == 0.0 or (0.0 < t1 < t0 + 0.02): break
+        if log: log('松手后东西还粘在夹爪上，抖一抖')
+        for g_, roll in ((0.2, 0.6), (1.6, -0.6), (1.6, 0.6), (1.6, 0.0)):
+            q = q_lo.copy(); q[4] += roll
+            robot.set_arm(q5=q, grip=g_, speed=2.0); yield from wait_arm(robot, timeout=1.5)
+        yield from wait(robot, 0.5)
     robot.set_arm(q5=q_hi, speed=1.0); yield from wait_arm(robot)
     robot.set_arm(q5=Q_CARRY, grip=0.3, speed=1.2); yield from wait_arm(robot)
     return True
