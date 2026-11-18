@@ -14,7 +14,7 @@ import numpy as np
 import objects as O
 from perception import FrontCamera, WristCamera
 from robot import Robot
-from skills import PULL_REACH, grasp, plan_grasp, pull
+from skills import PULL_MAX, PULL_REACH, grasp, plan_grasp, pull
 from test_perception import true_points
 
 SHELF_FACE = 0.35   # y of the shelf's front face (model.FURNITURE 'shelf')
@@ -36,7 +36,7 @@ def one(kind, gap, seed):
     W = true_points(r0, 0); oy = 1.0 - (W[:, 1].min() - SHELF_FACE - gap)
     far_true = 1.0 - W[:, 1].min(); near_true = W[:, 1].max() - 1.0
     # stand where the controller would: arm reaches 2 cm past the far side, body 17 cm clear of the near side
-    dist = max(0.29 - far_true - PULL_REACH, near_true + 0.17) + rng.normal(0, 0.01)
+    dist = max(0.30 - far_true - PULL_REACH, near_true + 0.17) + rng.normal(0, 0.01)
     robot = Robot([(kind, ox, oy, yaw, spec)], seed=seed, robot_pose=(ox + rng.normal(0, 0.01), oy + dist, -math.pi / 2 + rng.normal(0, 0.03)))
     for _ in range(40): robot.step()
     cam = FrontCamera(robot, np.random.default_rng(seed)); wrist = WristCamera(robot)
@@ -48,7 +48,7 @@ def one(kind, gap, seed):
         u = d['rel'][:2] / np.linalg.norm(d['rel'][:2]); t = d['pts'][:, :2] @ u; z = d['pts'][:, 2]
         near, far = np.percentile(t, [1, 99]); far = max(far, 2 * t[z >= z.max() - 0.003].mean() - near)
         p0 = robot.obj_pos(0).copy(); logs = []
-        ok = run_gen(robot, pull(robot, (far + PULL_REACH) * u, 0.15, log=logs.append)) if np.linalg.norm((far + PULL_REACH) * u) <= 0.32 else False
+        ok = run_gen(robot, pull(robot, (far + PULL_REACH) * u, 0.15, log=logs.append)) if np.linalg.norm((far + PULL_REACH) * u) <= PULL_MAX + 0.005 else False
         if not ok and not logs: logs.append('伸不到')
         p1 = robot.obj_pos(0); out = float(p1[1] - p0[1])
         for _ in range(20): robot.step()

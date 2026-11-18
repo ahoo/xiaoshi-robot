@@ -151,6 +151,7 @@ def plan_grasp(det):
     return dict(approach=approach, grasp=q_grasp, touch=q_touch, lift=lift, open=jaw_angle_for_gap(ext + CLEAR + 0.02, 0.08), expect=q_c, width=ext)
 
 
+PULL_MAX = 0.39             # farthest paddle position from the robot centre (gripper leaning forward up to 0.5 rad)
 PULL_REACH = 0.035          # paddle centre this far past the far side: half its thickness along the pull, plus margin
 PULL_Z = 0.025              # pinch point height while pulling: fingertips about 7 mm off the floor (flat things are 13 mm and up)
 
@@ -164,8 +165,12 @@ def pull(robot, finger_xy, back=0.15, drive=None, log=None):
     u = np.array(finger_xy, float) / np.linalg.norm(finger_xy)
     yaw = math.atan2(u[1], u[0]) + math.pi / 2
     hi = [finger_xy[0], finger_xy[1], 0.10]; lo = [finger_xy[0], finger_xy[1], PULL_Z]
-    q_hi, _, p1 = IK.solve(hi, approach=(0, 0, -1), yaw=yaw); q_lo, _, p2 = IK.solve(lo, approach=(0, 0, -1), yaw=yaw, seed=q_hi)
-    if max(p1, p2) > 0.004:
+    # straight down if the arm reaches; otherwise lean the gripper forward (reaches 33 cm upright, 40 cm at 0.5 rad)
+    for tilt in (0.0, 0.3, 0.5):
+        a = (math.sin(tilt) * u[0], math.sin(tilt) * u[1], -math.cos(tilt))
+        q_hi, e1, p1 = IK.solve(hi, approach=a, yaw=yaw); q_lo, e2, p2 = IK.solve(lo, approach=a, yaw=yaw, seed=q_hi)
+        if max(p1, p2) < 0.004 and max(e1, e2) < 0.03: break
+    else:
         if log: log('手臂伸不到它后面')
         return False
     robot.set_arm(q5=q_hi, grip=GRIP_CLOSED, speed=0.8); yield from wait_arm(robot)

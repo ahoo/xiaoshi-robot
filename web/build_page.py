@@ -86,18 +86,24 @@ def main():
         return f'{(g[0] if k != "sideways" else g[1]):.3f} m/s'
     base_rows = ''.join(f'<tr><td>{lab[k]}</td><td class="n">{got(k)}</td><td class="n">{B[k]["tilt_deg"]:.2f}°</td></tr>' for k in lab)
 
-    # segmentation given by the simulator (round 7) vs depth-only segmentation (this round), same seeds and objects
-    R4 = json.load(open(R('trials_round7.json')))['episodes']
-    sensor_rows = ''
-    for n in agg:
-        e4 = [e for e in R4 if e['condition'] == n]; e5 = [e for e in T['episodes'] if e['condition'] == n]
-        d5, t5 = sum(e['delivered'] for e in e5), sum(e['total'] for e in e5)
-        if not e4:
-            sensor_rows += f'<tr><td>{COND[n].split("：")[0]}</td><td class="n">（这一轮新加）</td><td class="n">{d5}/{t5}（{pct(d5, t5)}）</td><td class="n">{sum(e["sim_time"] for e in e5) / max(d5, 1):.0f} 秒</td></tr>'
-            continue
-        d4, t4 = sum(e['delivered'] for e in e4), sum(e['total'] for e in e4)
-        sensor_rows += (f'<tr><td>{COND[n].split("：")[0]}</td><td class="n">{d4}/{t4}（{pct(d4, t4)}）</td><td class="n">{d5}/{t5}（{pct(d5, t5)}）</td>'
-                        f'<td class="n">{sum(e["sim_time"] for e in e4) / max(d4, 1):.0f} → {sum(e["sim_time"] for e in e5) / max(d5, 1):.0f} 秒</td></tr>')
+    def compare(eps_a, eps_b):
+        rows = ''
+        for n in agg:
+            e4 = [e for e in eps_a if e['condition'] == n]; e5 = [e for e in eps_b if e['condition'] == n]
+            d5, t5 = sum(e['delivered'] for e in e5), sum(e['total'] for e in e5)
+            if not e4:
+                rows += f'<tr><td>{COND[n].split("：")[0]}</td><td class="n">（新加）</td><td class="n">{d5}/{t5}（{pct(d5, t5)}）</td><td class="n">{sum(e["sim_time"] for e in e5) / max(d5, 1):.0f} 秒</td></tr>'
+                continue
+            d4, t4 = sum(e['delivered'] for e in e4), sum(e['total'] for e in e4)
+            rows += (f'<tr><td>{COND[n].split("：")[0]}</td><td class="n">{d4}/{t4}（{pct(d4, t4)}）</td><td class="n">{d5}/{t5}（{pct(d5, t5)}）</td>'
+                     f'<td class="n">{sum(e["sim_time"] for e in e4) / max(d4, 1):.0f} → {sum(e["sim_time"] for e in e5) / max(d5, 1):.0f} 秒</td></tr>')
+        return rows
+    R7 = json.load(open(R('trials_round7.json')))['episodes']; R8 = json.load(open(R('trials_round8.json')))['episodes']
+    seg_cmp_rows = compare(R7, R8); pull_cmp_rows = compare(R8, T['episodes'])
+    PU = json.load(open(R('pull_bench.json')))
+    pull_rows = ''.join(f'<tr><td>{float(g) * 100:.0f} cm</td><td class="n">{v["n"]}</td><td class="n">{v["pulled"]}</td><td class="n">{v["held"]}</td></tr>' for g, v in PU.items())
+    pull_logs = [m for e in T['episodes'] for _, m in e['log']]
+    n_pull_try = sum('先把它扒出来' in m for m in pull_logs); n_pull_ok = sum('往外扒了' in m for m in pull_logs)
     allep = T['episodes']
     loc_mean = sum(e['loc_err_mean'] for e in allep) / len(allep); loc_max = max(e['loc_err_max'] for e in allep)
     head_max = max(e['loc_head_err_max_deg'] for e in allep); odom = sum(e['odom_err'] for e in allep) / len(allep)
@@ -128,6 +134,7 @@ def main():
         ('整机任务', '4×3 m 场地摆 5 件，离墙 ≥30 cm，做 10 次', f'送达 {pct(s["d"], s["tot"])}，每件 {s["t"]:.0f} 秒，{s["n"]} 次试验共碰撞 {s["coll"]} 次', '送达率不低于仿真 15 个百分点，没有倾翻'),
         ('贴边任务', '同上，物体离墙 12 cm 起', f'送达 {pct(nw["d"], nw["tot"])}', '只做记录'),
         ('扎堆任务', '同上，其中两对物体挨着放', f'送达 {pct(cl["d"], cl["tot"])}' if cl else '-', '只做记录'),
+        ('扒出来', '方块、球、香蕉、袜子等各一件，分别放在离墙或柜子 2、4、6 cm 处，机器人从房间一侧去扒', '扒出来：' + '，'.join(f'{float(g) * 100:.0f} cm 处 {v["pulled"]}/{v["n"]}' for g, v in PU.items()), '4 cm 及以上不比仿真少一半以上；记录 2 cm 时是插不进去还是压到了东西'),
     ]
     valid_rows = ''.join(f'<tr><td class="n">{i + 1}</td><td>{a}</td><td>{b}</td><td>{c}</td><td>{d}</td></tr>' for i, (a, b, c, d) in enumerate(valid))
 
@@ -136,7 +143,8 @@ def main():
                      ('trials_round3.json', '第三轮：加了只看雷达、只管平移的防撞层'), ('trials_round4.json', '第四轮：防撞层按真实外形算，也管转身'),
                      ('trials_round5.json', '第五轮：定位和识别换成真算法'), ('trials_round6.json', '第六轮：防撞层加上贴着障碍滑行'),
                      ('trials_round7.json', '第七轮：八种不认识的物体，含软的和不规则的'),
-                     ('trials.json', '第八轮：分割只用深度图，腕部深度相机确认夹持（当前版本）')):
+                     ('trials_round8.json', '第八轮：分割只用深度图，腕部深度相机确认夹持'),
+                     ('trials.json', '第九轮：贴得太近、站不进去时先把东西扒出来（当前版本）')):
         alle = json.load(open(R(fn)))['episodes']; eps = [e for e in alle if e['condition'] == 'standard']
         d = sum(e['delivered'] for e in eps); tot = sum(e['total'] for e in eps)
         round_rows += (f'<tr><td>{name}</td><td class="n">{d}/{tot}</td><td class="n">{sum(e["collisions"] > 0 for e in alle)} 次试验</td>'
@@ -158,7 +166,8 @@ def main():
         'VALID_ROWS': valid_rows, 'OTHER_N': f'{nw["n"]} 次和 {bj["n"]} 次',
         'TAPE_TITLE': '夹爪必须贴防滑胶带' if s['d'] / s['tot'] - bj['d'] / bj['tot'] >= 0.15 else '防滑胶带有用，但已经不是生死线',
         'TAPE_NOTE': '' if s['d'] / s['tot'] - bj['d'] / bj['tot'] >= 0.15 else '早几轮不贴胶带时网球几乎夹不住；这一版夹法会挑更窄、更居中的一条下手，失败了还会换一侧再试，摩擦小的影响被吃掉了大半。胶带便宜，仍然建议贴。',
-        'SENSOR_ROWS': sensor_rows, 'ODOM_DRIFT': f'{odom:.1f}', 'LOC_MEAN': f'{100 * loc_mean:.1f}', 'LOC_MAX': f'{100 * loc_max:.1f}',
+        'SENSOR_ROWS': seg_cmp_rows, 'PULL_CMP_ROWS': pull_cmp_rows, 'PULL_ROWS': pull_rows,
+        'PULL_USE': f'这一轮 {len(T["episodes"])} 局整机试验里，机器人决定扒 {n_pull_try} 次，扒出来 {n_pull_ok} 次。', 'ODOM_DRIFT': f'{odom:.1f}', 'LOC_MEAN': f'{100 * loc_mean:.1f}', 'LOC_MAX': f'{100 * loc_max:.1f}',
         'HEAD_MAX': f'{head_max:.1f}', 'DET_NEAR': f'{det_near:.1f}', 'DET_FAR': f'{det_far:.0f}',
         'STUCK5': str(sum(e['stuck'] for e in json.load(open(R('trials_round5.json')))['episodes'])), 'STUCK6': str(sum(e['stuck'] for e in T['episodes'])),
         'ROUND_ROWS': round_rows, 'NO_STANCE': f'{sum(v.get("no_stance", 0) for m in G for v in G[m].values())}',

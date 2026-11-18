@@ -16,13 +16,13 @@
 | `sim/objects.py` | 物体库：方块、小球、玩具车、香蕉、L 形积木、随机形状的石头、袜子（软）、毛绒玩具（软）。每次出场尺寸和重量随机 |
 | `sim/robot.py` | 驱动层接口：底盘速度、关节目标、雷达、里程计 |
 | `sim/arm.py` | 5 轴机械臂逆运动学 |
-| `sim/skills.py` | 抓取、搬运、放置。下手位置只从相机量到的表面点里选，不用物体类别 |
+| `sim/skills.py` | 抓取、搬运、放置，以及把贴着障碍的东西扒出来。下手位置只从相机量到的表面点里选，不用物体类别 |
 | `sim/controller.py` | 自主控制器：建图、A* 规划、全向跟踪、防撞层、任务调度。决策时不读仿真真值 |
 | `sim/localization.py` | 雷达扫描匹配定位（里程计预测 + 对自建地图的相关匹配） |
 | `sim/perception.py` | 前置深度相机：拟合地面、去掉家具，把剩下的点分成一件件东西，量轮廓、表面点和高度；腕部深度相机：看两片夹爪之间有没有东西 |
 | `sim/episode.py` | 一次完整试验（随机布局 → 自主运行 → 成绩单） |
 | `sim/run_trials.py` | 批量随机试验 → `results/trials.json` |
-| `sim/test_base.py`、`sim/test_grasp.py`、`sim/test_perception.py` | 底盘、抓取、相机识别的台架测试 |
+| `sim/test_base.py`、`sim/test_grasp.py`、`sim/test_perception.py`、`sim/test_pull.py` | 底盘、抓取、相机、扒出来的台架测试 |
 | `sim/render_video.py` | 把一次试验渲染成录像 |
 | `third_party/so101/` | SO-101 官方 MuJoCo 模型（Apache-2.0，来自 TheRobotStudio/SO-ARM100） |
 | `web/` | 结果页面的模板和生成脚本；`web/concept-v0.1/` 是第一版概念演示，不是物理仿真 |
@@ -34,6 +34,7 @@ pip install mujoco numpy scipy imageio imageio-ffmpeg pillow
 cd sim
 python test_base.py          # 底盘台架，几十秒
 python test_grasp.py 10      # 抓取台架，每种物体 10 次 × 两种夹爪摩擦
+python test_pull.py 2        # 扒出来台架：八种物体离书架 2、4、6 cm
 python test_perception.py     # 相机台架：八种物体 × 四个距离，挨着放的两件，贴着家具，空房间误报
 python episode.py 4          # 第 4 号随机布局跑一次，打印事件日志和成绩
 python run_trials.py 2       # 全部 48 次随机试验，2 个进程（双核约 2–3 小时，渲染相机图像占了一半时间）；中断后重跑会接着做

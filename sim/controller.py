@@ -19,7 +19,7 @@ from scipy.spatial import ConvexHull, QhullError
 
 from model import BASKET, HOME, P
 from robot import LIDAR_RANGE
-from skills import ELONG, PULL_REACH, best_band, carry_pose, grasp, holding, place, plan_grasp, pull, wait, wait_arm
+from skills import ELONG, PULL_MAX, PULL_REACH, best_band, carry_pose, grasp, holding, place, plan_grasp, pull, wait, wait_arm
 from localization import Localizer
 from perception import FrontCamera, WristCamera
 
@@ -572,7 +572,7 @@ class Agent:
 
     def pull_stances(self, e, D):
         """Where to stand to drag an object out of a tight spot: facing it, close enough that the arm reaches 2 cm past
-        its far side (at most 31 cm from the robot centre), with room for the paddle there (away from furniture and
+        its far side (at most PULL_MAX from the robot centre), with room for the paddle there (away from furniture and
         other objects) and room behind the robot to back up. Only directions that leave the object in more open space
         than now are offered."""
         ctr = np.array([e['x'], e['y']]); ol = e['outline']; out = []
@@ -586,8 +586,8 @@ class Agent:
         for k in range(24):
             a = k * math.pi / 12; dv = np.array([math.cos(a), math.sin(a)]); u = -dv
             far = float(np.max((ol - ctr) @ u)); near = float(np.max((ol - ctr) @ dv))
-            dist = max(0.29 - far - PULL_REACH, near + 0.17)
-            if dist + far + PULL_REACH > 0.31: continue
+            dist = max(0.30 - far - PULL_REACH, near + 0.17)
+            if dist + far + PULL_REACH > PULL_MAX - 0.01: continue
             P = ctr + dist * dv; finger = ctr + (far + PULL_REACH) * u
             if self._dat(self.D_furn, *finger) < 0.035: continue
             if len(others) and np.min(np.hypot(others[:, 0] - finger[0], others[:, 1] - finger[1])) < 0.015: continue
@@ -614,7 +614,7 @@ class Agent:
         near, far = np.percentile(t, [1, 99]); tz = t[z >= z.max() - 0.003].mean()
         far = max(far, 2 * tz - near)                     # hidden far side, as in skills.best_band
         finger = (far + PULL_REACH) * u
-        if np.linalg.norm(finger) > 0.32:
+        if np.linalg.norm(finger) > PULL_MAX + 0.005:
             self.log(f'手臂伸不到 {cn} 后面'); return False
         ok = yield from pull(r, finger, self.PULL_BACK, drive=lambda vx: self.cmd(vx, 0.0, 0.0), log=self.log)
         if not ok: return False
@@ -626,12 +626,16 @@ class Agent:
         return True
 
     def basket_standoffs(self, D):
+        """Places to stand to drop into the basket: off each side, at two distances and three positions along the side,
+        facing the basket centre (place() reaches over the near wall toward it). More than one per side, so a single
+        thing on the floor next to the basket does not shut that side off."""
         b = self.basket; out = []
-        for nx, ny, half in ((0, -1, b['sy'] / 2), (0, 1, b['sy'] / 2), (-1, 0, b['sx'] / 2), (1, 0, b['sx'] / 2)):
-            d = half + 0.25
-            px, py = b['x'] + nx * d, b['y'] + ny * d
-            h = math.atan2(-ny, -nx)
-            if self._dat(D, px, py) >= PASS and self.pose_ok(px, py, h, HELD_BOX, 0.5): out.append((px, py, h, 0.0))
+        for nx, ny, half, along in ((0, -1, b['sy'] / 2, b['sx']), (0, 1, b['sy'] / 2, b['sx']), (-1, 0, b['sx'] / 2, b['sy']), (1, 0, b['sx'] / 2, b['sy'])):
+            for d in (half + 0.25, half + 0.28):
+                for o in (0.0, -0.3 * along, 0.3 * along):
+                    px, py = b['x'] + nx * d + abs(ny) * o, b['y'] + ny * d + abs(nx) * o
+                    h = math.atan2(b['y'] - py, b['x'] - px)
+                    if self._dat(D, px, py) >= PASS and self.pose_ok(px, py, h, HELD_BOX, 0.5): out.append((float(px), float(py), h, 0.0))
         return out
 
     def measure_close(self, e):

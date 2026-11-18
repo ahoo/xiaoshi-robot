@@ -2,4 +2,602 @@
  "0.02": {
   "n": 16,
   "pulled": 6,
-  "held": 
+  "held": 4,
+  "grasp_before": 15,
+  "trials": [
+   {
+    "kind": "cube",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": 1.0,
+    "held": false,
+    "logs": [
+     "扒出来后从这边下不了手"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "cube",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": 0.5,
+    "held": false,
+    "logs": [
+     "手指落在了东西上，没插到它后面",
+     "手臂压到东西了，抬起重来"
+    ],
+    "tilt_deg": 5.6
+   },
+   {
+    "kind": "ball",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": -0.3,
+    "held": false,
+    "logs": [
+     "手指落在了东西上，没插到它后面",
+     "夹爪合拢到底，没夹到东西"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "ball",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": -0.2,
+    "held": false,
+    "logs": [
+     "手指落在了东西上，没插到它后面",
+     "夹爪合拢到底，没夹到东西"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "car",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": false,
+    "pulled": false,
+    "out_cm": 1.4,
+    "held": false,
+    "logs": [
+     "手指落在了东西上，没插到它后面",
+     "扒出来后从这边下不了手"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "car",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": 0.8,
+    "held": false,
+    "logs": [
+     "手指落在了东西上，没插到它后面",
+     "手臂压到东西了，抬起重来"
+    ],
+    "tilt_deg": 5.3
+   },
+   {
+    "kind": "banana",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 8.8,
+    "held": false,
+    "logs": [
+     "扒出来后从这边下不了手"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "banana",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 9.4,
+    "held": false,
+    "logs": [
+     "扒出来后从这边下不了手"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "lbrick",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 16.8,
+    "held": false,
+    "logs": [
+     "抬起时物体滑脱"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "lbrick",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": 0.8,
+    "held": true,
+    "logs": [
+     "手指落在了东西上，没插到它后面"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "rock",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": -0.0,
+    "held": false,
+    "logs": [
+     "抬起时物体滑脱"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "rock",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": 0.1,
+    "held": false,
+    "logs": [
+     "夹爪合拢到底，没夹到东西"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "sock",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 14.9,
+    "held": false,
+    "logs": [
+     "抬起时物体滑脱"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "sock",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": 1.0,
+    "held": true,
+    "logs": [
+     "手指落在了东西上，没插到它后面"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "plush",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 20.0,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "plush",
+    "gap": 0.02,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 18.6,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   }
+  ]
+ },
+ "0.04": {
+  "n": 16,
+  "pulled": 13,
+  "held": 11,
+  "grasp_before": 15,
+  "trials": [
+   {
+    "kind": "cube",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 17.2,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "cube",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 17.9,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "ball",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 17.3,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "ball",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 12.2,
+    "held": false,
+    "logs": [
+     "扒出来后从这边下不了手"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "car",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": false,
+    "pulled": true,
+    "out_cm": 17.8,
+    "held": false,
+    "logs": [
+     "扒出来后从这边下不了手"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "car",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 17.8,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "banana",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 8.2,
+    "held": false,
+    "logs": [
+     "扒出来后从这边下不了手"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "banana",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": 7.5,
+    "held": false,
+    "logs": [
+     "扒出来后从这边下不了手"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "lbrick",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 15.1,
+    "held": false,
+    "logs": [
+     "抬起时物体滑脱"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "lbrick",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": 1.2,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "rock",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": 1.1,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "rock",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 15.3,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "sock",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 16.7,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "sock",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 13.6,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "plush",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 18.5,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "plush",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 18.8,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   }
+  ]
+ },
+ "0.06": {
+  "n": 16,
+  "pulled": 14,
+  "held": 13,
+  "grasp_before": 15,
+  "trials": [
+   {
+    "kind": "cube",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 16.5,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "cube",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 16.6,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "ball",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 16.0,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "ball",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 15.9,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "car",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": false,
+    "pulled": true,
+    "out_cm": 16.9,
+    "held": false,
+    "logs": [
+     "扒出来后从这边下不了手"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "car",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 16.2,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "banana",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": 7.5,
+    "held": false,
+    "logs": [
+     "扒出来后从这边下不了手"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "banana",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": false,
+    "out_cm": 6.0,
+    "held": false,
+    "logs": [
+     "扒出来后从这边下不了手"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "lbrick",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 13.7,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "lbrick",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 16.9,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "rock",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 14.7,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "rock",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 15.9,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "sock",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 14.3,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "sock",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 11.7,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "plush",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 16.2,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "plush",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 16.5,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   }
+  ]
+ }
+}
