@@ -34,6 +34,58 @@ CELL = 0.015                 # m: grid for grouping points seen from above
 MAX_SIZE = 0.20              # m: a blob longer than this is not something to pick up (or two things merged)
 
 
+def object_materials(m, robot):
+    """Per geom: 0 matte (or not an object), 1 black, 2 shiny, 3 clear. Used only to spoil the rendered depth the way a
+    real stereo depth camera would; the algorithms never see it."""
+    code = dict(matte=0, black=1, shiny=2, clear=3)
+    out = np.zeros(m.ngeom, np.int8)
+    roots = {robot.obj_body[i]: code[o[4].get('mat', 'matte')] for i, o in enumerate(robot.objects)}
+    for g in range(m.ngeom):
+        out[g] = roots.get(int(m.body_rootid[m.geom_bodyid[g]]), 0)
+    return out
+
+
+def spoil_depth(depth, lab, gmat, rng, background=None):
+    """What a stereo depth camera returns instead of the true depth (0 = no reading):
+    black surfaces: no reading over half of them, in patches; shiny: holes in about a quarter, in patches;
+    clear plastic: mostly no reading, often the floor behind it (background), sometimes the surface;
+    every depth edge: some pixels take a value between the near and the far side ("flying pixels")."""
+    Hh, Ww = depth.shape
+    mat = np.where(lab >= 0, gmat[np.maximum(lab, 0)], 0)
+    d = depth.copy()
+    if mat.any():
+        f = np.kron(rng.random((Hh // 6 + 1, Ww // 6 + 1)), np.ones((6, 6)))[:Hh, :Ww]      # patchy
+        px = rng.random(d.shape)
+        d[(mat == 1) & ((f < 0.5) | (px < 0.1))] = 0.0
+        d[(mat == 2) & ((f < 0.25) | (px < 0.05))] = 0.0
+        clear = mat == 3
+        if clear.any():
+            d[clear & (px < 0.6)] = 0.0
+            if background is not None:
+                see = clear & (px >= 0.6) & (px < 0.9); d[see] = background[see]
+    # flying pixels on depth edges (left/right and up/down neighbours differ by more than 5 cm)
+    for ax in (0, 1):
+        a = np.take(d, range(0, d.shape[ax] - 1), axis=ax); b = np.take(d, range(1, d.shape[ax]), axis=ax)
+        edge = (np.abs(a - b) > 0.05) & (a > 0) & (b > 0)
+        pick = edge & (rng.random(edge.shape) < 0.3)
+        mix = a + (b - a) * rng.random(edge.shape)
+        if ax == 0: d[:-1][pick] = mix[pick]
+        else: d[:, :-1][pick] = mix[pick]
+    return d
+
+
+def depth_edges(d):
+    """Pixels on a depth edge (a neighbour differs by more than 3 cm + 2 % of the depth): the standard filter against
+    flying pixels. It also trims a pixel off every silhouette, which costs about 1 mm up close and 6 mm at 1.5 m."""
+    tol = 0.03 + 0.02 * d
+    e = np.zeros(d.shape, bool)
+    for a, b in ((d[1:], d[:-1]), (d[:, 1:], d[:, :-1])):
+        jump = np.abs(a - b) > np.minimum(tol[: a.shape[0], : a.shape[1]], 0.2)
+        if a.shape[0] < d.shape[0]: e[1:] |= jump; e[:-1] |= jump
+        else: e[:, 1:] |= jump; e[:, :-1] |= jump
+    return e
+
+
 def robot_geoms(m, robot):
     root = m.body_rootid[robot.chassis]
     return np.array([g for g in range(m.ngeom) if m.body_rootid[m.geom_bodyid[g]] == root])
@@ -61,6 +113,8 @@ class FrontCamera:
             q = np.zeros(4); mujoco.mju_axisAngle2Quat(q, a / max(np.linalg.norm(a), 1e-9), float(np.linalg.norm(a))); mujoco.mju_quat2Mat(Rx, q)
             self.R_bc = Rx.reshape(3, 3) @ self.R_bc
         self.self_geoms = robot_geoms(m, robot)
+        self.gmat = object_materials(m, robot); self.has_clear = bool((self.gmat == 3).any())
+        self.bg_opt = mujoco.MjvOption(); self.bg_opt.geomgroup[2] = 0
         self.basket_obs = None
         self.depth = None
         self.floor = np.zeros(3)
@@ -68,8 +122,12 @@ class FrontCamera:
     def capture(self):
         d = self.r.d
         self.seg.update_scene(d, 'front'); s = self.seg.render()
-        self.dep.update_scene(d, 'front'); self.depth = self.dep.render()
+        self.dep.update_scene(d, 'front'); depth = self.dep.render()
         lab = np.where(s[..., 1] == mujoco.mjtObj.mjOBJ_GEOM, s[..., 0], -1)
+        bg = None
+        if self.has_clear:
+            self.dep.update_scene(d, 'front', scene_option=self.bg_opt); bg = self.dep.render()
+        self.depth = spoil_depth(depth, lab, self.gmat, self.rng, bg)
         self.self_mask = np.isin(lab, self.self_geoms)          # the robot's own arm and body
         return self.depth
 
@@ -78,7 +136,7 @@ class FrontCamera:
         z = self.depth.astype(np.float64)
         z = z + self.rng.normal(0, 1, z.shape) * (DEPTH_SIGMA[0] + DEPTH_SIGMA[1] * z * z) * perturb.get('depth_noise', 1.0)
         P = (self.ray * z[..., None]) @ self.R_bc.T + self.t_bc
-        valid = (z < MAX_RANGE) & ~self.self_mask
+        valid = (z < MAX_RANGE) & (self.depth > 0.05) & ~self.self_mask & ~depth_edges(self.depth)   # 0: no reading there
         # floor plane z = a x + b y + c, fitted to points near the nominal floor, then refit without outliers
         cand = valid & (np.abs(P[..., 2]) < 0.03)
         hgt = P[..., 2].copy(); self.floor = np.zeros(3)
@@ -112,8 +170,9 @@ class FrontCamera:
         # image (the robot's own arm, or the thing it is carrying), so they may continue upward behind it. A table leg
         # whose upper part is hidden looks just like a short thing on the floor. (A low thing on the floor can only be
         # hidden from below by things in front of it, never from above.)
-        dz = np.full(self.depth.shape, np.inf); dz[3:] = self.depth[:-3]
-        self.occl_top = ndimage.binary_dilation(self.self_mask, iterations=3) | (dz < self.depth - 0.05)
+        dd = np.where(self.depth > 0.05, self.depth, np.inf)            # holes in the depth are unknown, not near
+        dz = np.full(dd.shape, np.inf); dz[3:] = dd[:-3]
+        self.occl_top = ndimage.binary_dilation(self.self_mask, iterations=3) | (dz < dd - 0.05)
         X = P[vv_all, uu_all]
         if basket_rect is not None:
             cx, cy, yaw, hx, hy = basket_rect; c, s = math.cos(yaw), math.sin(yaw)
@@ -204,6 +263,8 @@ class WristCamera:
         # camera mount in the gripper frame: fixed by the bracket, a calibration constant
         Rq = np.zeros(9); mujoco.mju_quat2Mat(Rq, m.cam_quat[self.cam]); self.R = Rq.reshape(3, 3); self.t = m.cam_pos[self.cam].copy()
         self.self_geoms = robot_geoms(m, robot)
+        self.gmat = object_materials(m, robot); self.has_clear = bool((self.gmat == 3).any())
+        self.bg_opt = mujoco.MjvOption(); self.bg_opt.geomgroup[2] = 0
         self.rng = np.random.default_rng(1)
 
     def load(self):
@@ -214,9 +275,13 @@ class WristCamera:
         gap = jaw_gap(self.r.joints()[5], 0.075)
         d = self.r.d
         self.seg.update_scene(d, self.cam); s = self.seg.render()
-        self.dep.update_scene(d, self.cam); z = self.dep.render().astype(np.float64)
+        self.dep.update_scene(d, self.cam); z = self.dep.render()
         lab = np.where(s[..., 1] == mujoco.mjtObj.mjOBJ_GEOM, s[..., 0], -1)
-        ok = ~np.isin(lab, self.self_geoms) & (z < 0.5)
+        bg = None
+        if self.has_clear:
+            self.dep.update_scene(d, self.cam, scene_option=self.bg_opt); bg = self.dep.render()
+        z = spoil_depth(z, lab, self.gmat, self.rng, bg).astype(np.float64)
+        ok = ~np.isin(lab, self.self_geoms) & (z < 0.5) & (z > 0.01) & ~depth_edges(z)
         z = z + self.rng.normal(0, 0.001, z.shape)
         Pg = (self.ray[ok] * z[ok][:, None]) @ self.R.T + self.t
         inside = (Pg[:, 0] > -0.011) & (Pg[:, 0] < -0.009 + gap + 0.003) & (np.abs(Pg[:, 1]) < 0.012) & (Pg[:, 2] < -0.045) & (Pg[:, 2] > -0.106)

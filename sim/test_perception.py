@@ -45,16 +45,23 @@ def true_points(r, k):
     return np.vstack(out)
 
 
-def run(trials=6, dists=(0.235, 0.6, 1.0, 1.5)):
+HARD_MATS = (('sock', 'black'), ('cube', 'black'), ('plush', 'black'), ('ball', 'shiny'), ('car', 'shiny'), ('bottle', 'clear'))
+
+
+def run(trials=6, dists=(0.235, 0.6, 1.0, 1.5), kinds=None):
     rng = np.random.default_rng(0); out = {}
     rpose = (2.2, 1.05, 0.0)      # facing +x: open floor out to about 1.7 m
-    for kind in O.KINDS:
-        out[kind] = {}
+    for kind in (kinds or O.KINDS):
+        mat = None
+        if isinstance(kind, tuple): kind, mat = kind
+        key = kind if mat is None else f'{kind}:{mat}'
+        out[key] = {}
         for dist in dists:
             det = 0; e_near = []; e_wid = []; e_top = []; e_ctr = []
             for t in range(trials):
                 bearing = rng.uniform(-0.25, 0.25) if dist > 0.3 else rng.uniform(-0.1, 0.1)
                 yaw = rng.uniform(-math.pi, math.pi); spec = O.sample(kind, rng)
+                if mat: spec['mat'] = mat
                 ox, oy = rpose[0] + dist * math.cos(bearing), rpose[1] + dist * math.sin(bearing)
                 r = Robot([(kind, ox, oy, yaw, spec)], seed=t, robot_pose=rpose)
                 for _ in range(60): r.step()
@@ -69,10 +76,10 @@ def run(trials=6, dists=(0.235, 0.6, 1.0, 1.5)):
                 e_top.append(float(d['top'] - W[:, 2].max()))
                 tc = 0.5 * (B.min(0) + B.max(0)); e_ctr.append(float(np.linalg.norm(d['rel'][:2] - tc)))
             mm = lambda a, f: round(1000 * float(f(np.abs(a))), 1) if a else None
-            out[kind][str(dist)] = dict(detected=det, n=trials, near_edge_err_mm=mm(e_near, np.mean), near_edge_err_max_mm=mm(e_near, np.max), width_err_mm=mm(e_wid, np.mean),
+            out[key][str(dist)] = dict(detected=det, n=trials, near_edge_err_mm=mm(e_near, np.mean), near_edge_err_max_mm=mm(e_near, np.max), width_err_mm=mm(e_wid, np.mean),
                                         top_err_mm=mm(e_top, np.mean), centre_err_mm=mm(e_ctr, np.mean))
-            o = out[kind][str(dist)]
-            print(f'{O.TYPES[kind]["cn"]:<10} {dist:.3f} m  detected {det}/{trials}  near edge {o["near_edge_err_mm"]} mm (max {o["near_edge_err_max_mm"]})  width {o["width_err_mm"]} mm  top {o["top_err_mm"]} mm  centre {o["centre_err_mm"]} mm', flush=True)
+            o = out[key][str(dist)]
+            print(f'{O.TYPES[kind]["cn"] + (":" + mat if mat else ""):<14} {dist:.3f} m  detected {det}/{trials}  near edge {o["near_edge_err_mm"]} mm (max {o["near_edge_err_max_mm"]})  width {o["width_err_mm"]} mm  top {o["top_err_mm"]} mm  centre {o["centre_err_mm"]} mm', flush=True)
     return out
 
 
@@ -148,4 +155,5 @@ def run_empty(poses=24):
 if __name__ == '__main__':
     res = run()
     res['_pairs'] = run_pairs(); res['_furniture'] = run_furniture(); res['_empty'] = run_empty()
+    res['_materials'] = run(trials=6, dists=(0.235, 0.6, 1.0), kinds=HARD_MATS)
     json.dump(res, open('../results/perception_bench.json', 'w'), ensure_ascii=False, indent=1)

@@ -24,6 +24,12 @@ TYPES = {
     'plush':  dict(cn='毛绒玩具（软）', soft=True, rgba='0.80 0.55 0.72 1'),
 }
 KINDS = list(TYPES)
+# only in the hard-materials trials: a small clear plastic bottle lying on its side
+TYPES['bottle'] = dict(cn='透明塑料瓶', soft=False, rgba='0.80 0.90 0.95 0.35')
+# Surface materials, for what a depth camera makes of them (perception.py): matte is the default; black and shiny
+# surfaces return patchy depth, clear plastic mostly none, or the floor behind it.
+MATERIALS = ('matte', 'black', 'shiny', 'clear')
+MAT_RGBA = dict(black='0.07 0.07 0.08 1', shiny=None, clear='0.80 0.90 0.95 0.35')
 # compliant contact for soft things; priority 2 makes these parameters win over the gripper pads' stiff ones
 # Soft surface, firmer core (stuffing packs down as it is squeezed): compliant for the first ~8 mm, then much stiffer.
 # With a softer core a 10 g toy sank 16 mm into the finger pad at full grip and stayed wedged there after release.
@@ -62,20 +68,24 @@ def sample(kind, rng):
     elif kind == 'plush':
         p = dict(rt=u(0.022, 0.028), lim=u(0.02, 0.03), rl=u(0.007, 0.009), density=u(80, 150))
         r, h = p['rt'] + p['lim'], 2.3 * p['rt']
+    elif kind == 'bottle':
+        p = dict(r=u(0.020, 0.025), L=u(0.10, 0.15), density=u(60, 110))       # a small (100-200 ml) bottle; thin walls: light for its size
+        r, h = p['L'] / 2, 2 * p['r']
     else:
         raise ValueError(kind)
     p['density'] *= perturb.get('obj_mass', 1.0)
-    return dict(kind=kind, p=p, radius=float(r), height=float(h))
+    return dict(kind=kind, p=p, radius=float(r), height=float(h), mat='clear' if kind == 'bottle' else 'matte')
 
 
 def xml(name, spec, x, y, yaw):
     """(asset xml, body xml) for one object, its lowest point resting on the floor at (x, y)."""
-    k, p = spec['kind'], spec['p']; rgba = TYPES[k]['rgba']
+    k, p = spec['kind'], spec['p']; rgba = MAT_RGBA.get(spec.get('mat', 'matte')) or TYPES[k]['rgba']
     hard = 'condim="4" friction="0.5 0.01 0.0001"'
     dens = f'density="{p["density"]:.0f}"'
     q = f'{math.cos(yaw / 2):.6f} 0 0 {math.sin(yaw / 2):.6f}'
     asset = ''
-    g = lambda i, rest: f'<geom name="{name}_g{i}" rgba="{rgba}" {dens} {rest}/>'
+    grp = ' group="2"' if spec.get('mat') == 'clear' else ''      # clear things: the renderer can hide them to see what is behind
+    g = lambda i, rest: f'<geom name="{name}_g{i}" rgba="{rgba}"{grp} {dens} {rest}/>'
     if k == 'cube':
         s = p['s'] / 2; inner = g(0, f'type="box" pos="0 0 {s:.4f}" size="{s:.4f} {s:.4f} {s:.4f}" {hard}')
     elif k == 'ball':
@@ -101,6 +111,8 @@ def xml(name, spec, x, y, yaw):
         cx, cy = la / 2, lb / 2
         inner = (g(0, f'type="box" pos="{la / 2 - cx:.4f} {t / 2 - cy:.4f} {h / 2:.4f}" size="{la / 2:.4f} {t / 2:.4f} {h / 2:.4f}" {hard}')
                  + g(1, f'type="box" pos="{t / 2 - cx:.4f} {(lb + t) / 2 - cy:.4f} {h / 2:.4f}" size="{t / 2:.4f} {(lb - t) / 2:.4f} {h / 2:.4f}" {hard}'))
+    elif k == 'bottle':
+        inner = g(0, f'type="cylinder" pos="0 0 {p["r"]:.4f}" quat="0.7071 0 0.7071 0" size="{p["r"]:.4f} {p["L"] / 2:.4f}" condim="6" friction="0.4 0.005 0.001"')
     elif k == 'rock':
         asset = f'<mesh name="{name}_mesh" vertex="{" ".join(f"{c:.4f}" for c in np.ravel(p["v"]))}"/>'
         inner = g(0, f'type="mesh" mesh="{name}_mesh" condim="4" friction="0.6 0.01 0.0001"')

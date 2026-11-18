@@ -19,13 +19,14 @@ from robot import Robot
 from skills import carry_pose, grasp, holding, plan_grasp, wait
 
 ALIGN_NOISE = 0.15     # rad, 1 sigma: how far a long object's long axis is from square to the jaw line after the base has lined up
-LONG = ('car', 'banana', 'sock')   # kinds whose long axis is the body x axis; the base lines up with these
+LONG = ('car', 'banana', 'sock', 'bottle')   # kinds whose long axis is the body x axis; the base lines up with these
 
 
-def one(kind, seed, pad_friction):
+def one(kind, seed, pad_friction, mat=None):
     rng = np.random.default_rng(seed)
     model.P['pad_friction'] = pad_friction
     spec = O.sample(kind, rng)
+    if mat: spec['mat'] = mat
     rpose = (2.2, 1.05, rng.uniform(-3.1, 3.1))          # open floor, at least 0.7 m from any furniture
     # Where the base ends up relative to the object: 0.235 m +- servo and localisation error, a little off to the side.
     # After the object has settled, the robot takes the same close look as the controller and applies the same test:

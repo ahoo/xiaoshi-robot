@@ -23,11 +23,13 @@ def _furn_dist(x, y):
     return d
 
 
-def make_layout(seed, clearance=0.30, n_boxes=None, clutter=False):
+def make_layout(seed, clearance=0.30, n_boxes=None, clutter=False, materials=False):
     """Five objects of five different kinds out of eight (each with its own random size, shape and weight, objects.py)
     at random poses at least `clearance` from walls and furniture, plus 0-2 extra cartons.
     clutter: the second and fourth objects are put right next to the first and third (edges 0.5-5 cm apart), the
-    way things end up in a heap, so the camera may see each pair as one blob."""
+    way things end up in a heap, so the camera may see each pair as one blob.
+    materials: each object is black or shiny (patchy depth), and a sixth object is added: a small clear plastic bottle,
+    which a depth camera hardly sees at all. Drawn from a separate random stream, so the layout is otherwise the same."""
     rng = np.random.default_rng(seed)
     kinds = [O.KINDS[i] for i in rng.choice(len(O.KINDS), 5, replace=False)]
     specs = [O.sample(k, rng) for k in kinds]
@@ -53,15 +55,25 @@ def make_layout(seed, clearance=0.30, n_boxes=None, clutter=False):
             if math.hypot(x - HOME[0], y - HOME[1]) < 0.5 or math.hypot(x - BASKET['x'], y - BASKET['y']) < 0.6: continue
             if any(math.hypot(x - o[1], y - o[2]) < (0.45 if clutter else 0.3) for o in objs): continue
             objs.append((kind, round(x, 3), round(y, 3), round(float(rng.uniform(-math.pi, math.pi)), 3), spec)); break
+    if materials:
+        r2 = np.random.default_rng(seed + 7000)
+        for o in objs: o[4]['mat'] = str(r2.choice(['black', 'shiny', 'matte'], p=[0.45, 0.45, 0.10]))
+        spec = O.sample('bottle', r2)
+        for _ in range(500):
+            x, y = r2.uniform(0.2, ROOM_W - 0.2), r2.uniform(0.2, ROOM_H - 0.2)
+            if _furn_dist(x, y) < clearance or math.hypot(x - HOME[0], y - HOME[1]) < 0.5 or math.hypot(x - BASKET['x'], y - BASKET['y']) < 0.6: continue
+            if any(math.hypot(max(abs(x - b[0]) - 0.15, 0), max(abs(y - b[1]) - 0.125, 0)) < clearance for b in boxes): continue
+            if any(math.hypot(x - o[1], y - o[2]) < 0.3 for o in objs): continue
+            objs.append(('bottle', round(x, 3), round(y, 3), round(float(r2.uniform(-math.pi, math.pi)), 3), spec)); break
     return objs, boxes
 
 
-def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=None, clutter=False, perturbation=None):
+def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=None, clutter=False, perturbation=None, materials=False):
     import model
     import perturb
     perturb.CUR = dict(perturbation or {})
     if pad_friction is not None: model.P['pad_friction'] = pad_friction
-    objs, boxes = make_layout(seed, clearance, clutter=clutter)
+    objs, boxes = make_layout(seed, clearance, clutter=clutter, materials=materials)
     robot = Robot(objs, seed=seed, extra_boxes=boxes)
     agent = Agent(robot, seed=seed, verbose=verbose)
     t0 = time.time(); gen = agent.run()

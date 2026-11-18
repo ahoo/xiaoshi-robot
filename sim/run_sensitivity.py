@@ -34,6 +34,10 @@ def _one(args):
     st = next(s for s in SETTINGS if s['name'] == name)
     fn = f'{CACHE}/{name}_{seed}.json'
     if os.path.exists(fn): return json.load(open(fn))
+    if name == 'nominal' and os.path.exists('../results/trials.json'):     # same code, same seeds: the main batch's standard runs
+        for e in json.load(open('../results/trials.json'))['episodes']:
+            if e['condition'] == 'standard' and e['seed'] == seed:
+                return dict(e, setting='nominal')
     res, agent, robot = run_episode(seed, 0.30, pad_friction=st['pad'], perturbation=st['pert'])
     res['setting'] = name; res['log'] = agent.log_lines
     json.dump(res, open(fn, 'w'), ensure_ascii=False)
