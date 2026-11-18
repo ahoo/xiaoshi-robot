@@ -19,7 +19,7 @@ from scipy.spatial import ConvexHull, QhullError
 
 from model import BASKET, HOME, P
 from robot import LIDAR_RANGE
-from skills import ELONG, best_band, carry_pose, grasp, holding, place, plan_grasp, wait, wait_arm
+from skills import ELONG, PULL_REACH, best_band, carry_pose, grasp, holding, place, plan_grasp, pull, wait, wait_arm
 from localization import Localizer
 from perception import FrontCamera, WristCamera
 
@@ -58,7 +58,7 @@ class Agent:
         self.loc_err = []                                  # (position error m, heading error rad) once a second, for the score sheet
         self.scan_pts = np.zeros((0, 2)); self.map_pts = np.zeros((0, 2)); self.blocked = 0; self.held = False; self.basket_blocked_t = -99.0
         self.path = None; self.scan = None; self.state = '启动'; self.target = None; self.log_lines = []
-        self.stats = dict(grasp_attempts=0, grasp_fail=0, dropped=0, missed_place=0, replans=0, stuck=0, collisions=0, floor_touch=0, max_tilt=0.0, dist=0.0)
+        self.stats = dict(pulls=0, grasp_attempts=0, grasp_fail=0, dropped=0, missed_place=0, replans=0, stuck=0, collisions=0, floor_touch=0, max_tilt=0.0, dist=0.0)
         self._tick = 0; self._last_xy = np.array(robot.true_pose()[:2]); self._coll_t = -9.0; self._floor_t = -9.0
         m = robot.m
         self._floor = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, 'floor')
@@ -301,6 +301,7 @@ class Agent:
         occ = self.lo > 0
         for j, i in self._basket_cells: occ[j, i] = True
         D = distance_transform_edt(~np.pad(occ, 1, constant_values=True))[1:-1, 1:-1] * CS
+        self.D_furn = D
         # Objects on the floor are low: only the chassis can touch them, so the robot centre has to keep KEEP from
         # their outlines, not a full PASS from the cells they are in.
         ol = [e['outline'] for k, e in self.memory.items() if k != ignore and e['status'] == 'pending']
@@ -439,7 +440,7 @@ class Agent:
         t0 = self.r.t; t_plan = -9.0; fails = 0; goal = None; path = None; wp = 1; self.abort = None
         prog_t, prog_xy = self.r.t, np.array(self.pose()[:2])
         while True:
-            if self.r.t - t0 > timeout: self.stop(); return None
+            if self.r.t - t0 > timeout: self.stop(); self.abort = 'timeout'; return None
             if check:
                 why = check()
                 if why: self.stop(); self.abort = why; return None
@@ -567,6 +568,63 @@ class Agent:
         if not out and max_tier == 0: return self.standoffs(e, D, 1)
         return out
 
+    PULL_BACK = 0.15
+
+    def pull_stances(self, e, D):
+        """Where to stand to drag an object out of a tight spot: facing it, close enough that the arm reaches 2 cm past
+        its far side (at most 31 cm from the robot centre), with room for the paddle there (away from furniture and
+        other objects) and room behind the robot to back up. Only directions that leave the object in more open space
+        than now are offered."""
+        ctr = np.array([e['x'], e['y']]); ol = e['outline']; out = []
+        others = [o['outline'] for j, o in self.memory.items() if j != e['id'] and o['status'] == 'pending']
+        others = np.vstack(others) if others else np.zeros((0, 2))
+        def room(p):          # how open the floor is around a point: furniture and other objects
+            r_ = self._dat(self.D_furn, *p)
+            if len(others): r_ = min(r_, float(np.min(np.hypot(others[:, 0] - p[0], others[:, 1] - p[1]))) + 0.03)
+            return r_
+        now = room(ctr)
+        for k in range(24):
+            a = k * math.pi / 12; dv = np.array([math.cos(a), math.sin(a)]); u = -dv
+            far = float(np.max((ol - ctr) @ u)); near = float(np.max((ol - ctr) @ dv))
+            dist = max(0.29 - far - PULL_REACH, near + 0.17)
+            if dist + far + PULL_REACH > 0.31: continue
+            P = ctr + dist * dv; finger = ctr + (far + PULL_REACH) * u
+            if self._dat(self.D_furn, *finger) < 0.035: continue
+            if len(others) and np.min(np.hypot(others[:, 0] - finger[0], others[:, 1] - finger[1])) < 0.015: continue
+            if room(ctr + self.PULL_BACK * dv) < now + 0.04: continue
+            if self._dat(self.D_base, *P) < PASS or not self.pose_ok(P[0], P[1], math.atan2(u[1], u[0]), ARM_BOX, 0.3): continue
+            if any(self._dat(self.D_base, *(P + s * dv)) < PASS - 0.04 for s in (0.05, 0.10, 0.15)): continue
+            out.append((float(P[0]), float(P[1]), math.atan2(u[1], u[0]), 0.0))
+        return out
+
+    def pull_out(self, k):
+        """Drag object k into the open so it can be grasped. Returns True if it was dragged."""
+        r = self.r; e = self.memory[k]; cn = self._name(e)
+        e['pulls'] = e.get('pulls', 0) + 1
+        self.state = '导航'; self.log(f'{cn} 太贴着别的东西，站不到能夹的位置：先把它扒出来')
+        goal = yield from self.goto(lambda D: self.pull_stances(e, D), ignore=k)
+        if goal is None:
+            self.log(f'{cn} 也找不到能扒它的位置'); return False
+        self.state = '抓取'
+        d = self.measure_close(e)
+        if d is None:
+            self.log(f'{cn} 不在预期位置，重新找'); self.memory.pop(k, None); self.cov[:] = False; return False
+        u = d['rel'][:2] / np.linalg.norm(d['rel'][:2])
+        t = d['pts'][:, :2] @ u; z = d['pts'][:, 2]
+        near, far = np.percentile(t, [1, 99]); tz = t[z >= z.max() - 0.003].mean()
+        far = max(far, 2 * tz - near)                     # hidden far side, as in skills.best_band
+        finger = (far + PULL_REACH) * u
+        if np.linalg.norm(finger) > 0.32:
+            self.log(f'手臂伸不到 {cn} 后面'); return False
+        ok = yield from pull(r, finger, self.PULL_BACK, drive=lambda vx: self.cmd(vx, 0.0, 0.0), log=self.log)
+        if not ok: return False
+        self.stats['pulls'] += 1
+        x, y, th = self.pose(); sh = -self.PULL_BACK * np.array([math.cos(th), math.sin(th)])
+        e.update(x=e['x'] + sh[0], y=e['y'] + sh[1], outline=e['outline'] + sh, pts=e['pts'] + np.append(sh, 0.0), dirs=None, sigma=0.03, retry_at=0.0)
+        e.pop('bad', None)
+        self.log(f'把 {cn} 往外扒了约 {100 * self.PULL_BACK:.0f} cm')
+        return True
+
     def basket_standoffs(self, D):
         b = self.basket; out = []
         for nx, ny, half in ((0, -1, b['sy'] / 2), (0, 1, b['sy'] / 2), (-1, 0, b['sx'] / 2), (1, 0, b['sx'] / 2)):
@@ -597,9 +655,14 @@ class Agent:
         tries = 0; restand = 0
         while True:
             self.state = '导航'; self.log(f'前往 {cn}' + (f'（第 {tries + 1} 次）' if tries else ''))
-            goal = yield from self.goto(lambda D: self.standoffs(e, D), ignore=k)
+            goal = yield from self.goto(lambda D: self.standoffs(e, D), ignore=k, timeout=75.0)
             if goal is None and self.abort == 'no_path':       # the best sides are cut off: try the others too
-                goal = yield from self.goto(lambda D: self.standoffs(e, D, 1), ignore=k)
+                goal = yield from self.goto(lambda D: self.standoffs(e, D, 1), ignore=k, timeout=75.0)
+            if goal is None and self.abort in ('no_path', 'timeout') and e.get('pulls', 0) < 2:
+                # nowhere to stand to grasp it: drag it into the open, then try again
+                pulled = yield from self.pull_out(k)
+                if pulled: continue
+                if k not in self.memory: return False
             if goal is None:
                 e['fails'] += 1; e['retry_at'] = r.t + 30 * e['fails']; e['why'] = '够不到' if self.abort == 'no_path' else '导航超时'
                 self.log(f'{cn} {e["why"]}，先跳过'); return False
@@ -619,6 +682,10 @@ class Agent:
                     self.log('从这边下不了手，换个站位')
                     if not self.grasp_dirs(e): restand = 99
                 continue
+            if plan is None and e.get('pulls', 0) < 2:
+                pulled = yield from self.pull_out(k)
+                if pulled: restand = 0; continue
+                if k not in self.memory: return False
             if plan is None:
                 e['fails'] += 1; e['retry_at'] = r.t + 40 * e['fails']; e['why'] = '找不到能下手的地方'; e.pop('bad', None); e['dirs'] = None
                 self.log(f'{cn} 找不到能下手的地方，先跳过'); return False

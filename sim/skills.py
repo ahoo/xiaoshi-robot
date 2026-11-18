@@ -151,6 +151,41 @@ def plan_grasp(det):
     return dict(approach=approach, grasp=q_grasp, touch=q_touch, lift=lift, open=jaw_angle_for_gap(ext + CLEAR + 0.02, 0.08), expect=q_c, width=ext)
 
 
+PULL_REACH = 0.035          # paddle centre this far past the far side: half its thickness along the pull, plus margin
+PULL_Z = 0.025              # pinch point height while pulling: fingertips about 7 mm off the floor (flat things are 13 mm and up)
+
+
+def pull(robot, finger_xy, back=0.15, drive=None, log=None):
+    """Drag a thing that sits too close to a wall, furniture or another thing to be grasped. The gripper points
+    straight down with its jaws closed and side by side across the pull (a solid paddle about 2.5 cm wide; with a gap
+    between the jaws, flat stones and thin bricks slipped through it), goes down just beyond the thing's far side
+    (finger_xy, chassis frame), and the base backs up `back` m with the arm held still.
+    drive(vx) sends the base command (through the safety layer on the robot). Returns True if it got through."""
+    u = np.array(finger_xy, float) / np.linalg.norm(finger_xy)
+    yaw = math.atan2(u[1], u[0]) + math.pi / 2
+    hi = [finger_xy[0], finger_xy[1], 0.10]; lo = [finger_xy[0], finger_xy[1], PULL_Z]
+    q_hi, _, p1 = IK.solve(hi, approach=(0, 0, -1), yaw=yaw); q_lo, _, p2 = IK.solve(lo, approach=(0, 0, -1), yaw=yaw, seed=q_hi)
+    if max(p1, p2) > 0.004:
+        if log: log('手臂伸不到它后面')
+        return False
+    robot.set_arm(q5=q_hi, grip=GRIP_CLOSED, speed=0.8); yield from wait_arm(robot)
+    robot.set_arm(q5=q_lo, speed=0.3); t0 = robot.t
+    while robot.t - t0 < 3.0:
+        if robot.tilt() > TILT_ABORT:              # landed on it, not behind it
+            if log: log('手指落在了东西上，没插到它后面')
+            robot.set_arm(q5=q_hi, speed=0.5); yield from wait_arm(robot); yield from carry_pose(robot); return False
+        yield
+        if robot.arm_done(): break
+    yield from wait(robot, 0.3)
+    drive = drive or (lambda vx: robot.set_twist(vx, 0, 0))
+    for _ in range(int(back / 0.05 / 0.02)):
+        drive(-0.05); yield
+    drive(0.0); robot.set_twist(0, 0, 0); yield from wait(robot, 0.4)
+    robot.set_arm(q5=q_hi, speed=0.5); yield from wait_arm(robot)
+    yield from carry_pose(robot)
+    return True
+
+
 def pinch_now(robot):
     """Where the pinch point is now (chassis frame), from joint feedback."""
     return IK.fk(robot.joints()[:5])[0]

@@ -198,8 +198,11 @@ class WristCamera:
         self.rng = np.random.default_rng(1)
 
     def load(self):
-        """Number of pixels that see something in the space between the jaws (gripper frame: fingers along -z,
-        fixed jaw face at x = -0.009, jaws close along x)."""
+        """Number of pixels that see something between the two finger pads (gripper frame: fingers along -z, fixed pad
+        face at x = -0.009, jaws close along x; the moving pad's face is where the jaw angle puts it). Only the space
+        between the pads counts: next to furniture, the region around the fingers is full of shelf."""
+        from skills import jaw_gap
+        gap = jaw_gap(self.r.joints()[5], 0.075)
         d = self.r.d
         self.seg.update_scene(d, self.cam); s = self.seg.render()
         self.dep.update_scene(d, self.cam); z = self.dep.render().astype(np.float64)
@@ -207,11 +210,11 @@ class WristCamera:
         ok = ~np.isin(lab, self.self_geoms) & (z < 0.5)
         z = z + self.rng.normal(0, 0.001, z.shape)
         Pg = (self.ray[ok] * z[ok][:, None]) @ self.R.T + self.t
-        inside = (Pg[:, 0] > -0.012) & (Pg[:, 0] < 0.075) & (np.abs(Pg[:, 1]) < 0.03) & (Pg[:, 2] < -0.035) & (Pg[:, 2] > -0.112)
+        inside = (Pg[:, 0] > -0.011) & (Pg[:, 0] < -0.009 + gap + 0.003) & (np.abs(Pg[:, 1]) < 0.012) & (Pg[:, 2] < -0.045) & (Pg[:, 2] > -0.106)
         return int(inside.sum())
 
     def holding(self):
-        return self.load() >= 20
+        return self.load() >= 10        # empty: 0; a plush toy squashed to the jaw stop: ~30
 
     def close(self):
         self.seg.close(); self.dep.close()
