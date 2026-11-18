@@ -10,6 +10,8 @@ import xml.etree.ElementTree as ET
 import mujoco
 import numpy as np
 
+import perturb
+
 import objects as objects_lib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -177,7 +179,7 @@ def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET):
     <camera name="overview" pos="2 5.6 4.2" xyaxes="-1 0 0 0 -0.6 0.8" fovy="42"/>
     <body name="chassis" pos="{rx} {ry} {R + 0.0005}" quat="{_quat_z(rth)}">
       <freejoint name="base"/>
-      <inertial pos="{cm[0]} {cm[1]} {cm[2]}" mass="{P['chassis_mass']}" diaginertia="0.0040 0.0040 0.0066"/>
+      <inertial pos="{cm[0]} {cm[1]} {cm[2]}" mass="{P['chassis_mass'] * perturb.get('chassis_mass', 1.0)}" diaginertia="0.0040 0.0040 0.0066"/>
       <geom class="rcol" name="chassis_col" type="cylinder" pos="0 0 0.056" size="0.105 0.03"/>
       <geom class="rvis" type="cylinder" pos="0 0 0.029" size="0.105 0.003" rgba="0.95 0.93 0.88 1"/>
       <geom class="rvis" type="cylinder" pos="0 0 0.0832" size="0.105 0.003" rgba="0.95 0.93 0.88 1"/>

@@ -11,6 +11,8 @@ import math
 
 import numpy as np
 
+import perturb
+
 TYPES = {
     'cube':   dict(cn='方块', soft=False, rgba='0.31 0.62 0.88 1'),
     'ball':   dict(cn='小球', soft=False, rgba='0.84 0.91 0.29 1'),
@@ -62,6 +64,7 @@ def sample(kind, rng):
         r, h = p['rt'] + p['lim'], 2.3 * p['rt']
     else:
         raise ValueError(kind)
+    p['density'] *= perturb.get('obj_mass', 1.0)
     return dict(kind=kind, p=p, radius=float(r), height=float(h))
 
 

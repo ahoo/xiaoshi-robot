@@ -9,6 +9,8 @@ import math
 import mujoco
 import numpy as np
 
+import perturb
+
 from model import P, build
 from arm import ALL_JOINTS
 
@@ -62,8 +64,10 @@ class Robot:
         self.arm_cmd = self.arm_target.copy(); self.arm_vel = np.zeros(6)
         self.wheel_target = np.zeros(3); self.wheel_cmd = np.zeros(3)
         self.arm_speed = 1.6                     # rad/s joint-space speed limit used when interpolating targets
-        self.d.qpos[self.arm_qadr] = self.arm_cmd
-        self.d.ctrl[3:9] = self.arm_cmd
+        # servo zero-point errors (perturb.py): each arm joint really sits this far from where it is commanded and read
+        self.arm_offset = np.append(self.rng.normal(0, math.radians(perturb.get('arm_offset_deg', 0.0)), 5), 0.0) if perturb.get('arm_offset_deg', 0.0) else np.zeros(6)
+        self.d.qpos[self.arm_qadr] = self.arm_cmd + self.arm_offset
+        self.d.ctrl[3:9] = self.arm_cmd + self.arm_offset
         # lidar: rays in the sensor frame; geoms in groups 0 (world), 1 (rollers), 3 (robot collision) are visible to it
         ang = np.linspace(0, 2 * math.pi, LIDAR_RAYS, endpoint=False)
         self.ray_ang = ang
@@ -71,7 +75,7 @@ class Robot:
         self._geomgroup = np.array([1, 0, 0, 1, 0, 0], dtype=np.uint8)
         self._ray_dist = np.zeros(LIDAR_RAYS); self._ray_geom = np.zeros(LIDAR_RAYS, dtype=np.int32)
         self.odom = np.zeros(3)                  # dead-reckoned pose from wheel encoders (starts at the true pose)
-        self.wheel_scale = 1 + self.rng.normal(0, ODOM_SCALE, 3)   # each wheel's real radius differs from the nominal one
+        self.wheel_scale = 1 + self.rng.normal(0, ODOM_SCALE * perturb.get('odom', 1.0), 3)   # each wheel's real radius differs from the nominal one
         self.peak_torque = np.zeros(9); self.torque_sq = np.zeros(9); self.n_steps = 0; self.sat_steps = np.zeros(9)
         self._flim = self.m.actuator_forcerange[:9, 1].copy()
         mujoco.mj_forward(m, self.d)
@@ -110,10 +114,10 @@ class Robot:
         a = self.arm_act[5]; self.m.actuator_forcerange[a] = [-limit, limit]; self._flim[a] = limit
 
     def arm_done(self, tol=0.03):
-        return np.abs(self.arm_cmd[:5] - self.arm_target[:5]).max() < 0.004 and np.abs(self.d.qpos[self.arm_qadr][:5] - self.arm_target[:5]).max() < tol
+        return np.abs(self.arm_cmd[:5] - self.arm_target[:5]).max() < 0.004 and np.abs(self.joints()[:5] - self.arm_target[:5]).max() < tol
 
     def joints(self):
-        return self.d.qpos[self.arm_qadr].copy()
+        return self.d.qpos[self.arm_qadr] - self.arm_offset
 
     # ---- sensors ----
     def lidar(self):
@@ -130,7 +134,7 @@ class Robot:
         own = np.isfinite(r) & (px > FOOTPRINT[0]) & (px < FOOTPRINT[1]) & (np.abs(py) < FOOTPRINT[2])
         self.last_self_hits = int(own.sum())
         r[own] = np.inf
-        return self.ray_ang, r + self.rng.normal(0, LIDAR_NOISE, LIDAR_RAYS) * np.isfinite(r)
+        return self.ray_ang, r + self.rng.normal(0, LIDAR_NOISE * perturb.get('lidar_noise', 1.0), LIDAR_RAYS) * np.isfinite(r)
 
     def lidar_origin(self):
         x, y, th = self.true_pose()
@@ -152,13 +156,13 @@ class Robot:
         d.ctrl[:3] = self.wheel_cmd * (1 + 0.6 / 3)   # feed-forward for the servo's back-EMF damping
         n = int(round(CTRL_DT / m.opt.timestep))
         for k in range(n):
-            d.ctrl[3:9] = cmd0 + (self.arm_cmd - cmd0) * (k + 1) / n     # the servo's own profile generator runs at kHz
+            d.ctrl[3:9] = cmd0 + (self.arm_cmd - cmd0) * (k + 1) / n + self.arm_offset     # the servo's own profile generator runs at kHz
             mujoco.mj_step(m, d)
             f = np.abs(d.actuator_force[:9]); self.peak_torque = np.maximum(self.peak_torque, f); self.torque_sq += f * f; self.n_steps += 1
             self.sat_steps += f > 0.8 * self._flim
         # odometry from wheel encoders
         wq = d.qpos[self.wheel_qadr]
-        dw = (wq - self._last_wheel_q) * self.wheel_scale * (1 + self.rng.normal(0, ODOM_SLIP, 3)); self._last_wheel_q = wq.copy()
+        dw = (wq - self._last_wheel_q) * self.wheel_scale * (1 + self.rng.normal(0, ODOM_SLIP * perturb.get('odom', 1.0), 3)); self._last_wheel_q = wq.copy()
         tw = wheels_to_twist(dw / CTRL_DT)
         th = self.odom[2] + 0.5 * tw[2] * CTRL_DT
         self.odom[0] += (math.cos(th) * tw[0] - math.sin(th) * tw[1]) * CTRL_DT

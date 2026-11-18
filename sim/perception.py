@@ -20,6 +20,8 @@ import mujoco
 import numpy as np
 
 from scipy import ndimage
+
+import perturb
 from scipy.spatial import ConvexHull, QhullError
 
 W, H = 320, 240
@@ -51,6 +53,13 @@ class FrontCamera:
         d = robot.d; Rb = d.xmat[robot.chassis].reshape(3, 3); pb = d.xpos[robot.chassis]
         Rc = d.cam_xmat[self.cam].reshape(3, 3); pc = d.cam_xpos[self.cam]
         self.R_bc = Rb.T @ Rc; self.t_bc = Rb.T @ (pc - pb); self.t_bc[2] += pb[2]    # z measured from the floor
+        ce = perturb.get('cam_err', None)
+        if ce:      # the robot's belief about the mount is off (perturb.py): position, then a small rotation
+            er = np.random.default_rng(int(rng.integers(1 << 30)))
+            self.t_bc = self.t_bc + er.normal(0, ce[0], 3)
+            a = er.normal(0, math.radians(ce[1]), 3); Rx = np.zeros(9)
+            q = np.zeros(4); mujoco.mju_axisAngle2Quat(q, a / max(np.linalg.norm(a), 1e-9), float(np.linalg.norm(a))); mujoco.mju_quat2Mat(Rx, q)
+            self.R_bc = Rx.reshape(3, 3) @ self.R_bc
         self.self_geoms = robot_geoms(m, robot)
         self.basket_obs = None
         self.depth = None
@@ -67,7 +76,7 @@ class FrontCamera:
     def _cloud(self):
         """All pixels as noisy points in the chassis frame, with height above the fitted floor plane."""
         z = self.depth.astype(np.float64)
-        z = z + self.rng.normal(0, 1, z.shape) * (DEPTH_SIGMA[0] + DEPTH_SIGMA[1] * z * z)
+        z = z + self.rng.normal(0, 1, z.shape) * (DEPTH_SIGMA[0] + DEPTH_SIGMA[1] * z * z) * perturb.get('depth_noise', 1.0)
         P = (self.ray * z[..., None]) @ self.R_bc.T + self.t_bc
         valid = (z < MAX_RANGE) & ~self.self_mask
         # floor plane z = a x + b y + c, fitted to points near the nominal floor, then refit without outliers

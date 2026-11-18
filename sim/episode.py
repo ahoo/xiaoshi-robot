@@ -56,8 +56,10 @@ def make_layout(seed, clearance=0.30, n_boxes=None, clutter=False):
     return objs, boxes
 
 
-def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=None, clutter=False):
+def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=None, clutter=False, perturbation=None):
     import model
+    import perturb
+    perturb.CUR = dict(perturbation or {})
     if pad_friction is not None: model.P['pad_friction'] = pad_friction
     objs, boxes = make_layout(seed, clearance, clutter=clutter)
     robot = Robot(objs, seed=seed, extra_boxes=boxes)
@@ -92,6 +94,7 @@ def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=
                peak_torque=[round(float(v), 2) for v in robot.peak_torque], rms_torque=[round(float(v), 2) for v in np.sqrt(robot.torque_sq / robot.n_steps)],
                time_above_80pct=[round(float(v), 4) for v in robot.sat_steps / robot.n_steps], **{k: (round(v, 2) if isinstance(v, float) else v) for k, v in agent.stats.items()})
     if pad_friction is not None: model.P['pad_friction'] = 1.0
+    perturb.CUR = {}
     return res, agent, robot
 
 
