@@ -134,6 +134,14 @@ class Robot:
         own = np.isfinite(r) & (px > FOOTPRINT[0]) & (px < FOOTPRINT[1]) & (np.abs(py) < FOOTPRINT[2])
         self.last_self_hits = int(own.sum())
         r[own] = np.inf
+        self.last_ray_geom = np.where(np.isfinite(r), self._ray_geom, -1)
+        self.last_raw = r.copy()
+        model = perturb.get('lidar_model', None)
+        if model is not None:
+            if isinstance(model, str):
+                import lidar_models
+                model = perturb.CUR['lidar_model'] = lidar_models.MODELS[model]
+            return self.ray_ang, model(r, self.last_ray_geom, self.rng)
         return self.ray_ang, r + self.rng.normal(0, LIDAR_NOISE * perturb.get('lidar_noise', 1.0), LIDAR_RAYS) * np.isfinite(r)
 
     def lidar_origin(self):

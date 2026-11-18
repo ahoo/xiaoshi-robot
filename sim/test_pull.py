@@ -41,7 +41,7 @@ def one(kind, gap, seed):
     for _ in range(40): robot.step()
     cam = FrontCamera(robot, np.random.default_rng(seed)); wrist = WristCamera(robot)
     try:
-        ds = [d for d in cam.detect() if d['n_px'] >= 40 and d['bottom'] < 0.04]
+        ds = [d for d in cam.detect(n_avg=8) if d['n_px'] >= 40 and d['bottom'] < 0.04]
         if not ds: return dict(kind=kind, gap=gap, seen=False, pulled=False, held=False)
         d = min(ds, key=lambda d: abs(d['rel'][1]))
         before = plan_grasp(d) is not None
@@ -52,7 +52,7 @@ def one(kind, gap, seed):
         if not ok and not logs: logs.append('伸不到')
         p1 = robot.obj_pos(0); out = float(p1[1] - p0[1])
         for _ in range(20): robot.step()
-        ds = [d for d in cam.detect() if d['n_px'] >= 60 and d['bottom'] < 0.04]
+        ds = [d for d in cam.detect(n_avg=8) if d['n_px'] >= 60 and d['bottom'] < 0.04]
         held = False
         if ds:
             d2 = min(ds, key=lambda d: abs(d['rel'][1])); plan = plan_grasp(d2)

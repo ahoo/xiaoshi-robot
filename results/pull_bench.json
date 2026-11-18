@@ -1,8 +1,8 @@
 {
  "0.02": {
   "n": 16,
-  "pulled": 6,
-  "held": 7,
+  "pulled": 7,
+  "held": 5,
   "grasp_before": 15,
   "trials": [
    {
@@ -11,10 +11,9 @@
     "seen": true,
     "grasp_before": true,
     "pulled": false,
-    "out_cm": 0.1,
+    "out_cm": 0.0,
     "held": false,
     "logs": [
-     "手指落在了东西上，没插到它后面",
      "手臂压到东西了，抬起重来"
     ],
     "tilt_deg": 0.0
@@ -25,13 +24,13 @@
     "seen": true,
     "grasp_before": true,
     "pulled": false,
-    "out_cm": 0.4,
+    "out_cm": 0.6,
     "held": false,
     "logs": [
      "手指落在了东西上，没插到它后面",
-     "手臂压到东西了，抬起重来"
+     "夹爪合拢到底，没夹到东西"
     ],
-    "tilt_deg": 6.7
+    "tilt_deg": 0.0
    },
    {
     "kind": "ball",
@@ -39,11 +38,11 @@
     "seen": true,
     "grasp_before": true,
     "pulled": false,
-    "out_cm": -0.2,
+    "out_cm": -0.4,
     "held": false,
     "logs": [
      "手指落在了东西上，没插到它后面",
-     "夹爪合拢到底，没夹到东西"
+     "抬起时物体滑脱"
     ],
     "tilt_deg": 0.0
    },
@@ -67,7 +66,7 @@
     "seen": true,
     "grasp_before": false,
     "pulled": false,
-    "out_cm": 1.4,
+    "out_cm": 1.3,
     "held": false,
     "logs": [
      "手指落在了东西上，没插到它后面",
@@ -94,7 +93,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 8.8,
+    "out_cm": 9.1,
     "held": false,
     "logs": [
      "扒出来后从这边下不了手"
@@ -107,7 +106,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 9.4,
+    "out_cm": 8.3,
     "held": false,
     "logs": [
      "扒出来后从这边下不了手"
@@ -120,10 +119,10 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 17.0,
+    "out_cm": 16.8,
     "held": false,
     "logs": [
-     "抬起时物体滑脱"
+     "夹爪合拢到底，没夹到东西"
     ],
     "tilt_deg": 0.0
    },
@@ -133,7 +132,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": false,
-    "out_cm": 0.8,
+    "out_cm": 0.7,
     "held": true,
     "logs": [
      "手指落在了东西上，没插到它后面"
@@ -146,9 +145,11 @@
     "seen": true,
     "grasp_before": true,
     "pulled": false,
-    "out_cm": 0.0,
-    "held": true,
-    "logs": [],
+    "out_cm": -0.1,
+    "held": false,
+    "logs": [
+     "夹爪合拢到底，没夹到东西"
+    ],
     "tilt_deg": 0.0
    },
    {
@@ -157,7 +158,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": false,
-    "out_cm": 0.1,
+    "out_cm": -0.0,
     "held": false,
     "logs": [
      "夹爪合拢到底，没夹到东西"
@@ -170,7 +171,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 17.5,
+    "out_cm": 17.8,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
@@ -180,11 +181,11 @@
     "gap": 0.02,
     "seen": true,
     "grasp_before": true,
-    "pulled": false,
-    "out_cm": 1.0,
-    "held": true,
+    "pulled": true,
+    "out_cm": 8.5,
+    "held": false,
     "logs": [
-     "手指落在了东西上，没插到它后面"
+     "扒出来后从这边下不了手"
     ],
     "tilt_deg": 0.0
    },
@@ -194,7 +195,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 19.7,
+    "out_cm": 19.9,
     "held": true,
     "logs": [
      "夹爪合到了底，但腕部相机看到夹爪里有东西：是软的，被压扁了"
@@ -207,7 +208,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 18.8,
+    "out_cm": 18.7,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
@@ -226,13 +227,24 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 18.2,
+    "out_cm": 17.8,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
    },
    {
     "kind": "cube",
+    "gap": 0.04,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 16.9,
+    "held": true,
+    "logs": [],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "ball",
     "gap": 0.04,
     "seen": true,
     "grasp_before": true,
@@ -248,18 +260,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 17.0,
-    "held": true,
-    "logs": [],
-    "tilt_deg": 0.0
-   },
-   {
-    "kind": "ball",
-    "gap": 0.04,
-    "seen": true,
-    "grasp_before": true,
-    "pulled": true,
-    "out_cm": 17.4,
+    "out_cm": 17.7,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
@@ -270,7 +271,7 @@
     "seen": true,
     "grasp_before": false,
     "pulled": true,
-    "out_cm": 17.8,
+    "out_cm": 18.1,
     "held": false,
     "logs": [
      "扒出来后从这边下不了手"
@@ -283,7 +284,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 17.8,
+    "out_cm": 17.9,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
@@ -294,7 +295,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 8.2,
+    "out_cm": 8.5,
     "held": false,
     "logs": [
      "扒出来后从这边下不了手"
@@ -307,7 +308,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": false,
-    "out_cm": 7.5,
+    "out_cm": 7.6,
     "held": false,
     "logs": [
      "扒出来后从这边下不了手"
@@ -333,7 +334,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": false,
-    "out_cm": 1.3,
+    "out_cm": 1.1,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
@@ -355,7 +356,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 15.5,
+    "out_cm": 15.4,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
@@ -377,7 +378,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 13.6,
+    "out_cm": 12.9,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
@@ -388,7 +389,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 18.5,
+    "out_cm": 18.6,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
@@ -409,7 +410,7 @@
  "0.06": {
   "n": 16,
   "pulled": 14,
-  "held": 12,
+  "held": 13,
   "grasp_before": 15,
   "trials": [
    {
@@ -440,7 +441,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 15.7,
+    "out_cm": 15.9,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
@@ -475,7 +476,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 16.0,
+    "out_cm": 16.1,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
@@ -499,7 +500,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": false,
-    "out_cm": 6.0,
+    "out_cm": 6.2,
     "held": false,
     "logs": [
      "扒出来后从这边下不了手"
@@ -512,11 +513,9 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 13.2,
-    "held": false,
-    "logs": [
-     "抬起时物体滑脱"
-    ],
+    "out_cm": 13.6,
+    "held": true,
+    "logs": [],
     "tilt_deg": 0.0
    },
    {
@@ -525,7 +524,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 15.2,
+    "out_cm": 16.1,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
@@ -569,18 +568,7 @@
     "seen": true,
     "grasp_before": true,
     "pulled": true,
-    "out_cm": 11.7,
-    "held": true,
-    "logs": [],
-    "tilt_deg": 0.0
-   },
-   {
-    "kind": "plush",
-    "gap": 0.06,
-    "seen": true,
-    "grasp_before": true,
-    "pulled": true,
-    "out_cm": 16.6,
+    "out_cm": 11.5,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0
@@ -592,6 +580,19 @@
     "grasp_before": true,
     "pulled": true,
     "out_cm": 16.4,
+    "held": true,
+    "logs": [
+     "夹爪合到了底，但腕部相机看到夹爪里有东西：是软的，被压扁了"
+    ],
+    "tilt_deg": 0.0
+   },
+   {
+    "kind": "plush",
+    "gap": 0.06,
+    "seen": true,
+    "grasp_before": true,
+    "pulled": true,
+    "out_cm": 16.5,
     "held": true,
     "logs": [],
     "tilt_deg": 0.0

@@ -131,10 +131,11 @@ class FrontCamera:
         self.self_mask = np.isin(lab, self.self_geoms)          # the robot's own arm and body
         return self.depth
 
-    def _cloud(self):
-        """All pixels as noisy points in the chassis frame, with height above the fitted floor plane."""
+    def _cloud(self, n_avg=1):
+        """All pixels as noisy points in the chassis frame, with height above the fitted floor plane. n_avg: frames
+        averaged while standing still (a temporal filter): the random part of the depth noise shrinks by sqrt(n_avg)."""
         z = self.depth.astype(np.float64)
-        z = z + self.rng.normal(0, 1, z.shape) * (DEPTH_SIGMA[0] + DEPTH_SIGMA[1] * z * z) * perturb.get('depth_noise', 1.0)
+        z = z + self.rng.normal(0, 1, z.shape) * (DEPTH_SIGMA[0] + DEPTH_SIGMA[1] * z * z) * perturb.get('depth_noise', 1.0) / np.sqrt(n_avg)
         P = (self.ray * z[..., None]) @ self.R_bc.T + self.t_bc
         valid = (z < MAX_RANGE) & (self.depth > 0.05) & ~self.self_mask & ~depth_edges(self.depth)   # 0: no reading there
         # floor plane z = a x + b y + c, fitted to points near the nominal floor, then refit without outliers
@@ -151,15 +152,16 @@ class FrontCamera:
         P[..., 2] = hgt
         return P, valid
 
-    def detect(self, basket_rect=None):
+    def detect(self, basket_rect=None, n_avg=1):
         """List of detections, each a dict in the chassis frame (x forward, y left, z up from the floor):
         rel (centre of the visible outline, z = half the height), top (height), bottom (lowest visible point: above ~4 cm
         it is not lying on the floor), hull (outline seen from above, k x 2), pts (up to 400 visible surface points, N x 3),
         heading (long axis), elong (long/short), width (narrowest outline width), n_px, dist, cut (touches the image edge).
         basket_rect: (cx, cy, yaw, half_x, half_y) where the robot believes the basket is (chassis frame); points there
-        go to the basket estimate and are not grouped into objects. Without it the basket is recognised by its size."""
-        self.capture(); self.basket_obs = None
-        P, valid = self._cloud()
+        go to the basket estimate and are not grouped into objects. Without it the basket is recognised by its size.
+        n_avg: frames averaged (only while the robot stands still, e.g. the close look before a grasp)."""
+        self.capture(); self.basket_obs = None; self.low_pts = np.zeros((0, 2))
+        P, valid = self._cloud(n_avg)
         hgt = P[..., 2]
         above = valid & (hgt > FLOOR_TOL)
         tall = above & (hgt > TALL)
@@ -174,6 +176,9 @@ class FrontCamera:
         dz = np.full(dd.shape, np.inf); dz[3:] = dd[:-3]
         self.occl_top = ndimage.binary_dilation(self.self_mask, iterations=3) | (dz < dd - 0.05)
         X = P[vv_all, uu_all]
+        # low obstacles as seen right now (chassis frame, one point per 2 cm cell, within 0.8 m): for the safety layer
+        Lo = X[(X[:, 2] > 0.015) & (np.hypot(X[:, 0], X[:, 1]) < 0.8), :2]
+        if len(Lo): self.low_pts = np.unique(np.round(Lo / 0.02), axis=0) * 0.02
         if basket_rect is not None:
             cx, cy, yaw, hx, hy = basket_rect; c, s = math.cos(yaw), math.sin(yaw)
             bx = c * (X[:, 0] - cx) + s * (X[:, 1] - cy); by = -s * (X[:, 0] - cx) + c * (X[:, 1] - cy)

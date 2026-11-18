@@ -44,7 +44,7 @@ def one(kind, seed, pad_friction, mat=None):
         for _ in range(30): robot.step()                 # 0.6 s: let the object and the robot settle
         if cam is not None: cam.close()
         cam = FrontCamera(robot, np.random.default_rng(seed * 10 + tries))
-        dets = [d for d in cam.detect() if d['n_px'] >= 60 and d['top'] < 0.10]
+        dets = [d for d in cam.detect(n_avg=8) if d['n_px'] >= 60 and d['top'] < 0.10]   # same close look as the controller
         plan = None
         if dets:
             det = min(dets, key=lambda d: abs(d['rel'][1]))

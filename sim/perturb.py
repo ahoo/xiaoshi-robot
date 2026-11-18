@@ -8,6 +8,7 @@ model, so the trials show which real-world error the task is most sensitive to. 
   chassis_mass   - multiplies the chassis mass
   odom           - multiplies wheel-radius error and slip noise
   lidar_noise    - multiplies lidar range noise
+  lidar_model    - name of a lidar error model in lidar_models.MODELS (e.g. 'ld19'); replaces the Gaussian noise
   depth_noise    - multiplies depth-camera noise
 """
 CUR = {}

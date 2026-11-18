@@ -31,7 +31,7 @@ def draw_map(agent, robot):
     """The robot's occupancy map, drawn as seen from above with the same orientation as the overview camera
     (x grows to the left, y grows downwards)."""
     lo = agent.lo; img = np.zeros((GY, GX, 3), np.uint8)
-    img[lo == 0] = COL['unk']; img[lo < 0] = COL['free']; img[lo > 0] = COL['paper']
+    img[lo == 0] = COL['unk']; img[lo < 0] = COL['free']; img[lo > 4] = COL['paper']
     im = Image.fromarray(img[:, ::-1]).resize(SIDE, Image.NEAREST); d = ImageDraw.Draw(im); k = SIDE[0] / (GX * CS)
     X = lambda x: (GX * CS - x) * k
     if agent.scan is not None:

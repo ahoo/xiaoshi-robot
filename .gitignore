@@ -4,3 +4,4 @@ __pycache__/
 results/frames/
 web/dist/
 results/.trials_cache/
+cache/

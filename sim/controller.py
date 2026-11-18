@@ -31,12 +31,19 @@ BODY_R = 0.15                # m: chassis + wheel rims, as a circle
 ARM_BOX = (0.035, 0.228, 0.04)   # folded arm footprint in the chassis frame: x from, x to, half width (measured from the meshes)
 HELD_BOX = (0.035, 0.245, 0.08)  # the same with a payload hanging under the gripper
 SAFE_GAP = 0.02              # m: the safety layer never lets a motion bring any part of the robot closer than this
+MAP_HIT = 4                  # obstacle map: a lidar return adds this to its cell, a ray passing through takes 1 off
+MAP_OCC = 4                  # a cell is an obstacle above this, i.e. after two returns: a single stray return (outlier,
+                             # mixed pixel) no longer blocks a cell until six rays have seen through it
+LIDAR_BIAS_MARGIN = 0.02     # m: extra gap kept from lidar points for the lidar's own range bias. LD19 datasheet: mean
+                             # error up to +-45 mm at 0.3-12 m and unspecified below 0.3 m; 2 cm assumes a per-unit
+                             # range calibration (docs/validation.md). Without one, set it to 0.045.
 MAP_PT_MARGIN = 0.02         # m: allowance for a mapped cell centre lying behind the obstacle surface it stands for
 SAFE_HORIZON = (0.15, 0.3)   # s: look-ahead of the safety layer; 0.3 s covers stopping from full speed under the wheel ramp
 ARM_SWEEP, HELD_SWEEP = 0.228, 0.258   # m: radius swept by the folded arm when the robot turns on the spot (empty / holding)
 V_MAX, W_MAX = 0.18, 1.0
 CAM_RANGE = 1.2             # m: floor counts as looked at out to here (with real depth-camera holes, small dark or flat
                             # things are often missed beyond ~1 m: perception bench)
+CLOSE_FRAMES = 8             # depth frames averaged for the close look before a grasp (standing still, ~0.3 s at 30 fps)
 CAM_RANGE_2 = 0.6           # m: second, closer sweep when the first one is done and there is time left
 STANDOFFS = (0.235, 0.25, 0.265)   # robot centre to the middle of the strip the jaws close on: preferred, then farther back
 KEEP = 0.19                  # m: on the way to a target, the robot centre keeps this far from its outline
@@ -58,6 +65,7 @@ class Agent:
         self.cam = FrontCamera(robot, np.random.default_rng(seed + 11)); self.visible = {}; self._ncam = 0
         self.wrist = WristCamera(robot)
         self.loc_err = []                                  # (position error m, heading error rad) once a second, for the score sheet
+        self.cam_low = np.zeros((0, 2)); self.cam_low_t = -9.0
         self.scan_pts = np.zeros((0, 2)); self.map_pts = np.zeros((0, 2)); self.blocked = 0; self.held = False; self.basket_blocked_t = -99.0
         self.path = None; self.scan = None; self.state = '启动'; self.target = None; self.log_lines = []
         self.stats = dict(pulls=0, grasp_attempts=0, grasp_fail=0, dropped=0, missed_place=0, replans=0, stuck=0, collisions=0, floor_touch=0, max_tilt=0.0, dist=0.0)
@@ -89,15 +97,18 @@ class Agent:
             if cam_now: self._sense_camera()
             return
         ang, rng_ = r.lidar()
+        rng_ = self._scan_filter(ang, rng_)
         f = np.isfinite(rng_)
         spx, spy = P['lidar_pos'][0] + rng_[f] * np.cos(ang[f]), rng_[f] * np.sin(ang[f])
         self.loc.correct(spx, spy)
-        self.loc.add_scan(spx, spy)
+        good = self.loc.map_ok
+        if good: self.loc.add_scan(spx, spy)
+        else: self.stats['scans_unmapped'] = self.stats.get('scans_unmapped', 0) + 1
         x, y, th = self.pose()
         lx, ly = x + math.cos(th) * P['lidar_pos'][0], y + math.sin(th) * P['lidar_pos'][0]
         fin = np.isfinite(rng_); a = ang[fin] + th; rr = rng_[fin]
         self.scan = (lx, ly, a, rr)
-        if len(rr):
+        if len(rr) and good:                          # map update, only from well-matched scans
             ts = np.arange(0.06, LIDAR_RANGE, 0.04)[None, :]
             mask = ts < (rr[:, None] - 0.05)
             px = (lx + np.cos(a)[:, None] * ts)[mask]; py = (ly + np.sin(a)[:, None] * ts)[mask]
@@ -108,7 +119,8 @@ class Agent:
             hi = np.floor((lx + np.cos(a) * (rr + 0.015)) / CS).astype(int); hj = np.floor((ly + np.sin(a) * (rr + 0.015)) / CS).astype(int)
             ok = (hi >= 0) & (hi < GX) & (hj >= 0) & (hj < GY)
             flat = np.unique(hj[ok] * GX + hi[ok])
-            lo[flat] = np.minimum(lo[flat].astype(int) + 6, 20).astype(np.int8)
+            lo[flat] = np.minimum(lo[flat].astype(int) + MAP_HIT, 20).astype(np.int8)
+        if len(rr):                                   # the safety layer always gets this scan's points
             wx_, wy_ = lx + np.cos(a) * rr, ly + np.sin(a) * rr
             near = np.hypot(wx_ - x, wy_ - y) < SAFE_R
             self.scan_pts = np.stack([wx_[near], wy_[near]], 1)
@@ -118,14 +130,51 @@ class Agent:
         # anything seen there earlier is still in the map, so the safety layer uses both.
         i0, i1 = max(0, int((x - SAFE_R) / CS)), min(GX, int((x + SAFE_R) / CS) + 1)
         j0, j1 = max(0, int((y - SAFE_R) / CS)), min(GY, int((y + SAFE_R) / CS) + 1)
-        jj, ii = np.nonzero(self.lo[j0:j1, i0:i1] > 0)
+        jj, ii = np.nonzero(self.lo[j0:j1, i0:i1] > MAP_OCC)
         self.map_pts = np.stack([(ii + i0 + 0.5) * CS, (jj + j0 + 0.5) * CS], 1)
         if cam_now: self._sense_camera()
+
+    def _scan_filter(self, ang, rr):
+        """Drop lidar returns that are neither backed by a neighbour in this scan nor seen at the same spot one scan
+        earlier: random outliers and mixed pixels at range jumps (both measured on LD19-class lidars) would otherwise
+        put phantom obstacles in the map and in front of the safety layer. A thin chair leg that only one ray hits
+        still survives, because it is there again in the next scan."""
+        n = len(rr); fin = np.isfinite(rr); R = np.where(fin, rr, 1e6)
+        tol = 0.05 + 0.03 * np.where(fin, rr, 0)
+        ok = np.zeros(n, bool)
+        for k in (1, 2):
+            for sgn in (1, -1):
+                ok |= np.abs(np.roll(R, sgn * k) - R) < tol
+        x, y, th = self.pose(); lx = P['lidar_pos'][0]
+        wx = x + np.cos(th + ang) * R + math.cos(th) * lx; wy = y + np.sin(th + ang) * R + math.sin(th) * lx
+        lone = np.nonzero(fin & ~ok)[0]
+        prev = getattr(self, '_prev_scan_w', None)
+        if len(lone) and prev is not None and len(prev):
+            d = np.min(np.hypot(wx[lone, None] - prev[None, :, 0], wy[lone, None] - prev[None, :, 1]), 1)
+            ok[lone[d < 0.04]] = True
+        self._prev_scan_w = np.stack([wx[fin], wy[fin]], 1)
+        self.stats['scan_dropped'] = self.stats.get('scan_dropped', 0) + int((fin & ~ok).sum())
+        return np.where(ok, rr, np.inf)
 
     def _sense_camera(self):
         """Front RGB-D camera: which floor cells it has looked at, and object detections put on the map."""
         x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th)
         dets = self.cam.detect(self.basket_rect())
+        # Low obstacles the camera sees right now (basket walls, things on the floor), for the safety layer. They do
+        # not depend on the map, so they still protect when localisation has drifted. Leave out the thing being
+        # carried (it hangs in front of the camera) and the thing about to be grasped.
+        L = self.cam.low_pts
+        if len(L):
+            if self.held or self.state in ('放置', '放下'):
+                L = L[~((L[:, 0] > -0.02) & (L[:, 0] < 0.42) & (np.abs(L[:, 1]) < 0.13))]
+            Lw = np.stack([x + c * L[:, 0] - s_ * L[:, 1], y + s_ * L[:, 0] + c * L[:, 1]], 1)
+            if self.target in self.memory and len(Lw):
+                ol = self.memory[self.target]['outline']
+                Lw = Lw[np.min(np.hypot(Lw[:, None, 0] - ol[None, :, 0], Lw[:, None, 1] - ol[None, :, 1]), 1) > 0.03]
+            self.cam_low = Lw
+        else:
+            self.cam_low = np.zeros((0, 2))
+        self.cam_low_t = self.r.t
         if self.cam.basket_obs is not None and not self.cam.basket_obs['cut']:
             self._update_basket(self.cam.basket_obs['pts'])
         # coverage: unseen floor cells whose centre is in the image, not hidden behind anything, and close enough
@@ -148,7 +197,7 @@ class Agent:
             b = self.basket
             if abs(o['top'] - b['h']) < 0.015 and abs(o['x'] - b['x']) < b['sx'] / 2 + 0.07 and abs(o['y'] - b['y']) < b['sy'] / 2 + 0.07: continue
             gi_, gj_ = int(o['x'] / CS), int(o['y'] / CS)
-            if 0 <= gi_ < GX and 0 <= gj_ < GY and self.lo[gj_, gi_] > 0: continue     # inside mapped furniture: a sliver of it
+            if 0 <= gi_ < GX and 0 <= gj_ < GY and self.lo[gj_, gi_] > MAP_OCC: continue     # inside mapped furniture: a sliver of it
             k = self._associate(o['x'], o['y'])
             if k is not None: seen.add(k)
             # only whole views are used to learn about an object: one cut by the image edge has a shifted outline
@@ -312,7 +361,7 @@ class Agent:
 
     # ------------------------------------------------------------------ planning
     def costmap(self, ignore=None):
-        occ = self.lo > 0
+        occ = self.lo > MAP_OCC
         for j, i in self._basket_cells: occ[j, i] = True
         D = distance_transform_edt(~np.pad(occ, 1, constant_values=True))[1:-1, 1:-1] * CS
         self.D_furn = D
@@ -409,7 +458,8 @@ class Agent:
         than SAFE_GAP (or closer than it already is), it falls back to a gentler command, finally to standing still.
         Rotation matters as much as translation: the folded arm sweeps a wider circle than the body."""
         x, y, th = self.pose()
-        lowp = np.vstack([self.basket_pts] + [self._outline(e) for e in self.memory.values() if e['status'] == 'pending'])
+        lowp = np.vstack([self.basket_pts] + [self._outline(e) for e in self.memory.values() if e['status'] == 'pending']
+                         + ([self.cam_low] if self.r.t - self.cam_low_t < 0.6 and len(self.cam_low) else []))
         bp = lowp[np.hypot(lowp[:, 0] - x, lowp[:, 1] - y) < SAFE_R]
         W = [self.scan_pts, self.map_pts, bp]
         if not any(len(w) for w in W):
@@ -417,7 +467,7 @@ class Agent:
         c, s = math.cos(th), math.sin(th)
         P = np.vstack([w for w in W if len(w)]) - [x, y]
         P = np.stack([c * P[:, 0] + s * P[:, 1], -s * P[:, 0] + c * P[:, 1]], 1)
-        margin = np.concatenate([np.zeros(len(self.scan_pts)), np.full(len(self.map_pts), MAP_PT_MARGIN), np.full(len(bp), 0.01)])
+        margin = np.concatenate([np.full(len(self.scan_pts), LIDAR_BIAS_MARGIN), np.full(len(self.map_pts), MAP_PT_MARGIN + LIDAR_BIAS_MARGIN), np.full(len(bp), 0.01)])
         low = np.concatenate([np.zeros(len(self.scan_pts) + len(self.map_pts), bool), np.ones(len(bp), bool)])
         clear = lambda Q, lw: np.where(lw, np.hypot(Q[:, 0], Q[:, 1]) - BODY_R, self._clearance(Q))   # low points: only the body can hit them
         now = clear(P, low) - margin
@@ -521,7 +571,7 @@ class Agent:
         """Can the robot stand at (px, py) and turn by +-sweep around `heading` without the folded arm touching mapped furniture?"""
         i0, i1 = max(0, int((px - 0.4) / CS)), min(GX, int((px + 0.4) / CS) + 1)
         j0, j1 = max(0, int((py - 0.4) / CS)), min(GY, int((py + 0.4) / CS) + 1)
-        jj, ii = np.nonzero(self.lo[j0:j1, i0:i1] > 0)
+        jj, ii = np.nonzero(self.lo[j0:j1, i0:i1] > MAP_OCC)
         if not len(ii): return True
         Q = np.stack([(ii + i0 + 0.5) * CS - px, (jj + j0 + 0.5) * CS - py], 1)
         for h in np.linspace(heading - sweep, heading + sweep, 7):
@@ -659,7 +709,7 @@ class Agent:
         or None if there is nothing there."""
         x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th)
         ex, ey = c * (e['x'] - x) + s_ * (e['y'] - y), -s_ * (e['x'] - x) + c * (e['y'] - y)
-        cands = [d for d in self.cam.detect(self.basket_rect()) if d['n_px'] >= 60 and d['bottom'] < 0.04]
+        cands = [d for d in self.cam.detect(self.basket_rect(), n_avg=CLOSE_FRAMES) if d['n_px'] >= 60 and d['bottom'] < 0.04]
         if not cands: return None
         d = min(cands, key=lambda d: math.hypot(d['rel'][0] - ex, d['rel'][1] - ey))
         if math.hypot(d['rel'][0] - ex, d['rel'][1] - ey) > 0.08: return None
