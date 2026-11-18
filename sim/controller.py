@@ -165,16 +165,20 @@ class Agent:
         for k in seen:
             if k in self.memory: self.memory[k]['miss'] = 0
         # Negative evidence: the floor where a remembered object should be is in plain view and nothing is there.
-        # (Pushed away by a wheel, or a duplicate.) Only between 0.35 and 1.2 m: closer, a flat object hardly hides
-        # the floor point under it; farther, too few pixels.
+        # (Pushed away by a wheel, or a duplicate.) Only from 0.35 m (closer, a flat object hardly hides the floor
+        # point under it) out to where the camera would surely have seen it: 1.2 m, but only 0.7 m for small flat
+        # things (a 2 cm stone is seen 1 time in 6 at 1 m). The floor there is marked unseen again, to look later.
         for k, e in list(self.memory.items()):
             if k in seen or e['status'] != 'pending' or k == self.target: continue
             wx_, wy_ = e['x'] - x, e['y'] - y
             B = np.array([[c * wx_ + s_ * wy_, -s_ * wx_ + c * wy_, 0.0]])
-            if 0.35 < math.hypot(B[0, 0], B[0, 1]) < 1.2 and self.cam.floor_visible(B)[0]:
+            r_max = 0.7 if (e['top'] < 0.03 or max(e['size'][:2]) < 0.05) else 1.2
+            if 0.35 < math.hypot(B[0, 0], B[0, 1]) < r_max and self.cam.floor_visible(B)[0]:
                 e['miss'] += 1
                 if e['miss'] >= 2:
                     self.log(f'{self._name(e)} 不在原处了，从记忆里去掉'); del self.memory[k]
+                    ci, cj = int(e['x'] / CCS), int(e['y'] / CCS)
+                    if 0 <= ci < CGX and 0 <= cj < CGY: self.cov[cj, ci] = False
                     if self.priority == k: self.priority = None
         # two memories of one object (seen from two sides before the views agreed): keep the better measured one
         pend = [(k, e) for k, e in self.memory.items() if e['status'] == 'pending']
@@ -791,6 +795,17 @@ class Agent:
         yield from wait(self.r, 0.5)
         self.state = '巡视'; self.log('开机，原地环顾建图')
         yield from self.spin()
+        while True:
+            yield from self._work()
+            self.state = '回位'; self.log('没有待办，回起点')
+            yield from self.goto(lambda D: [(HOME[0], HOME[1], HOME[2], 0.0)], check=lambda: 'found' if self.pick() is not None else None, timeout=90)
+            if self.abort == 'found' and self.r.t < T_MAX:
+                self.log('回去的路上又看见东西，接着干'); continue
+            break
+        self.state = '完成'
+
+    def _work(self):
+        """Fetch what is known, explore for more, wait for skipped things to come due; until nothing is left or time is up."""
         while self.r.t < T_MAX:
             k = self.pick()
             if k is not None:
@@ -799,10 +814,7 @@ class Agent:
             more = yield from self.explore_step()
             if not more:
                 waiting = [e for e in self.memory.values() if e['status'] == 'pending']
-                if not waiting: break
+                if not waiting: return
                 t_next = min(e['retry_at'] for e in waiting)
-                if t_next > T_MAX: break
+                if t_next > T_MAX: return
                 self.state = '等待'; yield from wait(self.r, max(0.5, min(5.0, t_next - self.r.t)))
-        self.state = '回位'; self.log('没有待办，回起点')
-        yield from self.goto(lambda D: [(HOME[0], HOME[1], HOME[2], 0.0)], timeout=90)
-        self.state = '完成'
