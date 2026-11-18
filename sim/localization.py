@@ -35,9 +35,12 @@ LL_FLOOR = 0.05             # robust floor of the per-point likelihood (outliers
 LL_DECORR = 2.0             # neighbouring end points are not independent: divide the summed log-likelihood by this
 PRIOR_XY = (0.004, 0.05)    # odometry prior, 1 sigma: fixed part (m) + fraction of the distance driven since the last match
 PRIOR_TH = (math.radians(0.3), 0.05)   # rad + fraction of the turn since the last match
-RECOVER_BELOW = 0.75        # kernel score below this: also search wide (+-15 cm, +-12 deg) without the odometry prior,
-RECOVER_GAIN = 0.10         # and jump there if it scores this much better. A bump into furniture turns the robot in a
-                            # way the wheels do not see; the prior must not then hold the estimate where the wheels say.
+RECOVER_GAIN = 0.10         # a suspect scan (see DROP) also searches wide (+-15 cm, +-12 deg) without the odometry
+                            # prior and jumps there if it scores this much better. A bump into furniture turns the
+                            # robot in a way the wheels do not see; the prior must not then hold the estimate there.
+RECOVER_AFTER = 50          # ...but only once the map has formed: at start-up every score is low because the map is
+                            # nearly empty, and with noisy lidar a wide search then jumped 22 cm to a wrong pose and
+                            # the whole map was built around it (sensitivity run, lidar noise x3, seed 6: 0/5)
 DROP = 0.15                 # a scan scoring this far below the running average of recent scores is suspect: a bump or
                             # slip has misaligned it. It is not added to the map (it would corrupt it) and triggers the
                             # wide search. Normal scans dip at most ~0.09 below it, even with LD19 errors; exploring new
@@ -124,7 +127,7 @@ class Localizer:
             # acceptance on the plain kernel score at the chosen pose, so the 0.3 floor means the same as before
             self.last_score = kernel(bx, by, bt)
             suspect = self.base is not None and self.last_score < self.base - DROP
-            if self.last_score < RECOVER_BELOW or suspect:
+            if suspect and self.n_match >= RECOVER_AFTER:
                 _, wx_, wy_, wt_ = score(x0 + _grid(0.15, 0.03), y0 + _grid(0.15, 0.03), t0 + _grid(math.radians(12), math.radians(2)), ll=False)
                 _, wx_, wy_, wt_ = score(wx_ + _grid(0.02, 0.01), wy_ + _grid(0.02, 0.01), wt_ + _grid(math.radians(1.5), math.radians(0.5)), ll=False)
                 _, wx_, wy_, wt_ = score(wx_ + _grid(0.01, 0.005), wy_ + _grid(0.01, 0.005), wt_ + _grid(math.radians(0.5), math.radians(0.25)), ll=False)
