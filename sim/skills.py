@@ -161,7 +161,7 @@ def grasp(robot, plan, log=None, look=None):
 
     The jaw angle tells whether something props the jaws open. A soft object squeezed thinner than the jaw's end stop
     (a plush toy's arm, a sock) leaves the jaw at the stop, exactly like an empty gripper. So when the jaw closes to the
-    stop, the arm lifts anyway and look() (the front camera) checks whether anything hangs in the gripper."""
+    stop, the arm lifts anyway and look() (the wrist camera) checks whether anything is between the jaws."""
     robot.set_arm(grip=plan['open'], speed=1.2)
     robot.set_arm(q5=plan['approach'][0]); yield from wait_arm(robot)
     for q, speed in [(q, 0.6) for q in plan['approach'][1:] + [plan['grasp']]] + [(plan['touch'], 0.3)]:   # last step slides the fixed jaw up to the object
@@ -205,7 +205,7 @@ def grasp(robot, plan, log=None, look=None):
     if robot.joints()[5] < HOLD_MIN:
         if look is not None and look():
             plan['closed_hold'] = True
-            if log: log('夹爪合到了底，但摄像头看到夹爪下挂着东西：是软的，被压扁了')
+            if log: log('夹爪合到了底，但腕部相机看到夹爪里有东西：是软的，被压扁了')
             return True
         if log: log('夹爪合拢到底，没夹到东西' if closed_full else '抬起时物体滑脱')
         return False
@@ -216,10 +216,10 @@ def carry_pose(robot, speed=0.6):
     robot.set_arm(q5=Q_CARRY, speed=speed); yield from wait_arm(robot)
 
 
-def place(robot, rel_xy, rim_z, log=None, peek=None):
+def place(robot, rel_xy, rim_z, log=None, look=None):
     """Reach over the basket rim at rel_xy (chassis frame), lower, open, retreat. A squashed soft object can stay
-    stuck to the jaws after they open. peek() (front camera) gives the top of whatever is under the gripper; it is read
-    before and after lifting the open gripper 3 cm, and if it rose with the gripper, the gripper shakes it off."""
+    stuck to the jaws after they open: after lifting the open gripper 3 cm, look() (the wrist camera) checks the
+    space between the jaws, and if something is still there the gripper shakes it off."""
     r = math.hypot(rel_xy[0], rel_xy[1])
     hi = np.array([rel_xy[0], rel_xy[1], rim_z + 0.10]); lo = np.array([rel_xy[0], rel_xy[1], rim_z + 0.045])
     q_hi, e1, p1 = IK.solve(hi, approach=(0.5 * rel_xy[0] / r, 0.5 * rel_xy[1] / r, -1))
@@ -231,13 +231,9 @@ def place(robot, rel_xy, rim_z, log=None, peek=None):
     robot.set_arm(q5=q_hi, speed=1.0); yield from wait_arm(robot)
     robot.set_arm(q5=q_lo, speed=0.6); yield from wait_arm(robot)
     robot.set_arm(grip=1.0); yield from wait(robot, 0.7)
-    for _ in range(3 if peek is not None else 0):
-        t0 = peek()
+    for _ in range(3 if look is not None else 0):
         robot.set_arm(q5=q_mid, speed=0.6); yield from wait_arm(robot)
-        t1 = peek()
-        # It let go if nothing was hanging there, or whatever was there stayed put. Something that rose with the
-        # gripper, or rose out of the picture, is stuck to the jaws.
-        if t0 == 0.0 or (0.0 < t1 < t0 + 0.02): break
+        if not look(): break
         if log: log('松手后东西还粘在夹爪上，抖一抖')
         for g_, roll in ((0.2, 0.6), (1.6, -0.6), (1.6, 0.6), (1.6, 0.0)):
             q = q_lo.copy(); q[4] += roll

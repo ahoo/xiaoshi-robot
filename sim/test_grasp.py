@@ -14,9 +14,9 @@ import numpy as np
 
 import model
 import objects as O
-from perception import FrontCamera
+from perception import FrontCamera, WristCamera
 from robot import Robot
-from skills import carry_pose, grasp, holding, pinch_now, plan_grasp, wait
+from skills import carry_pose, grasp, holding, plan_grasp, wait
 
 ALIGN_NOISE = 0.15     # rad, 1 sigma: how far a long object's long axis is from square to the jaw line after the base has lined up
 LONG = ('car', 'banana', 'sock')   # kinds whose long axis is the body x axis; the base lines up with these
@@ -52,10 +52,11 @@ def one(kind, seed, pad_friction):
                 break
             plan = None
     logs = [] if plan is not None else ['8 个站位都不满足下手条件']
+    wrist = WristCamera(robot)
 
     def script():
         if plan is None: return False
-        ok = yield from grasp(robot, plan, logs.append, look=lambda: cam.sees_load(pinch_now(robot)))
+        ok = yield from grasp(robot, plan, logs.append, look=wrist.holding)
         if not ok: return False
         yield from carry_pose(robot)
         yield from wait(robot, 2.0)
@@ -68,7 +69,7 @@ def one(kind, seed, pad_friction):
     except StopIteration as e:
         claimed = bool(e.value)
     held = robot.obj_pos(0)[2] > 0.08 and np.linalg.norm(robot.obj_pos(0) - robot.pinch_pos()) < 0.10
-    cam.close()
+    cam.close(); wrist.close()
     return dict(kind=kind, held=bool(held), claimed=claimed, logs=logs, stances=tries + 1, size=spec['radius'],
                 peak_arm_torque=[float(v) for v in robot.peak_torque[3:9]])
 

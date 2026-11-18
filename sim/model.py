@@ -95,7 +95,7 @@ def _arm_parts():
     ET.SubElement(grip, 'geom', dict(name='pad_fixed', type='box', pos='-0.0135 0 -0.0745', size='0.0045 0.007 0.0295')).attrib.update(_attrs(pad))
     ET.SubElement(grip, 'geom', dict(name='palm', type='box', pos='-0.002 0 -0.02', size='0.031 0.024 0.02')).attrib.update(_attrs(pad))
     ET.SubElement(grip, 'site', dict(name='pinch', pos='-0.009 0 -0.086', size='0.003', rgba='1 0 0 1', group='4'))
-    ET.SubElement(grip, 'camera', dict(name='wrist', pos='-0.045 0 -0.03', xyaxes='0 1 0 0.5 0 0.87', fovy='70'))
+    ET.SubElement(grip, 'camera', dict(name='wrist', pos='0.015 -0.08 -0.03', xyaxes='1 0 0 0 0.566 0.824', fovy='70'))
     # moving jaw pad, defined at q=0 in the gripper frame as box centre (0.0125, 0, -0.0745), then mapped into the jaw frame
     jp = np.array([float(v) for v in jaw.get('pos').split()]); jq = np.array([float(v) for v in jaw.get('quat').split()])
     Rj = np.zeros(9); mujoco.mju_quat2Mat(Rj, jq); Rj = Rj.reshape(3, 3)
@@ -151,7 +151,7 @@ def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET):
   <compiler angle="radian" meshdir="{os.path.join(SO101_DIR, 'assets')}" autolimits="true"/>
   <option timestep="0.002" integrator="implicitfast" cone="elliptic" impratio="10" noslip_iterations="4"/>
   <size memory="64M"/>
-  <visual><global offwidth="1280" offheight="720"/><quality shadowsize="4096"/><headlight ambient="0.45 0.45 0.45" diffuse="0.5 0.5 0.5" specular="0 0 0"/><map znear="0.01"/></visual>
+  <visual><global offwidth="1280" offheight="720"/><quality shadowsize="4096"/><headlight ambient="0.45 0.45 0.45" diffuse="0.5 0.5 0.5" specular="0 0 0"/><map znear="0.002" zfar="2"/></visual>
   <default>
     <geom contype="1" conaffinity="1" friction="0.6 0.005 0.0001"/>
     <default class="rvis"><geom contype="0" conaffinity="0" group="2"/></default>

@@ -1,25 +1,40 @@
-"""Object detection from the front RGB-D camera, rendered by MuJoCo.
+"""Object detection from the front RGB-D camera, and a load check from the wrist camera, rendered by MuJoCo.
 
-What is real here: the images. Objects are only found if enough of their pixels are visible (resolution, distance,
-occlusion by furniture or by the robot's own arm all count). Everything the robot learns about an object comes from
-back-projecting noisy depth pixels: where it is, how tall it is, its outline seen from above, its long axis.
-Nothing is known in advance about what the object is or how big it is.
+Everything here works from depth images alone, the way it would on the robot:
 
-What is assumed: the instance masks. A segmentation render stands in for a class-agnostic instance segmentation
-model ("this blob of pixels is one thing lying on the floor") that never misses, merges or splits objects. It does
-not say what the object is, and it gives no identity across frames: matching detections to remembered objects is
-the controller's job, by position.
+* the floor is found by fitting a plane to the depth points near it, every frame;
+* the robot's own arm and body are masked out from its known kinematics (a "self filter"; in the simulator this
+  mask comes from the segmentation render of the robot's own geoms, which carries the same information);
+* anything that reaches above 13 cm is furniture, a wall or a carton (objects to pick up are lower), and is removed
+  together with everything directly beneath it;
+* what is left, low things on the floor, is grouped by connectivity seen from above, on a 1.5 cm grid.
+
+That makes no use of what the objects are. It also makes the mistakes such a method makes: two things closer than
+about 1.5 cm come out as one blob, a thing pushed against furniture can lose its near side or vanish, flat things
+under ~1 cm are lost in the floor, and small things far away have too few pixels. The basket is recognised by its
+known size and rim height.
 """
 import math
 
 import mujoco
 import numpy as np
 
+from scipy import ndimage
 from scipy.spatial import ConvexHull, QhullError
 
 W, H = 320, 240
 MIN_PX = 25                  # fewer visible pixels than this: not detected
 DEPTH_SIGMA = (0.002, 0.005)  # per-pixel depth noise: a + b * depth^2 (m), roughly a consumer stereo depth camera
+MAX_RANGE = 3.0              # m
+FLOOR_TOL = 0.008            # m above the fitted floor plane: below this a point is floor
+TALL = 0.13                  # m: points above this belong to furniture, walls, cartons
+CELL = 0.015                 # m: grid for grouping points seen from above
+MAX_SIZE = 0.20              # m: a blob longer than this is not something to pick up (or two things merged)
+
+
+def robot_geoms(m, robot):
+    root = m.body_rootid[robot.chassis]
+    return np.array([g for g in range(m.ngeom) if m.body_rootid[m.geom_bodyid[g]] == root])
 
 
 class FrontCamera:
@@ -36,80 +51,111 @@ class FrontCamera:
         d = robot.d; Rb = d.xmat[robot.chassis].reshape(3, 3); pb = d.xpos[robot.chassis]
         Rc = d.cam_xmat[self.cam].reshape(3, 3); pc = d.cam_xpos[self.cam]
         self.R_bc = Rb.T @ Rc; self.t_bc = Rb.T @ (pc - pb); self.t_bc[2] += pb[2]    # z measured from the floor
-        # pixel label (geom id) -> object instance, through the geom's top-level body
-        self.geom2obj = np.full(m.ngeom, -1)
-        roots = {mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, f'obj{i}'): i for i in range(len(robot.objects))}
-        for gid in range(m.ngeom):
-            self.geom2obj[gid] = roots.get(int(m.body_rootid[m.geom_bodyid[gid]]), -1)
-        self.basket_geoms = np.array([mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, n) for n in ('basket_floor', 'basket_w0', 'basket_w1', 'basket_w2', 'basket_w3')])
+        self.self_geoms = robot_geoms(m, robot)
         self.basket_obs = None
         self.depth = None
+        self.floor = np.zeros(3)
 
     def capture(self):
         d = self.r.d
         self.seg.update_scene(d, 'front'); s = self.seg.render()
-        self.dep.update_scene(d, 'front'); self.depth = self.dep.render()   # noise is added per pixel where it is used
-        self.label = np.where(s[..., 1] == mujoco.mjtObj.mjOBJ_GEOM, s[..., 0], -1)
+        self.dep.update_scene(d, 'front'); self.depth = self.dep.render()
+        lab = np.where(s[..., 1] == mujoco.mjtObj.mjOBJ_GEOM, s[..., 0], -1)
+        self.self_mask = np.isin(lab, self.self_geoms)          # the robot's own arm and body
         return self.depth
 
-    def points_body(self, mask):
-        """Back-project masked pixels to the chassis frame (x forward, y left, z up from the floor)."""
-        z = self.depth[mask].astype(np.float64)
+    def _cloud(self):
+        """All pixels as noisy points in the chassis frame, with height above the fitted floor plane."""
+        z = self.depth.astype(np.float64)
         z = z + self.rng.normal(0, 1, z.shape) * (DEPTH_SIGMA[0] + DEPTH_SIGMA[1] * z * z)
-        P = self.ray[mask] * z[:, None]
-        return P @ self.R_bc.T + self.t_bc
+        P = (self.ray * z[..., None]) @ self.R_bc.T + self.t_bc
+        valid = (z < MAX_RANGE) & ~self.self_mask
+        # floor plane z = a x + b y + c, fitted to points near the nominal floor, then refit without outliers
+        cand = valid & (np.abs(P[..., 2]) < 0.03)
+        hgt = P[..., 2].copy(); self.floor = np.zeros(3)
+        if cand.sum() > 300:
+            Q = P[cand]
+            for tol in (0.03, 0.006):
+                Q = Q[np.abs(Q[:, 2] - (Q[:, :2] @ self.floor[:2] + self.floor[2])) < tol]
+                if len(Q) < 200: break
+                A = np.column_stack([Q[:, :2], np.ones(len(Q))])
+                self.floor = np.linalg.lstsq(A, Q[:, 2], rcond=None)[0]
+            hgt = P[..., 2] - (P[..., 0] * self.floor[0] + P[..., 1] * self.floor[1] + self.floor[2])
+        P[..., 2] = hgt
+        return P, valid
 
-    def detect(self):
+    def detect(self, basket_rect=None):
         """List of detections, each a dict in the chassis frame (x forward, y left, z up from the floor):
         rel (centre of the visible outline, z = half the height), top (height), bottom (lowest visible point: above ~4 cm
         it is not lying on the floor), hull (outline seen from above, k x 2), pts (up to 400 visible surface points, N x 3),
-        heading (long axis), elong (long/short), width (narrowest outline width), n_px, dist, cut (touches the image edge)."""
-        self.capture()
+        heading (long axis), elong (long/short), width (narrowest outline width), n_px, dist, cut (touches the image edge).
+        basket_rect: (cx, cy, yaw, half_x, half_y) where the robot believes the basket is (chassis frame); points there
+        go to the basket estimate and are not grouped into objects. Without it the basket is recognised by its size."""
+        self.capture(); self.basket_obs = None
+        P, valid = self._cloud()
+        hgt = P[..., 2]
+        above = valid & (hgt > FLOOR_TOL)
+        tall = above & (hgt > TALL)
+        low = above & ~tall
+        vv_all, uu_all = np.nonzero(low)
+        if not len(vv_all): return []
+        # Blobs whose upper edge is hidden count as only partly seen: something closer sits right above them in the
+        # image (the robot's own arm, or the thing it is carrying), so they may continue upward behind it. A table leg
+        # whose upper part is hidden looks just like a short thing on the floor. (A low thing on the floor can only be
+        # hidden from below by things in front of it, never from above.)
+        dz = np.full(self.depth.shape, np.inf); dz[3:] = self.depth[:-3]
+        self.occl_top = ndimage.binary_dilation(self.self_mask, iterations=3) | (dz < self.depth - 0.05)
+        X = P[vv_all, uu_all]
+        if basket_rect is not None:
+            cx, cy, yaw, hx, hy = basket_rect; c, s = math.cos(yaw), math.sin(yaw)
+            bx = c * (X[:, 0] - cx) + s * (X[:, 1] - cy); by = -s * (X[:, 0] - cx) + c * (X[:, 1] - cy)
+            inb = (np.abs(bx) < hx + 0.03) & (np.abs(by) < hy + 0.03)
+            if inb.sum() >= 80:
+                self.basket_obs = dict(pts=X[inb], n_px=int(inb.sum()), cut=self._cut(vv_all[inb], uu_all[inb]))
+            keep = ~inb; vv_all, uu_all, X = vv_all[keep], uu_all[keep], X[keep]
+            if not len(X): return []
+        # grid seen from above
+        x0, y0 = X[:, 0].min() - 2 * CELL, X[:, 1].min() - 2 * CELL
+        gi = ((X[:, 0] - x0) / CELL).astype(int); gj = ((X[:, 1] - y0) / CELL).astype(int)
+        G = np.zeros((gi.max() + 3, gj.max() + 3), np.int32)
+        np.add.at(G, (gi, gj), 1)
+        T = tall & (P[..., 0] > x0) & (P[..., 1] > y0)
+        if T.any():
+            Y = P[T]; ti = ((Y[:, 0] - x0) / CELL).astype(int); tj = ((Y[:, 1] - y0) / CELL).astype(int)
+            ok = (ti < G.shape[0]) & (tj < G.shape[1])
+            TG = np.zeros(G.shape, bool); TG[ti[ok], tj[ok]] = True
+            G[ndimage.binary_dilation(TG, iterations=1)] = 0          # furniture and whatever is right beneath it
+        lab, n = ndimage.label(G >= 2, structure=np.ones((3, 3)))
+        pl = lab[gi, gj]
         out = []
-        bm = np.isin(self.label, self.basket_geoms); nb = int(bm.sum()); self.basket_obs = None
-        if nb >= 80:
-            vv, uu = np.nonzero(bm); Pb = self.points_body(bm); Pb = Pb[np.isfinite(Pb).all(1)]
-            self.basket_obs = dict(pts=Pb, n_px=nb, cut=bool(vv.max() >= H - 2 or uu.min() <= 1 or uu.max() >= W - 2))
-        inst = np.where(self.label >= 0, self.geom2obj[np.maximum(self.label, 0)], -1)
-        for k in np.unique(inst[inst >= 0]):
-            mask = inst == k
-            n = int(mask.sum())
-            if n < MIN_PX: continue
-            P = self.points_body(mask); P = P[np.isfinite(P).all(1)]
-            if len(P) < MIN_PX: continue
-            vv, uu = np.nonzero(mask)
-            top = float(np.percentile(P[:, 2], 98))
-            xy = P[:, :2]
+        for k in range(1, n + 1):
+            sel = pl == k
+            if sel.sum() < MIN_PX: continue
+            Pk = X[sel]; vv, uu = vv_all[sel], uu_all[sel]
+            xy = Pk[:, :2]
             heading, elong = _heading(xy)
             try:
                 hull = xy[ConvexHull(xy).vertices]
             except (QhullError, ValueError):
                 hull = xy[[np.argmin(xy[:, 0]), np.argmax(xy[:, 0]), np.argmin(xy[:, 1]), np.argmax(xy[:, 1])]]
+            top = float(np.percentile(Pk[:, 2], 98))
+            ext = np.ptp(hull, 0); L = float(max(np.hypot(*ext), 0))
+            if basket_rect is None and self.basket_obs is None and _looks_like_basket(xy, top):
+                self.basket_obs = dict(pts=Pk, n_px=int(sel.sum()), cut=self._cut(vv, uu)); continue
+            if L > MAX_SIZE * 1.42: continue                    # too big to be one thing to pick up
             c = 0.5 * (hull.min(0) + hull.max(0))
             dist = float(np.hypot(c[0] - self.t_bc[0], c[1] - self.t_bc[1]))
-            pts = P if len(P) <= 400 else P[np.linspace(0, len(P) - 1, 400).astype(int)]
-            out.append(dict(rel=np.array([c[0], c[1], top / 2]), top=top, bottom=float(np.percentile(P[:, 2], 2)), hull=hull, pts=pts, heading=heading, elong=elong,
-                            width=min_width(hull), n_px=n, dist=dist, cut=bool(vv.max() >= H - 2 or uu.min() <= 1 or uu.max() >= W - 2)))
+            pts = Pk if len(Pk) <= 400 else Pk[np.linspace(0, len(Pk) - 1, 400).astype(int)]
+            out.append(dict(rel=np.array([c[0], c[1], top / 2]), top=top, bottom=float(np.percentile(Pk[:, 2], 2)), hull=hull, pts=pts, heading=heading, elong=elong,
+                            width=min_width(hull), n_px=int(sel.sum()), dist=dist, cut=self._cut(vv, uu)))
         return out
+
+    def _cut(self, vv, uu):
+        return bool(vv.max() >= H - 2 or vv.min() <= 1 or uu.min() <= 1 or uu.max() >= W - 2 or self.occl_top[vv, uu].sum() >= 3)
 
     def close(self):
         """Free the two offscreen renderers (each holds a GL context; they are not released with the object)."""
         self.seg.close(); self.dep.close()
-
-    def sees_load(self, p_pinch):
-        """Is something hanging in the gripper? p_pinch: the gripper's pinch point (chassis frame, from joint feedback).
-        Used when the jaw has closed to its stop: a squashed soft object and an empty gripper then read the same angle."""
-        for d in self.detect():
-            # off the floor, under the gripper, and reaching up to the jaws (not something lying in the basket below)
-            if d['bottom'] > 0.03 and d['top'] > p_pinch[2] - 0.04 and math.hypot(d['rel'][0] - p_pinch[0], d['rel'][1] - p_pinch[1]) < 0.07:
-                return True
-        return False
-
-    def top_under(self, p_pinch):
-        """Highest top among things off the floor right under the gripper (0 if none). Called before and after a small
-        lift of the open gripper: a thing that rises with it is stuck to the jaws."""
-        tops = [d['top'] for d in self.detect() if d['bottom'] > 0.02 and math.hypot(d['rel'][0] - p_pinch[0], d['rel'][1] - p_pinch[1]) < 0.08]
-        return max(tops, default=0.0)
 
     def floor_visible(self, pts_body):
         """For floor points (chassis frame, z=0): is each one inside the image and not hidden behind something?"""
@@ -122,6 +168,53 @@ class FrontCamera:
         for i in np.nonzero(ok)[0]:
             res[i] = self.depth[int(v[i]), int(u[i])] >= z[i] - 0.06
         return res
+
+
+def _looks_like_basket(xy, top, size=(0.30, 0.22), h=0.09):
+    """The robot's own basket: a blob about its known size (at least one full side seen) with the rim at its known height."""
+    a, _ = _heading(xy)
+    u = np.array([math.cos(a), math.sin(a)]); v = np.array([-u[1], u[0]])
+    L = np.ptp(xy @ u); Wd = np.ptp(xy @ v)
+    return abs(top - h) < 0.025 and size[0] - 0.08 < L < size[0] + 0.05 and Wd < size[0] + 0.05 and L > 0.18
+
+
+class WristCamera:
+    """Short-range depth camera on the side of the gripper, looking into the gap between the jaws. Answers one
+    question: is anything (other than the robot's own fingers) between the jaws?"""
+    WS, HS = 96, 72
+
+    def __init__(self, robot):
+        self.r = robot; m = robot.m
+        self.cam = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_CAMERA, 'wrist')
+        self.body = m.cam_bodyid[self.cam]
+        self.seg = mujoco.Renderer(m, self.HS, self.WS); self.seg.enable_segmentation_rendering()
+        self.dep = mujoco.Renderer(m, self.HS, self.WS); self.dep.enable_depth_rendering()
+        f = (self.HS / 2) / math.tan(math.radians(m.cam_fovy[self.cam]) / 2)
+        u, v = np.meshgrid(np.arange(self.WS) + 0.5, np.arange(self.HS) + 0.5)
+        self.ray = np.stack([(u - self.WS / 2) / f, -(v - self.HS / 2) / f, -np.ones_like(u)], -1)
+        # camera mount in the gripper frame: fixed by the bracket, a calibration constant
+        Rq = np.zeros(9); mujoco.mju_quat2Mat(Rq, m.cam_quat[self.cam]); self.R = Rq.reshape(3, 3); self.t = m.cam_pos[self.cam].copy()
+        self.self_geoms = robot_geoms(m, robot)
+        self.rng = np.random.default_rng(1)
+
+    def load(self):
+        """Number of pixels that see something in the space between the jaws (gripper frame: fingers along -z,
+        fixed jaw face at x = -0.009, jaws close along x)."""
+        d = self.r.d
+        self.seg.update_scene(d, self.cam); s = self.seg.render()
+        self.dep.update_scene(d, self.cam); z = self.dep.render().astype(np.float64)
+        lab = np.where(s[..., 1] == mujoco.mjtObj.mjOBJ_GEOM, s[..., 0], -1)
+        ok = ~np.isin(lab, self.self_geoms) & (z < 0.5)
+        z = z + self.rng.normal(0, 0.001, z.shape)
+        Pg = (self.ray[ok] * z[ok][:, None]) @ self.R.T + self.t
+        inside = (Pg[:, 0] > -0.012) & (Pg[:, 0] < 0.075) & (np.abs(Pg[:, 1]) < 0.03) & (Pg[:, 2] < -0.035) & (Pg[:, 2] > -0.112)
+        return int(inside.sum())
+
+    def holding(self):
+        return self.load() >= 20
+
+    def close(self):
+        self.seg.close(); self.dep.close()
 
 
 _ANG = np.radians(np.arange(0, 180, 3))

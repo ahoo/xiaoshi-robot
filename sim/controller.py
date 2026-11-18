@@ -19,9 +19,9 @@ from scipy.spatial import ConvexHull, QhullError
 
 from model import BASKET, HOME, P
 from robot import LIDAR_RANGE
-from skills import ELONG, best_band, carry_pose, grasp, holding, pinch_now, place, plan_grasp, wait, wait_arm
+from skills import ELONG, best_band, carry_pose, grasp, holding, place, plan_grasp, wait, wait_arm
 from localization import Localizer
-from perception import FrontCamera
+from perception import FrontCamera, WristCamera
 
 CS, GX, GY = 0.05, 80, 60
 CCS, CGX, CGY = 0.25, 16, 12
@@ -54,6 +54,7 @@ class Agent:
         self.memory = {}; self._next_id = 1; self.priority = None; self.score_events = []
         self.loc = Localizer(robot.true_pose(), CS, (GX * CS, GY * CS))   # starts docked at a known pose; after that, lidar + odometry only
         self.cam = FrontCamera(robot, np.random.default_rng(seed + 11)); self.visible = {}; self._ncam = 0
+        self.wrist = WristCamera(robot)
         self.loc_err = []                                  # (position error m, heading error rad) once a second, for the score sheet
         self.scan_pts = np.zeros((0, 2)); self.map_pts = np.zeros((0, 2)); self.blocked = 0; self.held = False; self.basket_blocked_t = -99.0
         self.path = None; self.scan = None; self.state = '启动'; self.target = None; self.log_lines = []
@@ -122,7 +123,7 @@ class Agent:
     def _sense_camera(self):
         """Front RGB-D camera: which floor cells it has looked at, and object detections put on the map."""
         x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th)
-        dets = self.cam.detect()
+        dets = self.cam.detect(self.basket_rect())
         if self.cam.basket_obs is not None and not self.cam.basket_obs['cut']:
             self._update_basket(self.cam.basket_obs['pts'])
         # coverage: unseen floor cells whose centre is in the image, not hidden behind anything, and close enough
@@ -141,6 +142,8 @@ class Agent:
             if dt['bottom'] > 0.04: continue               # not lying on the floor: the load in our own gripper
             o = self._to_world(dt, x, y, th)
             if self._in_basket((o['x'], o['y'], 0.0), margin=0.03): continue
+            gi_, gj_ = int(o['x'] / CS), int(o['y'] / CS)
+            if 0 <= gi_ < GX and 0 <= gj_ < GY and self.lo[gj_, gi_] > 0: continue     # inside mapped furniture: a sliver of it
             k = self._associate(o['x'], o['y'])
             if k is not None: seen.add(k)
             # only whole views are used to learn about an object: one cut by the image edge has a shifted outline
@@ -217,6 +220,13 @@ class Agent:
         ex = np.arange(-hx, hx + 1e-9, 0.02); ey = np.arange(-hy, hy + 1e-9, 0.02)
         self.basket_pts = np.vstack([np.stack([bx + ex, by - hy + 0 * ex], 1), np.stack([bx + ex, by + hy + 0 * ex], 1),
                                      np.stack([bx - hx + 0 * ey, by + ey], 1), np.stack([bx + hx + 0 * ey, by + ey], 1)])
+
+    def basket_rect(self):
+        """Where the basket is, in the chassis frame, once the camera has confirmed it (for the segmentation)."""
+        if self.basket_seen < 2: return None
+        x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th); b = self.basket
+        dx, dy = b['x'] - x, b['y'] - y
+        return (c * dx + s_ * dy, -s_ * dx + c * dy, -th, b['sx'] / 2 + 0.01, b['sy'] / 2 + 0.01)
 
     def _update_basket(self, pts_body):
         """Camera points on the basket (chassis frame) -> basket centre in the map, smoothed over sightings."""
@@ -564,7 +574,7 @@ class Agent:
         or None if there is nothing there."""
         x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th)
         ex, ey = c * (e['x'] - x) + s_ * (e['y'] - y), -s_ * (e['x'] - x) + c * (e['y'] - y)
-        cands = [d for d in self.cam.detect() if d['n_px'] >= 60 and d['bottom'] < 0.04]
+        cands = [d for d in self.cam.detect(self.basket_rect()) if d['n_px'] >= 60 and d['bottom'] < 0.04]
         if not cands: return None
         d = min(cands, key=lambda d: math.hypot(d['rel'][0] - ex, d['rel'][1] - ey))
         if math.hypot(d['rel'][0] - ex, d['rel'][1] - ey) > 0.08: return None
@@ -606,7 +616,7 @@ class Agent:
                 e['fails'] += 1; e['retry_at'] = r.t + 40 * e['fails']; e['why'] = '找不到能下手的地方'; e.pop('bad', None); e['dirs'] = None
                 self.log(f'{cn} 找不到能下手的地方，先跳过'); return False
             self.stats['grasp_attempts'] += 1; tries += 1
-            ok = yield from grasp(r, plan, self.log, look=lambda: self.cam.sees_load(pinch_now(r)))
+            ok = yield from grasp(r, plan, self.log, look=self.wrist.holding)
             if ok:
                 yield from carry_pose(r)
                 ok = holding(r, plan)
@@ -638,7 +648,7 @@ class Agent:
         c, s = math.cos(th), math.sin(th)
         ux, uy = bx / dist, by / dist; wx, wy = x + ux * reach, y + uy * reach
         rel = (c * (wx - x) + s * (wy - y), -s * (wx - x) + c * (wy - y))
-        ok = yield from place(r, rel, self.basket['h'], self.log, peek=lambda: self.cam.top_under(pinch_now(r)))
+        ok = yield from place(r, rel, self.basket['h'], self.log, look=self.wrist.holding)
         if not ok:                                   # could not reach over the rim from here: set it down, try later
             yield from self.put_down(k); return False
         yield from wait(r, 0.5)

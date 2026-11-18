@@ -23,9 +23,11 @@ def _furn_dist(x, y):
     return d
 
 
-def make_layout(seed, clearance=0.30, n_boxes=None):
+def make_layout(seed, clearance=0.30, n_boxes=None, clutter=False):
     """Five objects of five different kinds out of eight (each with its own random size, shape and weight, objects.py)
-    at random poses at least `clearance` from walls and furniture, plus 0-2 extra cartons."""
+    at random poses at least `clearance` from walls and furniture, plus 0-2 extra cartons.
+    clutter: the second and fourth objects are put right next to the first and third (edges 0.5-5 cm apart), the
+    way things end up in a heap, so the camera may see each pair as one blob."""
     rng = np.random.default_rng(seed)
     kinds = [O.KINDS[i] for i in rng.choice(len(O.KINDS), 5, replace=False)]
     specs = [O.sample(k, rng) for k in kinds]
@@ -37,21 +39,27 @@ def make_layout(seed, clearance=0.30, n_boxes=None):
             if any(math.hypot(x - b[0], y - b[1]) < 1.0 for b in boxes): continue
             boxes.append((round(x, 3), round(y, 3), 0.30, 0.25, 0.25)); break
     objs = []
-    for kind, spec in zip(kinds, specs):
+    for n_, (kind, spec) in enumerate(zip(kinds, specs)):
         for _ in range(500):
             x, y = rng.uniform(0.2, ROOM_W - 0.2), rng.uniform(0.2, ROOM_H - 0.2)
+            if clutter and n_ in (1, 3):      # next to the previous one, with a small gap between their outlines
+                a = rng.uniform(-math.pi, math.pi); prev = objs[-1]
+                sep = 0.75 * (spec['radius'] + specs[n_ - 1]['radius']) + rng.uniform(0.005, 0.05)
+                x, y = prev[1] + sep * math.cos(a), prev[2] + sep * math.sin(a)
+                if _furn_dist(x, y) < clearance or math.hypot(x - BASKET['x'], y - BASKET['y']) < 0.6: continue
+                objs.append((kind, round(x, 3), round(y, 3), round(float(rng.uniform(-math.pi, math.pi)), 3), spec)); break
             if _furn_dist(x, y) < clearance: continue
             if any(math.hypot(max(abs(x - b[0]) - 0.15, 0), max(abs(y - b[1]) - 0.125, 0)) < clearance for b in boxes): continue
             if math.hypot(x - HOME[0], y - HOME[1]) < 0.5 or math.hypot(x - BASKET['x'], y - BASKET['y']) < 0.6: continue
-            if any(math.hypot(x - o[1], y - o[2]) < 0.3 for o in objs): continue
+            if any(math.hypot(x - o[1], y - o[2]) < (0.45 if clutter else 0.3) for o in objs): continue
             objs.append((kind, round(x, 3), round(y, 3), round(float(rng.uniform(-math.pi, math.pi)), 3), spec)); break
     return objs, boxes
 
 
-def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=None):
+def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=None, clutter=False):
     import model
     if pad_friction is not None: model.P['pad_friction'] = pad_friction
-    objs, boxes = make_layout(seed, clearance)
+    objs, boxes = make_layout(seed, clearance, clutter=clutter)
     robot = Robot(objs, seed=seed, extra_boxes=boxes)
     agent = Agent(robot, seed=seed, verbose=verbose)
     t0 = time.time(); gen = agent.run()
