@@ -142,6 +142,9 @@ class Agent:
             if dt['bottom'] > 0.04: continue               # not lying on the floor: the load in our own gripper
             o = self._to_world(dt, x, y, th)
             if self._in_basket((o['x'], o['y'], 0.0), margin=0.03): continue
+            # a strip of basket wall the segmentation let through (the basket estimate is a few cm off): rim height, at the rim
+            b = self.basket
+            if abs(o['top'] - b['h']) < 0.015 and abs(o['x'] - b['x']) < b['sx'] / 2 + 0.07 and abs(o['y'] - b['y']) < b['sy'] / 2 + 0.07: continue
             gi_, gj_ = int(o['x'] / CS), int(o['y'] / CS)
             if 0 <= gi_ < GX and 0 <= gj_ < GY and self.lo[gj_, gi_] > 0: continue     # inside mapped furniture: a sliver of it
             k = self._associate(o['x'], o['y'])
@@ -222,25 +225,29 @@ class Agent:
                                      np.stack([bx - hx + 0 * ey, by + ey], 1), np.stack([bx + hx + 0 * ey, by + ey], 1)])
 
     def basket_rect(self):
-        """Where the basket is, in the chassis frame, once the camera has confirmed it (for the segmentation)."""
-        if self.basket_seen < 2: return None
+        """Where the robot believes the basket is, in the chassis frame (for the segmentation: points there belong to
+        the basket, not to objects). Its rough place is known from the start; the camera refines it."""
         x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th); b = self.basket
         dx, dy = b['x'] - x, b['y'] - y
         return (c * dx + s_ * dy, -s_ * dx + c * dy, -th, b['sx'] / 2 + 0.01, b['sy'] / 2 + 0.01)
 
     def _update_basket(self, pts_body):
-        """Camera points on the basket (chassis frame) -> basket centre in the map, smoothed over sightings."""
+        """Camera points on the basket walls (chassis frame) -> basket centre in the map. The known rectangle is slid
+        around the current estimate (+-8 cm) to where most points lie on its walls. One wall seen is enough to fix the
+        distance across it; along it, the estimate stays where it was unless an end of the wall is seen too."""
         x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th)
         wx = x + c * pts_body[:, 0] - s_ * pts_body[:, 1]; wy = y + s_ * pts_body[:, 0] + c * pts_body[:, 1]
-        b = self.basket; est = []
-        for v, size, me in ((wx, b['sx'], x), (wy, b['sy'], y)):
-            lo, hi = np.percentile(v, [1, 99])
-            if abs((hi - lo) - size) < 0.03: est.append(0.5 * (lo + hi))          # both sides seen
-            elif me < 0.5 * (lo + hi): est.append(lo + size / 2)                    # only the near side is reliable
-            else: est.append(hi - size / 2)
-        if math.hypot(est[0] - b['x'], est[1] - b['y']) > 0.5: return            # not plausible: ignore
-        a = 1.0 if self.basket_seen == 0 else 0.2
-        self._set_basket(b['x'] + a * (est[0] - b['x']), b['y'] + a * (est[1] - b['y'])); self.basket_seen += 1
+        b = self.basket; hx, hy = b['sx'] / 2, b['sy'] / 2
+        best = None
+        for dx in np.arange(-0.08, 0.0801, 0.01):
+            for dy in np.arange(-0.08, 0.0801, 0.01):
+                ex = np.abs(wx - b['x'] - dx) - hx; ey = np.abs(wy - b['y'] - dy) - hy
+                d = np.where((ex <= 0) & (ey <= 0), np.minimum(-ex, -ey), np.hypot(np.maximum(ex, 0), np.maximum(ey, 0)))
+                score = float((d < 0.012).sum()) - 0.5 * float((d > 0.03).sum()) - 2.0 * math.hypot(dx, dy)
+                if best is None or score > best[0]: best = (score, dx, dy)
+        _, dx, dy = best
+        a = 0.5 if self.basket_seen == 0 else 0.2
+        self._set_basket(b['x'] + a * dx, b['y'] + a * dy); self.basket_seen += 1
 
     @staticmethod
     def _outline(e):

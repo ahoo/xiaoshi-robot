@@ -52,6 +52,9 @@ h1 span{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;color:var(
 .three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
 .three p{font-size:14px;color:var(--paper-dim);margin:0}
 .three h3{padding-top:10px;border-top:3px solid var(--orange)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:6px}
+.two p{font-size:14px;color:var(--paper-dim)}
+.two h3{padding-top:10px;border-top:3px solid var(--orange)}
 .tablewrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
 table.wide{min-width:680px}
@@ -67,15 +70,15 @@ ol.find b{display:block}
 ol.find span{color:var(--paper-dim)}
 pre{margin:0;padding:14px;background:#1b2b27;color:#eef0e4;border-radius:3px;overflow-x:auto;font-family:var(--f-mono);font-size:13px;line-height:1.6}
 code{font-family:var(--f-mono);font-size:.92em}
-@media(max-width:940px){.bench{grid-template-columns:1fr}.nums{grid-template-columns:repeat(2,minmax(0,1fr))}.three{grid-template-columns:1fr}.sheet.half{grid-column:span 12}}
+@media(max-width:940px){.bench{grid-template-columns:1fr}.nums{grid-template-columns:repeat(2,minmax(0,1fr))}.three{grid-template-columns:1fr}.two{grid-template-columns:1fr}.sheet.half{grid-column:span 12}}
 @media(max-width:560px){.sheet{padding:22px 18px}.num b{font-size:24px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>小拾<span>v0.4 不认识物体版</span></h1>
-    <p class="tag">LeKiwi 三全向轮底盘 + SO-101 机械臂（5 轴 + 夹爪）+ 激光雷达。下面每个数字都来自 MuJoCo 物理引擎里的随机试验。这一版里，机器人事先不知道地上是什么：物体有硬的、软的、形状不规则的，大小每次随机，它只靠深度相机量到的轮廓决定从哪里下手。定位靠雷达扫描匹配，都不读仿真真值。代码、模型和原始结果都在 <a href="https://github.com/ahoo/xiaoshi-robot">ahoo/xiaoshi-robot</a>。</p>
+    <h1>小拾<span>v0.5 只用深度图版</span></h1>
+    <p class="tag">LeKiwi 三全向轮底盘 + SO-101 机械臂（5 轴 + 夹爪）+ 激光雷达。下面每个数字都来自 MuJoCo 物理引擎里的随机试验。机器人事先不知道地上是什么：物体有硬的、软的、形状不规则的，大小每次随机。这一版连「哪些像素是同一件东西」也不再由仿真告诉它，全靠深度图自己分；夹爪里有没有东西，靠腕部深度相机看。定位靠雷达扫描匹配，都不读仿真真值。代码、模型和原始结果都在 <a href="https://github.com/ahoo/xiaoshi-robot">ahoo/xiaoshi-robot</a>。</p>
   </header>
 
   <section class="bench">
@@ -110,8 +113,8 @@ code{font-family:var(--f-mono);font-size:.92em}
       </table></div>
       <div class="three" style="margin-top:18px">
         <div><h3>从哪里下手</h3><p>夹爪只能沿机器人到物体的连线开合。控制器把相机看到的表面点按手指宽度切成一条一条，逐个方向量每一条有多长，挑夹爪张得开、又靠近中间的那一条：香蕉横着夹，L 形积木夹窄的那条臂，毛绒玩具夹身体而不是整个轮廓。站位由这条线反推，够不着就后退一点或换一侧。</p></div>
-        <div><h3>夹住了没有</h3><p>硬的东西看夹爪角度：被撑着合不拢就是夹住了。软的东西会被压扁，夹爪合到底，和空夹读数一样。这时抬起一点，用前置相机看夹爪下面有没有挂着东西。{{SOFT_HOLDS}}</p></div>
-        <div><h3>松手了没有</h3><p>软东西松手后可能粘在指垫上。松手后把张开的夹爪抬高 3 cm 再看一眼：跟着升上去的就是还粘着，开大夹爪、转手腕抖掉。{{SHAKES}}</p></div>
+        <div><h3>夹住了没有</h3><p>硬的东西看夹爪角度：被撑着合不拢就是夹住了。软的东西会被压扁，夹爪合到底，和空夹读数一样。这时抬起一点，用装在夹爪侧面的腕部深度相机看两片夹爪之间有没有东西。{{SOFT_HOLDS}}</p></div>
+        <div><h3>松手了没有</h3><p>软东西松手后可能粘在指垫上。松手后把张开的夹爪抬高 3 cm，腕部相机再看一眼两片夹爪之间，还有东西就开大夹爪、转手腕抖掉。{{SHAKES}}</p></div>
       </div>
       <p class="note">软物体是近似：袜子是 3 段、毛绒玩具是 6 段刚体，用很软的弹性铰链连起来，表面接触是「浅层柔软、越压越实」。它能复现压扁、垂挂、粘手，但不是布料仿真，褶皱和缠绕没有建模。</p>
     </article>
@@ -129,16 +132,38 @@ code{font-family:var(--f-mono);font-size:.92em}
     </article>
 
     <article class="sheet">
-      <h2>去掉「认识物体」以后</h2>
-      <p>同样的三种条件、同样的随机种子，上一轮是五种已知尺寸的规整物体，这一轮是八种不认识的物体。物体不同，所以这不是严格的同题对比，只能看量级：</p>
+      <h2>分出一件件东西：不再由仿真告诉它</h2>
+      <p>上一版里，「这一团像素是同一件东西」由仿真的分割图直接给出，从不漏、从不把两件粘成一件。这一版换成真机上可以照搬的做法，不用训练任何模型：每帧拟合地面，去掉地面；高过 13 cm 的都算家具、墙或纸箱，连同它正下方的点一起去掉；剩下的低矮的点从上往下看，按 1.5 cm 的格子连成一团一团。机器人自己的手臂按运动学屏蔽掉；收纳筐按已知的 30×22×9 cm 认出来。</p>
+      <p>这种做法会犯的错，在台架上一项项量了：</p>
+      <div class="two">
+        <div>
+          <h3>挨着放的两件</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>边缘间隙</th><th class="n">试验</th><th class="n">分得开</th><th class="n">粘成一件</th></tr></thead>
+            <tbody>{{SEG_PAIR_ROWS}}</tbody>
+          </table></div>
+        </div>
+        <div>
+          <h3>其他几项</h3>
+          <p>贴着书架放的东西：{{SEG_FURN}} 找到了。{{SEG_EMPTY}}。扁平的小东西远了看不见：{{DET_MISS}}，要走近了才发现。</p>
+          <p>收纳筐的位置事先只知道个大概，相机看到筐壁后，用已知的长方形去套，只看到一面墙也套得准。筐边 5 cm 以内的点都算筐的，所以掉在筐边上的东西会被漏看。</p>
+          <p>整机试验里加了「扎堆」条件：五件里有两对边缘只隔 0.5–5 cm，送达 {{CLUTTER}}。粘成一团的两件，机器人会当成一件形状奇怪的东西，照样按测量去找最窄、最居中的一条下手。没送达的 2 件是同一局里的一对：毛绒玩具和香蕉中心只隔 12 cm，又夹在书架和纸箱之间，机器人要离每件东西的轮廓留出 19 cm，哪一侧都站不进去。真机遇到这种情况得先把东西推开，这个动作还没有做。</p>
+        </div>
+      </div>
+      <p class="note">调这套分割时出过一个错：机器人搬着东西走时，一下子「发现」了十几件 9–11 cm 高的细长东西。那是家具的下半截，上半截被它自己手里的东西挡住了，看不到高过 13 cm 的部分。现在一团点如果在画面中正上方紧挨着更近的东西，就当作没看全，不拿它新建物体。</p>
+    </article>
+
+    <article class="sheet">
+      <h2>分割从仿真给的换成自己算的</h2>
+      <p>同样的条件、同样的随机种子、同样的物体，上一轮分割由仿真给出，这一轮只用深度图：</p>
       <div class="tablewrap"><table>
-        <thead><tr><th>条件</th><th class="n">已知的规整物体（第六轮）</th><th class="n">不认识的物体（第七轮）</th><th class="n">每件用时</th></tr></thead>
+        <thead><tr><th>条件</th><th class="n">分割由仿真给出（第七轮）</th><th class="n">只用深度图（第八轮）</th><th class="n">每件用时</th></tr></thead>
         <tbody>{{SENSOR_ROWS}}</tbody>
       </table></div>
       <div class="three" style="margin-top:18px">
         <div><h3>定位：雷达扫描匹配</h3><p>轮子里程计带 1.5% 的轮径误差和打滑噪声，单靠它平均每局漂 {{ODOM_DRIFT}} m。每 0.1 秒用雷达扫描去对自己建的地图，定位误差平均 {{LOC_MEAN}} cm，最大 {{LOC_MAX}} cm，航向最大偏 {{HEAD_MAX}}°。</p></div>
-        <div><h3>测量：深度图像</h3><p>前置相机 320×240，深度噪声随距离平方增长。每件东西量出俯视轮廓、表面点和高度，不用任何已知尺寸。近看（0.235 m）时，决定夹爪落点的近侧边缘误差平均 {{DET_NEAR}} mm；1.5 m 处轮廓中心误差 {{DET_FAR}} mm（只看得见朝自己的一面）。太小的东西远了看不见：{{DET_MISS}}，要靠走近了再发现。</p></div>
-        <div><h3>还剩一个理想化</h3><p>「哪些像素属于同一件东西」是用 MuJoCo 的分割图直接给的，相当于一个从不漏、从不把两件粘成一件的分割模型。它不告诉机器人这是什么，也不告诉这次看到的和上次是不是同一件：机器人靠位置自己对。真实的分割模型会漏、会粘连，这是下一步要补的。</p></div>
+        <div><h3>测量：深度图像</h3><p>前置相机 320×240，深度噪声随距离平方增长。每件东西量出俯视轮廓、表面点和高度，不用任何已知尺寸。近看（0.235 m）时，决定夹爪落点的近侧边缘误差平均 {{DET_NEAR}} mm；1.5 m 处轮廓中心误差 {{DET_FAR}} mm（只看得见朝自己的一面）。</p></div>
+        <div><h3>还剩哪些理想化</h3><p>深度噪声只按距离建模：真实深度相机在黑色、反光、透明的表面上会成片丢点，地毯的纹理也会带来起伏，这些都没有建模。机器人认得出自己手臂的像素（真机按运动学和标定算，仿真里直接给）。这几项要在实物上量。</p></div>
       </div>
     </article>
 
@@ -163,8 +188,8 @@ code{font-family:var(--f-mono);font-size:.92em}
     </article>
 
     <article class="sheet">
-      <h2>物理仿真查出来的十二件事</h2>
-      <p>这些都不是事先想到的，是跑出来才看见的，其中几条在真机上会原样出现。控制器前后改了七轮，每轮都用同一批随机种子重跑（第七轮换成了不认识的物体）：</p>
+      <h2>物理仿真查出来的十四件事</h2>
+      <p>这些都不是事先想到的，是跑出来才看见的，其中几条在真机上会原样出现。控制器前后改了八轮，每轮都用同一批随机种子重跑（第七轮换成了不认识的物体，第八轮分割改成只用深度图）：</p>
       <div class="tablewrap" style="margin-bottom:18px"><table>
         <thead><tr><th>每轮的全部试验</th><th class="n">标准条件送达</th><th class="n">碰到家具</th><th class="n">翻车</th><th class="n">机身倾斜超过 3° 的试验</th><th class="n">原地卡住后退</th></tr></thead>
         <tbody>{{ROUND_ROWS}}</tbody>
@@ -180,6 +205,8 @@ code{font-family:var(--f-mono);font-size:.92em}
         <li><div><b>深度相机只看得见朝自己的一面</b><span>直接取物体像素的中心，位置会被拉向机器人 1.5–5 cm，夹爪就落偏了。固定夹指对准看得见的近侧边缘；看不见的远侧不靠已知尺寸，而是用「最高的地方大致在正中」反推（圆的东西顶点在中心，平顶的东西整个顶面都看得见）。近侧边缘误差 {{DET_NEAR}} mm。</span></div></li>
         <li><div><b>「最窄的地方」不等于「好夹的地方」</b><span>第一版只挑最短的那一条下手，结果玩具车被选中了车角斜切出来的 2.5 cm，而不是横跨车身的 6.5 cm。现在偏离中心要扣分；同一条夹取线从两头站位都算同一个分数，因为物体靠着家具时往往只有另一头站得进去。</span></div></li>
         <li><div><b>软东西会让夹爪「读数为空」</b><span>毛绒玩具的一条腿被压到 8 mm 以下，夹爪合到了关节下限，角度和空夹一模一样，于是机器人把已经提起来的东西又放下了。真机的舵机也只有位置反馈，会遇到同样的问题，所以加了相机确认。</span></div></li>
+        <li><div><b>腕部相机要能看清 5 cm 以内</b><span>模型里原来的腕部相机朝后装，看到的全是手臂自己；改成侧装、朝向两片夹爪之间以后，又发现渲染器默认的近裁剪面是 7 cm，夹爪里的东西被整个裁掉了。真机上对应的是深度相机的最近测距：常见的中距深度相机在 10–28 cm 以内就没有读数，腕部要用近距型号；前置相机近看时物体离镜头只有 15 cm 左右，也要跑在最近测距够短的模式。</span></div></li>
+        <li><div><b>挨着的两件会被看成一件</b><span>只用深度图分割，边缘间隙小于 1.5 cm 左右的两件大多会粘成一团。整机里这不一定是坏事：最窄的下手位置通常只横跨其中一件，夹走以后另一件就单独露出来了。</span></div></li>
         <li><div><b>软东西会粘在夹爪上，带着它什么都干不了</b><span>有一局毛绒玩具松手后一直卡在指垫上，之后每一次抓取都因此失败，五件只送到一件。原因一半是仿真的软接触太软（10 g 的玩具陷进指垫 16 mm，已改成越压越实），一半是真问题：松手后必须确认东西真的掉了。</span></div></li>
         <li><div><b>舵机指令要插值</b><span>机械臂按 50 Hz 给台阶式位置指令时，电机有四分之一的时间顶在力矩上限的 80% 以上。改成按毫秒插值、限制加速度后降到 1% 以下。</span></div></li>
       </ol>
@@ -194,7 +221,7 @@ code{font-family:var(--f-mono);font-size:.92em}
         <li>夹爪与物体的接触：夹不稳会滑、会掉、会被碰倒。</li>
         <li>雷达：240 线射线投射，1 cm 噪声，会被自己的手臂挡住。</li>
         <li>定位：轮子里程计（1.5% 轮径误差、3% 打滑噪声）加雷达扫描匹配，不读真值。</li>
-        <li>相机：渲染出的 320×240 深度图，物体的轮廓、表面点和高度从像素里量，不用已知尺寸，会被家具和手臂挡住。</li>
+        <li>相机：渲染出的 320×240 深度图，地面、家具、一件件物体都从深度里分出来，再量轮廓、表面点和高度，不用已知类别或尺寸，会被家具和手臂挡住。腕部 96×72 深度图只看两片夹爪之间。</li>
       </ul>
     </article>
 
@@ -202,7 +229,7 @@ code{font-family:var(--f-mono);font-size:.92em}
       <h2>哪些是假设</h2>
       <ul class="plain">
         <li>开机时停在充电座上，起点位置已知。定位没有回环检测。</li>
-        <li>分割：用分割图代替分割模型，同一件东西的像素一定归在一起，不漏、不粘连。不提供类别、尺寸和身份。</li>
+        <li>分割：只用深度图算，会漏、会粘连（见上面的台架）。但深度图本身是理想的：没有黑色、反光、透明表面的成片丢点，也没有边缘的飞点。机器人自己手臂的像素按运动学屏蔽，仿真里直接给出。</li>
         <li>收纳筐的大致位置事先告诉机器人，精确位置由相机看到后修正。</li>
         <li>底盘、电池等的重量是估的（整机约 2.35 kg），滚子没有轴承间隙。</li>
         <li>打印件不变形、舵机没有回差。软物体是多段刚体加弹性铰链和柔性接触的近似，不是布料仿真。</li>

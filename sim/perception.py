@@ -109,7 +109,7 @@ class FrontCamera:
         if basket_rect is not None:
             cx, cy, yaw, hx, hy = basket_rect; c, s = math.cos(yaw), math.sin(yaw)
             bx = c * (X[:, 0] - cx) + s * (X[:, 1] - cy); by = -s * (X[:, 0] - cx) + c * (X[:, 1] - cy)
-            inb = (np.abs(bx) < hx + 0.03) & (np.abs(by) < hy + 0.03)
+            inb = (np.abs(bx) < hx + 0.05) & (np.abs(by) < hy + 0.05)
             if inb.sum() >= 80:
                 self.basket_obs = dict(pts=X[inb], n_px=int(inb.sum()), cut=self._cut(vv_all[inb], uu_all[inb]))
             keep = ~inb; vv_all, uu_all, X = vv_all[keep], uu_all[keep], X[keep]
