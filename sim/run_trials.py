@@ -4,6 +4,8 @@
 """
 import json
 import multiprocessing as mp
+import os
+import shutil
 import sys
 
 from episode import run_episode
@@ -15,19 +17,27 @@ CONDITIONS = [
 ]
 
 
+CACHE = '../results/.trials_cache'      # one file per finished episode, so an interrupted batch resumes
+
+
 def _one(args):
     name, seed, clearance, mu = args
+    fn = f'{CACHE}/{name}_{seed}.json'
+    if os.path.exists(fn): return json.load(open(fn))
     res, agent, robot = run_episode(seed, clearance, pad_friction=mu)
     res['condition'] = name; res['log'] = agent.log_lines
+    json.dump(res, open(fn, 'w'), ensure_ascii=False)
     return res
 
 
 if __name__ == '__main__':
+    os.makedirs(CACHE, exist_ok=True)
     jobs = [(c['name'], s, c['clearance'], c['pad_friction']) for c in CONDITIONS for s in c['seeds']]
-    with mp.Pool(int(sys.argv[1]) if len(sys.argv) > 1 else max(1, mp.cpu_count() - 1)) as pool:
+    with mp.Pool(int(sys.argv[1]) if len(sys.argv) > 1 else max(1, mp.cpu_count() - 1), maxtasksperchild=1) as pool:   # fresh process per episode: GL memory is not all returned
         out = []
         for r in pool.imap_unordered(_one, jobs):
             out.append(r); print(r['condition'], r['seed'], f"{r['delivered']}/{r['total']}", r['sim_time'], flush=True)
     out.sort(key=lambda r: (r['condition'], r['seed']))
     json.dump(dict(conditions=[dict(name=c['name'], label=c['label'], clearance=c['clearance'], pad_friction=c['pad_friction'], n=len(c['seeds'])) for c in CONDITIONS], episodes=out),
               open('../results/trials.json', 'w'), ensure_ascii=False, indent=1)
+    shutil.rmtree(CACHE)

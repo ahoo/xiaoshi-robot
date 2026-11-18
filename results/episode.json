@@ -1,1 +1,1 @@
-{"seed": 4, "clearance": 0.3, "delivered": 5, "total": 5, "sim_time": 299.3, "grasp_attempts": 5, "grasp_fail": 0, "collisions": 0}
+{"seed": 4, "clearance": 0.3, "objects": {"lbrick": {"mass_g": 31.5, "size_cm": 8.1}, "rock": {"mass_g": 29.1, "size_cm": 5.8}, "car": {"mass_g": 29.3, "size_cm": 8.7}, "banana": {"mass_g": 31.5, "size_cm": 14.5}, "plush": {"mass_g": 8.2, "size_cm": 9.3}}, "delivered": 5, "total": 5, "sim_time": 368.1, "grasp_attempts": 6, "grasp_fail": 0, "collisions": 0}

@@ -31,6 +31,7 @@ def one(kind, seed, pad_friction):
     # After the object has settled, the robot takes the same close look as the controller and applies the same test:
     # grasp only if the object is within 6 cm of the centre line and the planner finds a finger-wide strip of it that
     # fits the gripper. Otherwise the controller would move to a new stance; here the stance is redrawn.
+    cam = None
     for tries in range(8):
         r_obj = rng.uniform(0.205, 0.265); bearing = rng.uniform(-0.3, 0.3)
         rel0 = np.array([r_obj * math.cos(bearing), r_obj * math.sin(bearing)])
@@ -40,6 +41,7 @@ def one(kind, seed, pad_friction):
         robot = Robot([(kind, rpose[0] + c * rel0[0] - s_ * rel0[1], rpose[1] + s_ * rel0[0] + c * rel0[1], rpose[2] + yaw_rel, spec)],
                       seed=seed, robot_pose=rpose)
         for _ in range(30): robot.step()                 # 0.6 s: let the object and the robot settle
+        if cam is not None: cam.close()
         cam = FrontCamera(robot, np.random.default_rng(seed * 10 + tries))
         dets = [d for d in cam.detect() if d['n_px'] >= 60 and d['top'] < 0.10]
         plan = None
@@ -66,6 +68,7 @@ def one(kind, seed, pad_friction):
     except StopIteration as e:
         claimed = bool(e.value)
     held = robot.obj_pos(0)[2] > 0.08 and np.linalg.norm(robot.obj_pos(0) - robot.pinch_pos()) < 0.10
+    cam.close()
     return dict(kind=kind, held=bool(held), claimed=claimed, logs=logs, stances=tries + 1, size=spec['radius'],
                 peak_arm_torque=[float(v) for v in robot.peak_torque[3:9]])
 

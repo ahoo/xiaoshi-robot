@@ -15,12 +15,10 @@ from PIL import Image, ImageDraw, ImageFont
 
 from controller import CS, GX, GY
 from episode import run_episode
-from model import BASKET, OBJECTS
 
 W, H = 1280, 720
 MAIN = (880, 495); SIDE = (400, 300)
 COL = dict(bg=(15, 42, 37), paper=(241, 238, 226), dim=(164, 189, 177), orange=(255, 107, 44), warn=(255, 209, 102), free=(38, 98, 79), unk=(13, 36, 32))
-OBJ_COL = dict(block=(79, 157, 224), ball=(214, 232, 74), remote=(220, 214, 234), car=(242, 176, 46), sock=(226, 72, 61))
 
 
 def _font(size):
@@ -44,7 +42,10 @@ def draw_map(agent, robot):
     if agent.path: d.line([(X(x), y * k)] + [(X(p[0]), p[1] * k) for p in agent.path[1:]], fill=COL['orange'], width=2)
     for j, e in agent.memory.items():
         if e['status'] != 'pending': continue
-        r = 5; d.ellipse([X(e['x']) - r, e['y'] * k - r, X(e['x']) + r, e['y'] * k + r], fill=OBJ_COL[e['kind']], outline=COL['unk'])
+        # the robot does not know what the thing is: it draws the outline it measured
+        ol = [(X(p[0]), p[1] * k) for p in e['outline']]
+        if len(ol) >= 3: d.polygon(ol, fill=COL['warn'], outline=COL['unk'])
+        r = 2; d.ellipse([X(e['x']) - r, e['y'] * k - r, X(e['x']) + r, e['y'] * k + r], fill=COL['unk'])
         if j == agent.target: d.ellipse([X(e['x']) - 9, e['y'] * k - 9, X(e['x']) + 9, e['y'] * k + 9], outline=COL['orange'], width=2)
     r = 0.14 * k; d.ellipse([X(x) - r, y * k - r, X(x) + r, y * k + r], fill=COL['paper'])
     d.line([(X(x), y * k), (X(x + 0.2 * math.cos(th)), (y + 0.2 * math.sin(th)) * k)], fill=COL['orange'], width=3)
@@ -76,14 +77,14 @@ def main(seed=4, clearance=0.30, out='../results/episode.mp4'):
         for i, (t, msg) in enumerate(agent.log_lines[-5:][::-1]):
             d.text((20, y0 + 56 + i * 28), f'{int(t // 60):02d}:{int(t % 60):02d}  {msg}', font=f_mid, fill=COL['paper'] if i == 0 else COL['dim'])
         d.text((MAIN[0] + 8, 2 * SIDE[1] + 12), '白：障碍  绿：可通行  黄点：雷达回波', font=f_small, fill=COL['dim'])
-        d.text((MAIN[0] + 8, 2 * SIDE[1] + 36), '橙线：规划路径  彩点：已识别物体', font=f_small, fill=COL['dim'])
+        d.text((MAIN[0] + 8, 2 * SIDE[1] + 36), '橙线：规划路径  黄块：相机量到的物体', font=f_small, fill=COL['dim'])
         d.text((MAIN[0] + 8, 2 * SIDE[1] + 68), 'LeKiwi 三全向轮底盘 + SO-101 机械臂', font=f_small, fill=COL['paper'])
         writer.append_data(np.asarray(frame))
 
     res, agent, robot = run_episode(seed, clearance, on_step=on_step)
     writer.close()
     import json
-    json.dump({k: res[k] for k in ('seed', 'clearance', 'delivered', 'total', 'sim_time', 'grasp_attempts', 'grasp_fail', 'collisions')}, open(out.replace('.mp4', '.json'), 'w'))
+    json.dump({k: res[k] for k in ('seed', 'clearance', 'objects', 'delivered', 'total', 'sim_time', 'grasp_attempts', 'grasp_fail', 'collisions')}, open(out.replace('.mp4', '.json'), 'w'))
     rd = imageio.get_reader(out); n = rd.count_frames(); imageio.imwrite(out.replace('.mp4', '.jpg'), rd.get_data(int(n * 0.3)), quality=82); rd.close()
     print(res['delivered'], '/', res['total'], 'sim time', res['sim_time'], '->', out)
     return res

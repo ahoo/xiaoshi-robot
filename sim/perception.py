@@ -92,6 +92,10 @@ class FrontCamera:
                             width=min_width(hull), n_px=n, dist=dist, cut=bool(vv.max() >= H - 2 or uu.min() <= 1 or uu.max() >= W - 2)))
         return out
 
+    def close(self):
+        """Free the two offscreen renderers (each holds a GL context; they are not released with the object)."""
+        self.seg.close(); self.dep.close()
+
     def sees_load(self, p_pinch):
         """Is something hanging in the gripper? p_pinch: the gripper's pinch point (chassis frame, from joint feedback).
         Used when the jaw has closed to its stop: a squashed soft object and an empty gripper then read the same angle."""
