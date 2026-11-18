@@ -41,6 +41,7 @@ BIAS_ON_MAP = False          # mapped cells keep MAP_PT_MARGIN only: stacking th
                              # paths (PASS from cell centres) with no room to turn, and the robot froze (round 11: 15
                              # stuck events in 8 runs, against 1 before)
 ESCAPE = True                # when every candidate motion is blocked, ease off slowly away from the close points
+PLACE_REACH = 0.31           # m: farthest drop point over the basket rim the arm reaches (from the chassis centre)
 MAP_PT_MARGIN = 0.02         # m: allowance for a mapped cell centre lying behind the obstacle surface it stands for
 SAFE_HORIZON = (0.15, 0.3)   # s: look-ahead of the safety layer; 0.3 s covers stopping from full speed under the wheel ramp
 ARM_SWEEP, HELD_SWEEP = 0.228, 0.258   # m: radius swept by the folded arm when the robot turns on the spot (empty / holding)
@@ -69,7 +70,7 @@ class Agent:
         self.cam = FrontCamera(robot, np.random.default_rng(seed + 11)); self.visible = {}; self._ncam = 0
         self.wrist = WristCamera(robot)
         self.loc_err = []                                  # (position error m, heading error rad) once a second, for the score sheet
-        self.cam_low = np.zeros((0, 2)); self.cam_low_t = -9.0
+        self.cam_low = np.zeros((0, 2)); self.cam_low_t = -9.0; self.help_needed = False
         self.scan_pts = np.zeros((0, 2)); self.map_pts = np.zeros((0, 2)); self.blocked = 0; self.held = False; self.basket_blocked_t = -99.0
         self.path = None; self.scan = None; self.state = '启动'; self.target = None; self.log_lines = []
         self.stats = dict(pulls=0, grasp_attempts=0, grasp_fail=0, dropped=0, missed_place=0, replans=0, stuck=0, collisions=0, floor_touch=0, max_tilt=0.0, dist=0.0)
@@ -801,13 +802,25 @@ class Agent:
         x, y, th = self.pose()
         bx, by = self.basket['x'] - x, self.basket['y'] - y; dist = math.hypot(bx, by)
         half = self.basket['sx'] / 2 if abs(math.cos(goal[2])) > 0.7 else self.basket['sy'] / 2
-        reach = float(np.clip(dist - half + 0.05, 0.24, 0.31))      # drop 5 cm inside the near wall
+        if dist - half + 0.05 > PLACE_REACH:
+            # standing too far back (the far stance, or stopped short of it): the drop point would land on the rim,
+            # and a soft thing released there drapes over the wall and stays between the jaws. Step in first.
+            step = dist - half + 0.05 - PLACE_REACH + 0.02
+            yield from self.servo((x + bx / dist * step, y + by / dist * step, th), timeout=4.0)
+            x, y, th = self.pose()
+            bx, by = self.basket['x'] - x, self.basket['y'] - y; dist = math.hypot(bx, by)
+        reach = float(np.clip(dist - half + 0.05, 0.24, PLACE_REACH))      # drop 5 cm inside the near wall
         c, s = math.cos(th), math.sin(th)
         ux, uy = bx / dist, by / dist; wx, wy = x + ux * reach, y + uy * reach
         rel = (c * (wx - x) + s * (wy - y), -s * (wx - x) + c * (wy - y))
         ok = yield from place(r, rel, self.basket['h'], self.log, look=self.wrist.holding)
         if not ok:                                   # could not reach over the rim from here: set it down, try later
             yield from self.put_down(k); return False
+        if ok == 'stuck':
+            # Still on the gripper after shaking and pressing. Nothing more can be grasped with it there, and it hangs
+            # in front of the camera: stop and ask for help rather than drive about with it.
+            self.log(f'{cn} 粘在夹爪上弄不下来，停下等人帮忙'); self.stats['stuck_payload'] = 1
+            self.help_needed = True; return False
         yield from wait(r, 0.5)
         # The robot assumes it went in. If it bounced out, the camera will see it on the floor later and reopen it.
         e['status'] = 'delivered'; self.log(f'{cn} 已放进收纳筐')
@@ -872,6 +885,8 @@ class Agent:
         yield from self.spin()
         while True:
             yield from self._work()
+            if self.help_needed:
+                self.stop(); self.state = '求助'; return
             self.state = '回位'; self.log('没有待办，回起点')
             yield from self.goto(lambda D: [(HOME[0], HOME[1], HOME[2], 0.0)], check=lambda: 'found' if self.pick() is not None else None, timeout=90)
             if self.abort == 'found' and self.r.t < T_MAX:
@@ -884,7 +899,9 @@ class Agent:
         while self.r.t < T_MAX:
             k = self.pick()
             if k is not None:
-                yield from self.fetch(k); self.target = None; self.held = False
+                yield from self.fetch(k); self.target = None
+                if self.help_needed: return
+                self.held = False
                 continue
             more = yield from self.explore_step()
             if not more:

@@ -259,7 +259,9 @@ def carry_pose(robot, speed=0.6):
 def place(robot, rel_xy, rim_z, log=None, look=None):
     """Reach over the basket rim at rel_xy (chassis frame), lower, open, retreat. A squashed soft object can stay
     stuck to the jaws after they open: after lifting the open gripper 3 cm, look() (the wrist camera) checks the
-    space between the jaws, and if something is still there the gripper shakes it off."""
+    space between the jaws, and if something is still there the gripper shakes it off. If shaking does not free it,
+    the open gripper presses it onto the basket floor (or what is already in the basket) and lifts away fast, so
+    friction below holds it back. Returns True, False (could not reach), or 'stuck' (still on the gripper)."""
     r = math.hypot(rel_xy[0], rel_xy[1])
     hi = np.array([rel_xy[0], rel_xy[1], rim_z + 0.10]); lo = np.array([rel_xy[0], rel_xy[1], rim_z + 0.045])
     q_hi, e1, p1 = IK.solve(hi, approach=(0.5 * rel_xy[0] / r, 0.5 * rel_xy[1] / r, -1))
@@ -279,9 +281,22 @@ def place(robot, rel_xy, rim_z, log=None, look=None):
             q = q_lo.copy(); q[4] += roll
             robot.set_arm(q5=q, grip=g_, speed=2.0); yield from wait_arm(robot, timeout=1.5)
         yield from wait(robot, 0.5)
+    stuck = False
+    if look is not None and look():
+        # 5 cm further in than the drop point and steeper, so the wrist clears the near wall of the basket
+        pr = np.array([rel_xy[0], rel_xy[1]]) * (r + 0.05) / r
+        q_press, _, pp = IK.solve(np.array([pr[0], pr[1], rim_z - 0.02]), approach=(0.25 * rel_xy[0] / r, 0.25 * rel_xy[1] / r, -1), seed=q_lo)
+        for _ in range(2 if pp < 0.01 else 0):
+            if log: log('抖不掉：张着夹爪把它按到筐底，再快速抬起')
+            robot.set_arm(q5=q_press, grip=1.6, speed=0.5); yield from wait_arm(robot, timeout=2.0)
+            yield from wait(robot, 0.4)
+            robot.set_arm(q5=q_hi, speed=2.5); yield from wait_arm(robot, timeout=1.5)
+            robot.set_arm(q5=q_mid, speed=1.0); yield from wait_arm(robot)
+            if not look(): break
+        stuck = bool(look())
     robot.set_arm(q5=q_hi, speed=1.0); yield from wait_arm(robot)
     robot.set_arm(q5=Q_CARRY, grip=0.3, speed=1.2); yield from wait_arm(robot)
-    return True
+    return 'stuck' if stuck else True
 
 
 def holding(robot, plan):
