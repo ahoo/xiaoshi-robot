@@ -66,7 +66,7 @@ def main():
         fail_rows += f'<li><b>{COND[n].split("：")[0]}</b>：{a["tot"] - a["d"]} 件没送达。' + '；'.join(parts) + '。</li>'
     grasp_rows = ''.join(f'<tr><td>{CN[k]}</td><td class="n {"good" if gt[k][0] >= 0.8 * gt[k][1] else "bad"}">{gt[k][0]}/{gt[k][1]}</td>'
                          f'<td class="n {"good" if gb[k][0] >= 0.8 * gb[k][1] else "bad"}">{gb[k][0]}/{gb[k][1]}</td>'
-                         f'<td class="n">{G["1.0"][k]["misjudged"] + G["0.35"][k]["misjudged"]}</td></tr>' for k in CN)
+                         f'<td class="n">{G["1.0"][k]["misjudged"] + G["0.35"][k]["misjudged"]}</td></tr>' for k in CN if k in gt and k in gb)
     # per kind: sizes and weights that actually appeared, and deliveries, over every episode of every condition
     seen = collections.defaultdict(lambda: dict(n=0, d=0, size=[], mass=[]))
     for e in T['episodes']:
@@ -74,7 +74,7 @@ def main():
             v = seen[k]; v['n'] += 1; v['d'] += e['outcome'][k] == '已送达'; v['size'].append(o['size_cm']); v['mass'].append(o['mass_g'])
     object_rows = ''.join(
         f'<tr><td>{CN[k]}</td><td>{HOW[k]}</td><td class="n">{SIZE[k]}</td><td class="n">{min(seen[k]["mass"]):.0f}–{max(seen[k]["mass"]):.0f} g</td>'
-        f'<td class="n {"good" if gt[k][0] >= 0.8 * gt[k][1] else "bad"}">{gt[k][0]}/{gt[k][1]}</td>'
+        + (f'<td class="n {"good" if gt[k][0] >= 0.8 * gt[k][1] else "bad"}">{gt[k][0]}/{gt[k][1]}</td>' if k in gt else '<td class="n">-</td>') +
         f'<td class="n {"good" if seen[k]["d"] >= 0.8 * seen[k]["n"] else "bad"}">{seen[k]["d"]}/{seen[k]["n"]}</td></tr>' for k in CN if seen[k]['n'])
     logs = [m for e in T['episodes'] for _, m in e['log']]
     n_soft = sum('被压扁了' in m for m in logs); n_place = sum(len(e['places']) for e in T['episodes'])
@@ -126,13 +126,43 @@ def main():
     mat_bottle = (sum(e['outcome'].get('bottle') == '已送达' for e in mat_eps), len(mat_eps))
     # sensitivity and compute
     SE = json.load(open(R('sensitivity.json'))) if os.path.exists(R('sensitivity.json')) else None
-    sens_rows = ''
+    SE11 = json.load(open(R('sensitivity_round11.json'))) if os.path.exists(R('sensitivity_round11.json')) else None
+    sens_rows = ''; sens_md = []
     if SE:
-        for st in SE['settings']:
-            es = [e for e in SE['episodes'] if e['setting'] == st['name']]
+        labels = {st['name']: st['label'] for st in SE['settings']}
+        if SE11: labels.update({st['name']: st['label'] for st in SE11['settings']})
+
+        def cell(src, name):
+            es = [e for e in src['episodes'] if e['setting'] == name] if src else []
+            if not es: return None
             d, tt = sum(e['delivered'] for e in es), sum(e['total'] for e in es)
-            sens_rows += (f'<tr><td>{st["label"]}</td><td class="n {"good" if d >= 0.95 * tt else "bad"}">{d}/{tt}</td><td class="n">{sum(e["grasp_fail"] for e in es)}/{sum(e["grasp_attempts"] for e in es)}</td>'
-                          f'<td class="n">{sum(tlast(e) for e in es) / max(d, 1):.0f} 秒</td><td class="n">{sum(e["collisions"] for e in es)}</td></tr>')
+            return dict(d=d, tt=tt, gf=sum(e['grasp_fail'] for e in es), ga=sum(e['grasp_attempts'] for e in es), coll=sum(e['collisions'] for e in es),
+                        t=sum(tlast(e) for e in es) / max(d, 1), loc=max(e['loc_err_max'] for e in es))
+        for name, label in labels.items():
+            a, b = cell(SE, name), cell(SE11, name)
+            fmt = lambda c: (f'<td class="n {"good" if c["d"] >= 0.95 * c["tt"] else "bad"}">{c["d"]}/{c["tt"]}</td><td class="n">{c["coll"]}</td>' if c else '<td class="n">-</td><td class="n">-</td>')
+            last = b or a
+            sens_rows += (f'<tr><td>{label}</td>' + fmt(a) + fmt(b) + f'<td class="n">{last["gf"]}/{last["ga"]}</td><td class="n">{100 * last["loc"]:.0f} cm</td></tr>')
+            fm = lambda c: f'{c["d"]}/{c["tt"]}，碰撞 {c["coll"]}' if c else '-'
+            sens_md.append(f'| {label} | {fm(a)} | {fm(b)} | {last["gf"]}/{last["ga"]} | {100 * last["loc"]:.0f} cm |')
+    # localisation bench (offline replay of recorded trajectories)
+    LB = json.load(open(R('loc_bench.json'))) if os.path.exists(R('loc_bench.json')) else []
+    LBN = dict(gauss10='高斯噪声 1 cm（名义）', gauss30='高斯噪声 3 cm', ld19='LD19 规格书模型（偏差抽样 a）', ld19b='LD19 规格书模型（偏差抽样 b）',
+               ld19c='LD19 规格书模型（偏差抽样 c）', ld19x2='LD19 模型，噪声和野点加倍')
+    loc_rows = ''
+    for mdl, lab in LBN.items():
+        r10 = [x for x in LB if x['model'] == mdl and x['localiser'] == 'round10']; r11 = [x for x in LB if x['model'] == mdl and x['localiser'] == 'round11']
+        if not r10 or not r11: continue
+        f = lambda rs: f'{sum(x["mean_cm"] for x in rs) / len(rs):.1f} / {max(x["max_cm"] for x in rs):.1f}'
+        bad = max(x['max_cm'] for x in r10) > 10
+        loc_rows += f'<tr><td>{lab}</td><td class="n {"bad" if bad else ""}">{f(r10)}</td><td class="n good">{f(r11)}</td></tr>'
+    def sens_txt(name):
+        es = [e for e in SE11['episodes'] if e['setting'] == name] if SE11 else []
+        if not es: return '还在跑'
+        return f'{sum(e["delivered"] for e in es)}/{sum(e["total"] for e in es)} 送达，碰撞 {sum(e["collisions"] for e in es)} 次'
+    ld19_txt = f'未标定（±45 mm）{sens_txt("ld19")}；标定后（±20 mm）{sens_txt("ld19cal")}'
+    n_scans = sum(e.get('scan_matches', 0) + e.get('scan_skips', 0) for e in T['episodes'])
+    scan_drop = sum(e.get('scan_dropped', 0) for e in T['episodes']) / max(n_scans, 1)
     CP = json.load(open(R('compute_profile.json')))
     compute_rows = ''.join(f'<tr><td>{k}</td><td class="n">{v["ms_per_call"]:.1f} ms</td><td class="n">{100 * v["share_of_one_core"]:.1f}%</td></tr>'
                            for k, v in sorted(CP['modules'].items(), key=lambda kv: -kv[1]['share_of_one_core']) if v['share_of_one_core'] >= 0.001)
@@ -162,11 +192,16 @@ def main():
         ('最高速度', '指令 0.4 m/s', f'到 {B["overspeed"]["got"][0]:.2f} m/s 饱和', '记下实测值，写回 <code>MAX_WHEEL_SPEED</code>'),
         ('里程计漂移', '走一个 1 m 的正方形回到起点，量闭合误差', f'按 1.5% 轮径误差、3% 打滑建模：整机试验单靠里程计平均漂 {s["odom"]:.1f} m / {s["dist"]:.0f} m 行程', '只做记录，实测值写回 <code>robot.py</code> 的 <code>ODOM_SCALE</code>、<code>ODOM_SLIP</code>'),
         ('雷达自遮挡', '收臂状态原地采一圈，数被机身滤波丢掉的点', f'{M["lidar_self_hits"]}/{M["lidar_rays"]} 线', '正前方盲区不超过仿真值 + 10 线'),
+        ('雷达测距偏差', '机器人正对一面平墙，用卷尺摆在 0.15、0.2、0.3、0.5、1、2 m；墙面换白墙、深色木板、黑布、亮面板四种。每个位置采 100 圈取平均，和卷尺比', 'LD19 规格书：0.3–12 m 平均误差 ±45 mm，0.3 m 以内不保证。仿真按每个表面固定偏差跑了标准条件 10 局：' + ld19_txt, '做一张「读数 → 真实距离」的修正表；修正后剩余偏差不超过 2 cm 就保持 <code>LIDAR_BIAS_MARGIN</code> = 2 cm，否则改成实测的最大值'),
+        ('雷达角度零位', '机器人停在一面长直墙前、车身用直角尺对正，看扫描里墙的方向', '规格书角度误差 ±2°；仿真没有加这一项', '修正后不超过 0.5°；把偏差写进雷达安装角'),
+        ('雷达毛刺和细腿', '房间里放一把椅子（腿粗约 2 cm）和一个门框边，原地采 100 圈，看过滤后丢掉的点和地图里椅子腿还在不在', f'整机试验里每圈平均滤掉 {scan_drop:.1f} 个点（名义雷达模型，没有野点）', '1 m 内的椅子腿全部在地图里；空地上不出现障碍格'),
         ('定位精度', '跑一局取放，途中停 5 次，每次用卷尺核对定位输出', f'扫描匹配：平均 {100 * loc_mean:.1f} cm，最大 {100 * loc_max:.1f} cm，航向最大 {head_max:.1f}°', '平均不超过 3 cm；超了先查雷达安装和自遮挡滤波'),
+        ('碰撞后恢复', '机器人直行时用手把车身推转约 10°，或者让它轻轻蹭一下椅子，看定位输出', '修之前：一局蹭到椅子后航向错了 10°，又撞了 19 次；加了宽范围重找和雷达偏差余量以后，同一局 0 碰撞', '2 秒内航向回到 1° 以内，地图上没有多出一道斜墙'),
+        ('前置相机外参', '地面上用胶带标出 4 个已知位置（0.25–1 m），各放一个方块；比相机量出的位置和卷尺，再看拟合出的地面倾角', '敏感度扫描：安装位置偏 1 cm、角度偏 1° 时 47/50 送达', '0.25 m 处位置差不超过 5 mm，地面倾角不超过 0.5°；超了重新标定外参'),
         ('相机测量', '手边的小东西分别放在 0.25 m 和 1.5 m 处，用尺子核对相机量出的近侧边缘和轮廓中心', f'近侧边缘平均差 {det_near:.1f} mm，1.5 m 处轮廓中心差 {det_far:.0f} mm（<code>test_perception.py</code>）', '近侧边缘不超过 6 mm，否则夹爪会落偏'),
         ('分割', '地上摆 8 件软硬不一的东西，其中两对挨着放（间隙 1 cm、3 cm），一件贴着家具，拍 50 张，数漏掉的、两件粘成一件的、凭空多出来的', f'0.6–1.5 m 整件可见时检出 {det_rate[0]}/{det_rate[1]}；挨着放的见上表；贴着家具 {seg_furn}；{seg_empty}', '粘连和漏检不比仿真多一倍以上；地毯、深色或反光的东西单独记录'),
         ('腕部相机', '夹住袜子、毛绒玩具、方块各 10 次，空夹 10 次，看腕部相机说「夹爪里有东西」对不对', f'台架上判断错 {sum(G[m][k]["misjudged"] for m in G for k in G[m])} 次', '判断错不超过 2 次'),
-        ('单物体抓取', '机器人停稳，物体在正前方 20–26 cm。找 8 件对应的实物（方块、球、玩具车、香蕉、L 形积木、石头、袜子、毛绒玩具），每件 10 次', '贴胶带：' + '，'.join(f'{CN[k].split("（")[0]} {gt[k][0]}/{gt[k][1]}' for k in CN), '每种不比仿真少 2 次以上'),
+        ('单物体抓取', '机器人停稳，物体在正前方 20–26 cm。找 8 件对应的实物（方块、球、玩具车、香蕉、L 形积木、石头、袜子、毛绒玩具），每件 10 次', '贴胶带：' + '，'.join(f'{CN[k].split("（")[0]} {gt[k][0]}/{gt[k][1]}' for k in CN if k in gt), '每种不比仿真少 2 次以上'),
         ('软物体放下', '把袜子和毛绒玩具各放进筐 10 次，看有没有粘在夹爪上，粘住时机器人发现了没有', f'整机试验 {n_place} 次放筐里抖了 {n_shake} 次（软的 {n_shake_soft} 次）', '粘住了都要被发现'),
         ('胶带对照', '撕掉胶带，小球夹 10 次', f'{gb["ball"][0]}/{gb["ball"][1]}', '应该明显变差。如果没变差，说明仿真的摩擦假设偏保守'),
         ('整机任务', '4×3 m 场地摆 5 件，离墙 ≥30 cm，做 10 次', f'送达 {pct(s["d"], s["tot"])}，每件 {s["t"]:.0f} 秒，{s["n"]} 次试验共碰撞 {s["coll"]} 次', '送达率不低于仿真 15 个百分点，没有倾翻'),
@@ -186,7 +221,7 @@ def main():
                      ('trials_round8.json', '第八轮：分割只用深度图，腕部深度相机确认夹持'),
                      ('trials_round9.json', '第九轮：贴得太近、站不进去时先把东西扒出来'),
                      ('trials_round10.json', '第十轮：深度图加上真实相机的毛病'),
-                     ('trials.json', '第十一轮：修好相机毛病带来的问题，走近再看一遍（当前版本）')):
+                     ('trials.json', '第十一轮：修好相机毛病带来的问题，雷达按规格书加误差（当前版本）')):
         alle = json.load(open(R(fn)))['episodes']; eps = [e for e in alle if e['condition'] == 'standard']
         d = sum(e['delivered'] for e in eps); tot = sum(e['total'] for e in eps)
         round_rows += (f'<tr><td>{name}</td><td class="n">{d}/{tot}</td><td class="n">{sum(e["collisions"] > 0 for e in alle)} 次试验</td>'
@@ -210,7 +245,7 @@ def main():
         'TAPE_NOTE': '' if s['d'] / s['tot'] - bj['d'] / bj['tot'] >= 0.15 else '早几轮不贴胶带时网球几乎夹不住；这一版夹法会挑更窄、更居中的一条下手，失败了还会换一侧再试，摩擦小的影响被吃掉了大半。胶带便宜，仍然建议贴。',
         'SENSOR_ROWS': seg_cmp_rows, 'PULL_CMP_ROWS': pull_cmp_rows, 'PULL_ROWS': pull_rows, 'SPOIL_CMP_ROWS': spoil_cmp_rows,
         'MAT_ROWS': mat_rows, 'MAT_REGULAR': f'{mat_regular[0]}/{mat_regular[1]}', 'MAT_BOTTLE': f'{mat_bottle[0]}/{mat_bottle[1]}',
-        'SENS_ROWS': sens_rows or '<tr><td colspan="5">还在跑</td></tr>', 'COMPUTE_ROWS': compute_rows,
+        'SENS_ROWS': sens_rows or '<tr><td colspan="6">还在跑</td></tr>', 'COMPUTE_ROWS': compute_rows, 'LOC_ROWS': loc_rows,
         'COMPUTE_TOTAL': f'{100 * CP["total_share_of_one_core"]:.0f}%', 'COMPUTE_CPU': CP['machine'].split('@')[0].replace('(R)', '').strip(),
         'PULL_USE': f'第九轮 {len(R9eps)} 局整机试验里，机器人决定扒 {n_pull_try} 次，扒出来 {n_pull_ok} 次。', 'ODOM_DRIFT': f'{odom:.1f}', 'LOC_MEAN': f'{100 * loc_mean:.1f}', 'LOC_MAX': f'{100 * loc_max:.1f}',
         'HEAD_MAX': f'{head_max:.1f}', 'DET_NEAR': f'{det_near:.1f}', 'DET_FAR': f'{det_far:.0f}',
@@ -230,20 +265,17 @@ def main():
           '| # | 测什么 | 怎么测 | 仿真值 | 通过 |', '|---|---|---|---|---|']
     md += [f'| {i + 1} | {a} | {b} | {c} | {d} |'.replace('<code>', '`').replace('</code>', '`') for i, (a, b, c, d) in enumerate(valid)]
     if SE:
-        md += ['', '## 敏感度：每次只让一项变差（标准条件 10 局）', '', '| 变差的那一项 | 送达 | 抓取失败/尝试 | 每件用时 | 碰撞 |', '|---|---|---|---|---|']
-        for st in SE['settings']:
-            es = [e for e in SE['episodes'] if e['setting'] == st['name']]
-            d, tt = sum(e['delivered'] for e in es), sum(e['total'] for e in es)
-            md.append(f'| {st["label"]} | {d}/{tt} | {sum(e["grasp_fail"] for e in es)}/{sum(e["grasp_attempts"] for e in es)} | {sum(tlast(e) for e in es) / max(d, 1):.0f} 秒 | {sum(e["collisions"] for e in es)} |')
+        md += ['', '## 敏感度：每次只让一项变差（标准条件 10 局）', '', '| 变差的那一项 | 第十轮代码 | 第十一轮代码 | 抓取失败/尝试（最新） | 定位最大误差（最新） |', '|---|---|---|---|---|']
+        md += sens_md
     md += ['', '## 分割：挨着放的两件', '', '| 边缘间隙 | 试验 | 分得开 | 粘成一件 |', '|---|---|---|---|']
     md += [f'| {g} | {v["n"]} | {v["apart"]} | {v["merged"]} |' for g, v in pairs.items() if v['n']]
     md += ['', '## 整机试验汇总', '', '| 条件 | 试验次数 | 送达 | 五件全送达 | 每件用时 | 抓取失败/尝试 | 途中掉落 | 碰撞 | 机身倾斜超过 3° 的试验 |', '|---|---|---|---|---|---|---|---|---|']
     md += [f'| {COND[n]} | {a["n"]} | {a["d"]}/{a["tot"]}（{pct(a["d"], a["tot"])}） | {a["all5"]}/{a["n"]} | {a["t"]:.0f} 秒 | {a["gf"]}/{a["ga"]} | {a["drop"]} | {a["coll"]} | {a["tilt"]}（最大 {a["max_tilt"]:.1f}°） |' for n, a in agg.items()]
     md += ['', '## 仿真里什么是真的，什么是假设', '',
-           '真物理：轮子滚子与地面的接触摩擦；舵机力矩上限 2.94 N·m 和由阻尼决定的转速上限；机械臂的质量、惯量、限位（SO-101 官方模型）；夹爪与物体的接触；雷达射线投射（1 cm 噪声、被自身遮挡）。', '',
+           '真物理：轮子滚子与地面的接触摩擦；舵机力矩上限 2.94 N·m 和由阻尼决定的转速上限；机械臂的质量、惯量、限位（SO-101 官方模型）；夹爪与物体的接触；雷达射线投射（名义 1 cm 噪声、被自身遮挡；另按 LD19 规格书的误差模型测过）。', '',
            '定位和感知也是真算法：轮子里程计（1.5% 轮径误差、3% 打滑）加雷达扫描匹配；物体只从渲染出的深度图里找：拟合地面、去掉家具、按俯视连通分成一件件，再量轮廓和高度，不用任何已知类别或尺寸，也不用训练好的模型。夹爪里有没有东西由腕部深度相机判断。', '',
-           '假设（每条都对应上表一项实测）：深度噪声只按距离建模，没有反光、深色、透明表面的缺失；机器人认得出自己的手臂（按运动学屏蔽）；收纳筐大致位置和尺寸已知；底盘重量是估的；打印件不变形、舵机无回差；软物体是多段刚体加弹性铰链和柔性接触的近似，不是布料仿真。', '',
-           '## 实测后怎么回填', '', '1. 硬件参数改 `sim/model.py` 顶部的 `P`（质量、摩擦、轮径、力矩上限）。', '2. 传感器噪声改 `sim/controller.py` 顶部的常量。',
+           '假设（每条都对应上表一项实测）：深度图的毛病（黑色、反光、透明表面的空洞，边缘飞点）按规律近似，比例是估的；雷达误差按规格书上限估（每个表面固定偏差 ±45 mm、1.5 cm 量化、混合点、野点），角度零位误差没有建模；机器人认得出自己的手臂（按运动学屏蔽）；收纳筐大致位置和尺寸已知；底盘重量是估的；打印件不变形、舵机无回差；软物体是多段刚体加弹性铰链和柔性接触的近似，不是布料仿真。', '',
+           '## 实测后怎么回填', '', '1. 硬件参数改 `sim/model.py` 顶部的 `P`（质量、摩擦、轮径、力矩上限）。', '2. 传感器噪声改 `sim/robot.py` 顶部的常量和 `sim/lidar_models.py`；安全余量（含 `LIDAR_BIAS_MARGIN`）在 `sim/controller.py` 顶部。',
            '3. 物体的尺寸、重量、软硬在 `sim/objects.py`，可以照着手边的实物改或加新种类。', '4. 依次重跑 `python test_base.py`、`python test_perception.py`、`python test_grasp.py 10`、`python run_trials.py`，再 `python ../web/build_page.py`。', '']
     open(os.path.join(ROOT, 'docs', 'validation.md'), 'w', encoding='utf8').write('\n'.join(md))
     print('built', len(html), 'bytes;', {k: (v if len(v) < 40 else '...') for k, v in rep.items() if k not in ('TRIAL_ROWS', 'FAIL_ROWS', 'GRASP_ROWS', 'BASE_ROWS', 'VALID_ROWS', 'ROUND_ROWS')})

@@ -37,6 +37,10 @@ MAP_OCC = 4                  # a cell is an obstacle above this, i.e. after two 
 LIDAR_BIAS_MARGIN = 0.02     # m: extra gap kept from lidar points for the lidar's own range bias. LD19 datasheet: mean
                              # error up to +-45 mm at 0.3-12 m and unspecified below 0.3 m; 2 cm assumes a per-unit
                              # range calibration (docs/validation.md). Without one, set it to 0.045.
+BIAS_ON_MAP = False          # mapped cells keep MAP_PT_MARGIN only: stacking the bias margin on top left the planner's
+                             # paths (PASS from cell centres) with no room to turn, and the robot froze (round 11: 15
+                             # stuck events in 8 runs, against 1 before)
+ESCAPE = True                # when every candidate motion is blocked, ease off slowly away from the close points
 MAP_PT_MARGIN = 0.02         # m: allowance for a mapped cell centre lying behind the obstacle surface it stands for
 SAFE_HORIZON = (0.15, 0.3)   # s: look-ahead of the safety layer; 0.3 s covers stopping from full speed under the wheel ramp
 ARM_SWEEP, HELD_SWEEP = 0.228, 0.258   # m: radius swept by the folded arm when the robot turns on the spot (empty / holding)
@@ -467,7 +471,7 @@ class Agent:
         c, s = math.cos(th), math.sin(th)
         P = np.vstack([w for w in W if len(w)]) - [x, y]
         P = np.stack([c * P[:, 0] + s * P[:, 1], -s * P[:, 0] + c * P[:, 1]], 1)
-        margin = np.concatenate([np.full(len(self.scan_pts), LIDAR_BIAS_MARGIN), np.full(len(self.map_pts), MAP_PT_MARGIN + LIDAR_BIAS_MARGIN), np.full(len(bp), 0.01)])
+        margin = np.concatenate([np.full(len(self.scan_pts), LIDAR_BIAS_MARGIN), np.full(len(self.map_pts), MAP_PT_MARGIN + (LIDAR_BIAS_MARGIN if BIAS_ON_MAP else 0.0)), np.full(len(bp), 0.01)])
         low = np.concatenate([np.zeros(len(self.scan_pts) + len(self.map_pts), bool), np.ones(len(bp), bool)])
         clear = lambda Q, lw: np.where(lw, np.hypot(Q[:, 0], Q[:, 1]) - BODY_R, self._clearance(Q))   # low points: only the body can hit them
         now = clear(P, low) - margin
@@ -480,7 +484,16 @@ class Agent:
         cl = P[np.argmin(now)]; nrm = cl / max(np.hypot(*cl), 1e-6)
         toward = vx * nrm[0] + vy * nrm[1]
         sx, sy = (vx - toward * nrm[0], vy - toward * nrm[1]) if toward > 0 else (vx, vy)
-        cands = ((vx, vy, wz), (vx, vy, 0.0), (sx, sy, wz), (sx, sy, 0.0), (0.5 * sx, 0.5 * sy, 0.0), (0.0, 0.0, wz), (0.0, 0.0, 0.0))
+        cands = [(vx, vy, wz), (vx, vy, 0.0), (sx, sy, wz), (sx, sy, 0.0), (0.5 * sx, 0.5 * sy, 0.0), (0.0, 0.0, wz)]
+        if ESCAPE:
+            # away from the close points, weighted by closeness: lets the robot ease off a wall it was squeezed against,
+            # so the turn or the path it wants becomes possible again (instead of freezing until the stuck handler)
+            close = now < SAFE_GAP + 0.02
+            if close.any():
+                w = 1.0 / np.maximum(now[close], 0.005); dirs = P[close] / np.maximum(np.hypot(P[close, 0], P[close, 1]), 1e-6)[:, None]
+                e = -(w[:, None] * dirs).sum(0); ne = math.hypot(*e)
+                if ne > 1e-6: cands.append((0.04 * e[0] / ne, 0.04 * e[1] / ne, 0.0))
+        cands.append((0.0, 0.0, 0.0))
         for k, (cx, cy, cw) in enumerate(cands):
             ok = True
             for dt in SAFE_HORIZON:

@@ -2,7 +2,7 @@
 setting making one thing worse than the nominal model (perturb.py), plus one with everything a little worse at once.
 -> results/sensitivity.json. The settings whose delivery rate drops most are the ones to measure first on the robot.
 
-  python run_sensitivity.py [processes]
+  python run_sensitivity.py [processes] [--only name,name] [--out file]
 """
 import json
 import multiprocessing as mp
@@ -22,6 +22,8 @@ SETTINGS = [
     dict(name='chassis_light', label='底盘轻 20%', pert=dict(chassis_mass=0.8), pad=None),
     dict(name='odom', label='里程计误差 ×3', pert=dict(odom=3.0), pad=None),
     dict(name='lidar', label='雷达噪声 ×3（3 cm）', pert=dict(lidar_noise=3.0), pad=None),
+    dict(name='ld19', label='雷达按 LD19 规格书（每个表面偏差 ±45 mm、1.5 cm 量化、边缘混合点、1% 野点），未标定', pert=dict(lidar_model='ld19'), pad=None),
+    dict(name='ld19cal', label='同上，标定后剩余偏差 ±20 mm', pert=dict(lidar_model='ld19cal'), pad=None),
     dict(name='depth', label='深度噪声 ×2', pert=dict(depth_noise=2.0), pad=None),
     dict(name='combined', label='以上各项都差一点（摩擦 0.7、重 1.5 倍、零位 1°、相机 0.5 cm/0.5°、底盘轻 10%、里程计 ×2、雷达 ×2、深度 ×1.5）',
          pert=dict(obj_mass=1.5, arm_offset_deg=1.0, cam_err=(0.005, 0.5), chassis_mass=0.9, odom=2.0, lidar_noise=2.0, depth_noise=1.5), pad=0.7),
@@ -45,12 +47,17 @@ def _one(args):
 
 
 if __name__ == '__main__':
+    args = sys.argv[1:]
+    only = args[args.index('--only') + 1].split(',') if '--only' in args else None
+    out_fn = args[args.index('--out') + 1] if '--out' in args else 'sensitivity.json'
+    nproc = int(args[0]) if args and args[0].isdigit() else 2
+    sel = [s for s in SETTINGS if only is None or s['name'] in only]
     os.makedirs(CACHE, exist_ok=True)
-    jobs = [(s['name'], seed) for s in SETTINGS for seed in SEEDS]
-    with mp.Pool(int(sys.argv[1]) if len(sys.argv) > 1 else 2, maxtasksperchild=1) as pool:
+    jobs = [(s['name'], seed) for s in sel for seed in SEEDS]
+    with mp.Pool(nproc, maxtasksperchild=1) as pool:
         out = []
         for r in pool.imap_unordered(_one, jobs):
             out.append(r); print(r['setting'], r['seed'], f"{r['delivered']}/{r['total']}", r['sim_time'], flush=True)
     out.sort(key=lambda r: (r['setting'], r['seed']))
-    json.dump(dict(settings=[{k: v for k, v in s.items()} for s in SETTINGS], episodes=out), open('../results/sensitivity.json', 'w'), ensure_ascii=False, indent=1)
+    json.dump(dict(settings=[{k: v for k, v in s.items()} for s in sel], episodes=out), open('../results/' + out_fn, 'w'), ensure_ascii=False, indent=1)
     shutil.rmtree(CACHE)
