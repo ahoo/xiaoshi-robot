@@ -858,7 +858,10 @@ class Agent:
         cells.sort()
         _, j, i, cx, cy = cells[0]
         self.state = '巡视'
-        goal = yield from self.goto(lambda D: [(cx, cy, None, 0.55)], check=lambda: 'found' if self.pick() is not None else None, timeout=60)
+        # stop well inside camera range of the cell: standing 0.55 m off with a 0.6 m range (second sweep) meant each
+        # spin barely saw the cell, and the sweep crept along 10 cm per spin
+        rad = min(0.55, self.cam_range - 0.25)
+        goal = yield from self.goto(lambda D: [(cx, cy, None, rad)], check=lambda: 'found' if self.pick() is not None else None, timeout=60)
         if goal is None and self.abort == 'found': return True
         if goal is not None and not self.cov[j, i]: yield from self.spin()
         self.cov[j, i] = True
