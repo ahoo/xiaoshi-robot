@@ -193,7 +193,8 @@ class FrontCamera:
             ok = (ti < G.shape[0]) & (tj < G.shape[1])
             TG = np.zeros(G.shape, bool); TG[ti[ok], tj[ok]] = True
             G[ndimage.binary_dilation(TG, iterations=1)] = 0          # furniture and whatever is right beneath it
-        lab, n = ndimage.label(G >= 2, structure=np.ones((3, 3)))
+        # close one-cell gaps: holes in the depth of black or shiny things otherwise cut one thing into pieces
+        lab, n = ndimage.label(ndimage.binary_closing(G >= 2, structure=np.ones((3, 3))) | (G >= 2), structure=np.ones((3, 3)))
         pl = lab[gi, gj]
         out = []
         for k in range(1, n + 1):

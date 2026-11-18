@@ -35,7 +35,9 @@ MAP_PT_MARGIN = 0.02         # m: allowance for a mapped cell centre lying behin
 SAFE_HORIZON = (0.15, 0.3)   # s: look-ahead of the safety layer; 0.3 s covers stopping from full speed under the wheel ramp
 ARM_SWEEP, HELD_SWEEP = 0.228, 0.258   # m: radius swept by the folded arm when the robot turns on the spot (empty / holding)
 V_MAX, W_MAX = 0.18, 1.0
-CAM_RANGE = 1.6             # m: beyond this the smallest object (4 cm cube) is under MIN_PX pixels, so 'seen' stops here
+CAM_RANGE = 1.2             # m: floor counts as looked at out to here (with real depth-camera holes, small dark or flat
+                            # things are often missed beyond ~1 m: perception bench)
+CAM_RANGE_2 = 0.6           # m: second, closer sweep when the first one is done and there is time left
 STANDOFFS = (0.235, 0.25, 0.265)   # robot centre to the middle of the strip the jaws close on: preferred, then farther back
 KEEP = 0.19                  # m: on the way to a target, the robot centre keeps this far from its outline
 ASSOC = 0.10                 # m: a detection this close to a remembered object is taken to be that object
@@ -51,7 +53,7 @@ class Agent:
         self.r = robot; self.rng = np.random.default_rng(seed + 7); self.verbose = verbose
         self.lo = np.zeros((GY, GX), np.int8)
         self.cov = np.zeros((CGY, CGX), bool)
-        self.memory = {}; self._next_id = 1; self.priority = None; self.score_events = []
+        self.memory = {}; self._next_id = 1; self.priority = None; self.score_events = []; self.cam_range = CAM_RANGE
         self.loc = Localizer(robot.true_pose(), CS, (GX * CS, GY * CS))   # starts docked at a known pose; after that, lidar + odometry only
         self.cam = FrontCamera(robot, np.random.default_rng(seed + 11)); self.visible = {}; self._ncam = 0
         self.wrist = WristCamera(robot)
@@ -132,7 +134,7 @@ class Agent:
             W_ = np.array([((i + 0.5) * CCS, (j + 0.5) * CCS) for j, i in cells]) - [x, y]
             B = np.stack([c * W_[:, 0] + s_ * W_[:, 1], -s_ * W_[:, 0] + c * W_[:, 1], np.zeros(len(W_))], 1)
             dist = np.hypot(B[:, 0], B[:, 1])
-            seen = self.cam.floor_visible(B) & (dist < CAM_RANGE)
+            seen = self.cam.floor_visible(B) & (dist < self.cam_range)
             for (j, i), sn, dd in zip(cells, seen, dist):
                 if sn or dd < 0.3: self.cov[j, i] = True
         self.visible = {}
@@ -180,14 +182,22 @@ class Agent:
                     ci, cj = int(e['x'] / CCS), int(e['y'] / CCS)
                     if 0 <= ci < CGX and 0 <= cj < CGY: self.cov[cj, ci] = False
                     if self.priority == k: self.priority = None
-        # two memories of one object (seen from two sides before the views agreed): keep the better measured one
+        # Two memories of one object (seen from two sides before the views agreed, or cut in two by holes in the
+        # depth of a shiny thing): centres within 7 cm, or outlines within 2 cm. Keep the one seen more completely.
         pend = [(k, e) for k, e in self.memory.items() if e['status'] == 'pending']
         for i, (k1, e1) in enumerate(pend):
             for k2, e2 in pend[i + 1:]:
-                if k1 in self.memory and k2 in self.memory and math.hypot(e1['x'] - e2['x'], e1['y'] - e2['y']) < 0.07:
-                    drop = k2 if (k1 == self.target or (e1['sigma'] <= e2['sigma'] and k2 != self.target)) else k1
-                    del self.memory[drop]
-                    if self.priority == drop: self.priority = None
+                if k1 not in self.memory or k2 not in self.memory: continue
+                near = math.hypot(e1['x'] - e2['x'], e1['y'] - e2['y']) < 0.07
+                if not near and math.hypot(e1['x'] - e2['x'], e1['y'] - e2['y']) < 0.25:
+                    o1, o2 = e1['outline'], e2['outline']
+                    near = float(np.min(np.hypot(o1[:, None, 0] - o2[None, :, 0], o1[:, None, 1] - o2[None, :, 1]))) < 0.02
+                if not near: continue
+                if k1 == self.target: drop = k2
+                elif k2 == self.target: drop = k1
+                else: drop = k2 if len(e1['pts']) >= len(e2['pts']) else k1
+                del self.memory[drop]
+                if self.priority == drop: self.priority = None
 
     def _to_world(self, dt, x, y, th):
         """A detection (chassis frame) as map-frame measurements of the object: centre, outline, surface points, size."""
@@ -594,6 +604,8 @@ class Agent:
             if dist + far + PULL_REACH > PULL_MAX - 0.01: continue
             P = ctr + dist * dv; finger = ctr + (far + PULL_REACH) * u
             if self._dat(self.D_furn, *finger) < 0.035: continue
+            b = self.basket          # the paddle must not come down on or scrape along the basket wall
+            if math.hypot(max(abs(finger[0] - b['x']) - b['sx'] / 2, 0), max(abs(finger[1] - b['y']) - b['sy'] / 2, 0)) < 0.06: continue
             if len(others) and np.min(np.hypot(others[:, 0] - finger[0], others[:, 1] - finger[1])) < 0.015: continue
             if room(ctr + self.PULL_BACK * dv) < now + 0.04: continue
             if self._dat(self.D_base, *P) < PASS or not self.pose_ok(P[0], P[1], math.atan2(u[1], u[0]), ARM_BOX, 0.3): continue
@@ -814,6 +826,10 @@ class Agent:
             more = yield from self.explore_step()
             if not more:
                 waiting = [e for e in self.memory.values() if e['status'] == 'pending']
+                if not waiting and self.cam_range > CAM_RANGE_2 and T_MAX - self.r.t > 120:
+                    # small dark things are easy to miss from afar: go round once more and look from closer up
+                    self.cam_range = CAM_RANGE_2; self.cov[:] = False; self.log('看完一遍了，再走近仔细看一遍')
+                    continue
                 if not waiting: return
                 t_next = min(e['retry_at'] for e in waiting)
                 if t_next > T_MAX: return

@@ -103,6 +103,7 @@ def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=
                loc_head_err_max_deg=round(math.degrees(float(np.max([e[1] for e in agent.loc_err]))), 2) if agent.loc_err else None,
                scan_matches=agent.loc.n_match, scan_skips=agent.loc.n_skip,
                basket_sightings=agent.basket_seen, places=agent.score_events,
+               t_last=max([p[0] for p in agent.score_events if p[3]], default=None),   # when the last thing really went in
                peak_torque=[round(float(v), 2) for v in robot.peak_torque], rms_torque=[round(float(v), 2) for v in np.sqrt(robot.torque_sq / robot.n_steps)],
                time_above_80pct=[round(float(v), 4) for v in robot.sat_steps / robot.n_steps], **{k: (round(v, 2) if isinstance(v, float) else v) for k, v in agent.stats.items()})
     if pad_friction is not None: model.P['pad_friction'] = 1.0
