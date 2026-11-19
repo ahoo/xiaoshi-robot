@@ -1,12 +1,17 @@
 """Benches for the home features: 3D scan, object records, people and children, voice.
 
-  python test_home.py scan [seeds]     3D scan of the furnished room: the next-best-view planner against the coverage tour, both against the true geometry
-  python test_home.py apartment        the same planner on a two-room flat (a camera on a kinematic path, no robot): does it scale past one room
-  python test_home.py inventory        object records across sessions: the same things found again after they were moved, new and missing things
-  python test_home.py people           people and children: detection, height, age class, identity, how the robot behaves near them
-  python test_home.py voice            Chinese commands through a noisy speech recogniser: intent, slots, permissions, dialogue
-  python test_home.py day              one scripted day: scan, records, a child walks in, questions and errands by voice
-Each writes results/home_<name>.json.
+  python test_home.py scan [seeds]        3D scan of the empty furnished room: next-best-view planner against the coverage tour, both against the true geometry
+  python test_home.py export [seed]       one scan with the toys on the floor: point cloud (PLY), stand-alone viewer page (HTML), numbers against the truth
+  python test_home.py inv1 [seeds]        object records, one session: found, kind guessed (standard layouts and the hard-material ones)
+  python test_home.py inventory [seeds]   object records across two sessions: things moved, taken away, new; identity of each
+  python test_home.py people_static [n]   people: found, how tall, child or adult, from a standing robot (150 trials), false tracks in an empty room
+  python test_home.py pairs               a child standing close to a grown-up: are they told apart, is the child ever called an adult
+  python test_home.py identity            the registry and the thresholds of the (stand-in) recogniser: consent, enrolment, confusions, forgetting
+  python test_home.py safety [seeds]      people and the robot at work: an adult walks up, a child runs at it, a toddler by the basket, a family; guard on and off
+  python test_home.py voice               Chinese commands through the simulated recogniser: noise sweep, chatter without the wake word, stop words, permissions, dialogues
+  python test_home.py day [seed]          one scripted day with everything: voice, scan, records, a child enrolled by a grown-up, stop and continue, forgetting
+Each writes results/home_<name>.json (export also writes the PLY and HTML). Set PROCS for the number of processes and MUJOCO_GL=egl for headless rendering.
+Not done: a scan of more than one room (the two-room test planned for round 14 was not built).
 """
 import json
 import math
@@ -302,6 +307,47 @@ def bench_people_static(procs=2, trials=150):
     res['child_called_adult'] = int(sum(1 for r in rows if r['found'] and r['truth_cls'] == 'child' and r['cls'] == 'adult'))
     print(json.dumps(res, ensure_ascii=False, indent=1)); _save('people_static', dict(summary=res, rows=rows))
 
+def _pair_job(args):
+    """A child and a grown-up standing close together, at different gaps and in two arrangements (side by side, one in front of the other): are both found, and what is the pair called?"""
+    import mujoco
+    import people as P
+    from robot import Robot
+    seed, reps = args
+    rng = np.random.default_rng(seed); names = ['adult_m', 'child_8']
+    r = Robot([], seed=seed, people=names, head_cam=True, robot_pose=(2.0, 1.5, 0.0)); stub = _Stub(r)
+    scripts = [P.Script([]) for _ in names]; ps = P.People(r, names, scripts); det = P.PersonDetector(r, stub, np.random.default_rng(seed + 3)); rows = []
+    for gap in (0.10, 0.25, 0.45, 0.70):
+        for arr in ('side', 'inline'):
+            for rep in range(reps):
+                for _try in range(200):
+                    rx, ry, yaw = rng.uniform(0.9, 3.0), rng.uniform(0.7, 2.3), rng.uniform(-math.pi, math.pi); d = rng.uniform(1.6, 2.6)
+                    ux, uy = math.cos(yaw), math.sin(yaw); px, py = rx + d * ux, ry + d * uy                      # the adult, straight ahead
+                    off = (0.23 + 0.16 + gap)                                                                       # shoulder to shoulder with the stated gap between the bodies
+                    cx, cy = (px - uy * off, py + ux * off) if arr == 'side' else (px - ux * (0.14 + 0.14 + gap), py - uy * (0.14 + 0.14 + gap))
+                    if 0.3 < px < 3.7 and 0.3 < py < 2.7 and 0.3 < cx < 3.7 and 0.3 < cy < 2.7: break
+                else: continue
+                scripts[0] = P.Script([('at', px, py, yaw + math.pi)]); scripts[1] = P.Script([('at', cx, cy, yaw + math.pi)]); ps.scripts = scripts
+                _teleport(r, rx, ry, yaw); mujoco.mj_forward(r.m, r.d); det.tracks = []; det._t = -9.0
+                for _ in range(100): ps.update(); r.step(); det.process()
+                tr = det.confirmed(2); ka = [k for k in tr if math.hypot(k.x - px, k.y - py) < 0.5]; kc = [k for k in tr if math.hypot(k.x - cx, k.y - cy) < 0.5 and k not in ka]
+                rows.append(dict(gap=gap, arrangement=arr, tracks=len(tr), adult_found=bool(ka), child_found=bool(kc), adult_cls=ka[0].cls if ka else None, child_cls=kc[0].cls if kc else None,
+                                 pair_in_one=bool(len(tr) == 1)))
+    return rows
+
+
+def bench_pairs(procs=2, reps=8):
+    with mp.Pool(procs, maxtasksperchild=1) as p: out = p.map(_pair_job, [(300 + i, reps) for i in range(procs)])
+    rows = [r for o in out for r in o]; res = {}
+    for gap in (0.10, 0.25, 0.45, 0.70):
+        for arr in ('side', 'inline'):
+            a = [r for r in rows if r['gap'] == gap and r['arrangement'] == arr]
+            if not a: continue
+            res[f'{arr} gap {int(gap * 100)} cm'] = dict(n=len(a), two_tracks=sum(1 for r in a if r['tracks'] >= 2 and r['adult_found'] and r['child_found']), merged_into_one=sum(1 for r in a if r['pair_in_one']),
+                                                         child_called_child=sum(1 for r in a if r['child_cls'] in ('child', 'unsure')), child_called_adult_or_missing=sum(1 for r in a if r['child_cls'] not in ('child', 'unsure')),
+                                                         pair_called=dict(sorted({c: sum(1 for r in a if r['pair_in_one'] and r['adult_cls'] == c) for c in ('adult', 'unsure', 'child')}.items())))
+    print(json.dumps(res, ensure_ascii=False, indent=1)); _save('people_pairs', dict(summary=res, rows=rows))
+
+
 
 # --------------------------------------------------------------------------------------------- people near the robot at work
 def _scenario(name, seed):
@@ -318,9 +364,9 @@ def _scenario(name, seed):
                     steps=[[('wait', 15.0), ('enter',), ('walk', 3.2, 2.35, 0.4), ('wait', 8.0), ('walk', 3.05, 2.45, 0.3), ('wait', 6.0), ('walk', 3.3, 2.65, 0.3), ('wait', 40.0), ('exit', 0.4)]])
     if name == 'family':           # three people moving about at once
         return dict(names=['adult_f', 'child_8', 'toddler'], who=['mum', 'ming', 'baby'], family=['A', 'A', 'A'], comply=[1.0, 0.7, 0.0],
-                    steps=[[('wait', 10.0), ('enter',), ('walk', 2.0, 1.1, 0.8), ('wait', 10.0), ('walk', 3.6, 1.5, 0.8), ('wait', 20.0), ('walk', 1.0, 2.6, 0.8), ('wait', 20.0), ('walk', 3.6, 0.4, 0.8)],
-                           [('wait', 20.0), ('enter',), ('walk', 2.2, 1.9, 1.1), ('walk', 1.0, 1.0, 1.1), ('wait', 5.0), ('walk', 3.0, 2.4, 1.4), ('wait', 5.0), ('walk', 1.5, 2.9, 1.2), ('walk', 3.6, 1.9, 1.3)],
-                           [('wait', 30.0), ('enter',), ('walk', 2.6, 1.7, 0.3), ('wait', 8.0), ('walk', 3.4, 2.2, 0.3), ('wait', 15.0), ('walk', 2.0, 2.0, 0.3), ('wait', 15.0), ('walk', 1.6, 1.0, 0.3)]])
+                    steps=[[('wait', 10.0), ('enter',), ('walk', 2.0, 1.1, 0.8), ('wait', 10.0), ('walk', 3.6, 1.5, 0.8), ('wait', 20.0), ('walk', 1.0, 2.6, 0.8), ('wait', 20.0), ('walk', 3.6, 0.4, 0.8), ('exit', 0.8)],
+                           [('wait', 20.0), ('enter',), ('walk', 2.2, 1.9, 1.1), ('walk', 1.0, 1.0, 1.1), ('wait', 5.0), ('walk', 3.0, 2.4, 1.4), ('wait', 5.0), ('walk', 1.5, 2.9, 1.2), ('walk', 3.6, 1.9, 1.3), ('wait', 5.0), ('exit', 1.0)],
+                           [('wait', 30.0), ('enter',), ('walk', 2.6, 1.7, 0.3), ('wait', 8.0), ('walk', 3.4, 2.2, 0.3), ('wait', 15.0), ('walk', 2.0, 2.0, 0.3), ('wait', 15.0), ('walk', 1.6, 1.0, 0.3), ('wait', 10.0), ('exit', 0.4)]])
     raise ValueError(name)
 
 
@@ -346,7 +392,8 @@ def bench_people_safety(seeds=(1, 2), procs=2, scenarios=('none', 'adult_cross',
     jobs = [(s, sc, g, t_end) for s in seeds for sc in scenarios for g in ((True,) if sc == 'none' else (False, True))]
     with mp.Pool(procs, maxtasksperchild=1) as p: res = p.map(_safety_job, jobs)
     for r in res: print({k: v for k, v in r.items() if k not in ('events', 'cls_votes')})
-    _save('people_safety', dict(runs=res))
+    fn = os.path.join(RES, 'home_people_safety.json'); old = json.load(open(fn))['runs'] if os.path.exists(fn) else []
+    keys = {(r['scenario'], r['seed'], r['guard']) for r in res}; _save('people_safety', dict(runs=[r for r in old if (r['scenario'], r['seed'], r['guard']) not in keys] + res))
 
 
 # --------------------------------------------------------------------------------------------- voice (language side, no robot)
@@ -571,13 +618,14 @@ class Director:
         else: self.done = True
 
 
-def _spot_in_front(sup, d, side=0.0):
+def _spot_in_front(sup, d, side=0.0, avoid=()):
+    """A free spot about d m from the robot, roughly in front of it (side: radians to the left/right), inside the room, clear of furniture and at least 0.8 m from the spots in `avoid`."""
     from episode import _furn_dist
     x, y, th = sup.r.true_pose()
-    for dd in (d, d * 0.8, d * 1.2, d * 0.6, d * 1.5):
-        for sd in (side, -side, side * 0.5):
+    for dd in (d, 0.8 * d, 1.2 * d, 0.6 * d, 1.5 * d):
+        for sd in (side, -side, 0.0, 0.5, -0.5, 1.0, -1.0, 1.5, -1.5):
             a = th + sd; px, py = x + dd * math.cos(a), y + dd * math.sin(a)
-            if 0.3 < px < 3.7 and 0.3 < py < 2.7 and _furn_dist(px, py) > 0.3: return float(px), float(py)
+            if 0.3 < px < 3.7 and 0.3 < py < 2.7 and _furn_dist(px, py) > 0.3 and all(math.hypot(px - q[0], py - q[1]) >= 0.8 for q in avoid): return float(px), float(py)
     return float(np.clip(x, 0.4, 3.6)), float(np.clip(y - d, 0.4, 2.6))
 
 
@@ -621,7 +669,7 @@ def _day_job(seed=3):
         d.add('scan done', lambda s: s.scan_done or s.r.t > d.t_prev + 330.0, lambda s: (chk('scan finished', s.scan_done, round(s.r.t, 1)), chk('scan found the furniture and the walls', bool(home.analysis) and len(home.analysis['furniture']) >= 5 and len(home.analysis['walls']) >= 3, (len(home.analysis['furniture']), len(home.analysis['walls'])) if home.analysis else None), box.update(halts_scan=ppl.guard.stats['halts'], halt_s_scan=round(ppl.guard.stats['halt_s'], 1)),
                                                                                          chk('no false halts while nobody was there', ppl.guard.stats['halts'] <= 1, ppl.guard.stats)))
         def enter(s):
-            fx, fy = _spot_in_front(s, 1.3); gx, gy = _spot_in_front(s, 1.1, side=0.7)
+            gx, gy = _spot_in_front(s, 1.2, side=0.0); fx, fy = _spot_in_front(s, 1.5, side=0.6, avoid=[(gx, gy)])         # both well inside the head camera's view: the child ahead, the grown-up a little to the side
             ppl.people.scripts[0].steps.extend([('enter',), ('walk', fx, fy, 1.0), ('face_robot',)])
             ppl.people.scripts[1].steps.extend([('wait', 4.0), ('enter',), ('walk', gx, gy, 1.0), ('face_robot',)])
         d.add('dad and child come in', d.after(3.0), enter)
@@ -652,9 +700,10 @@ def _day_job(seed=3):
         d.add('dad: continue', d.after(1.0), hear('小拾小拾，继续', 0))
         d.add('check resumed', d.after(6.0), lambda s: chk('continue resumes the job', s.mode == 'TASK' or any(a[0] == 'resume' for a in vs.actions), (s.mode, vs.tts[-2:])))
         d.add('task done', lambda s: s.task_done or s.r.t > d.t_prev + 260.0, lambda s: box.update(t_task_end=round(s.r.t, 1)))
+        d.add('dad: stop (end of the job)', d.after(1.0), hear('停下', 0))
         d.add('dad comes back', d.after(2.0), lambda s: ppl.people.scripts[0].steps.extend([('to_robot', 1.2, 1.0), ('face_robot',)]))
         d.add('dad: forget the child', d.after(10.0), hear('小拾小拾，忘掉小明', 0))
-        d.add('dad: yes (forget)', d.after(3.0), hear('好的', 0))
+        d.add('dad: yes (forget)', d.after(6.5), hear('好的', 0))                          # the robot turns to him first (3.5 s), then asks
         d.add('check forgotten', d.after(0.5), lambda s: chk('forgetting removes the child', '小明' not in reg.people, reg.report()))
         d.add('who again', d.after(8.0), hear('小拾小拾，现在有谁', 0))
         d.add('end', d.after(1.0), lambda s: chk('after forgetting the child is only "a child"', '小明' not in str(L['rec'].get('reply')), L['rec'].get('reply')))
@@ -738,5 +787,6 @@ if __name__ == '__main__':
     elif what == 'export': export_scan(a[0] if a else 1)
     elif what == 'day': bench_day(tuple(a) or (3,))
     elif what == 'identity': bench_identity()
+    elif what == 'pairs': bench_pairs(procs=procs)
     elif what == 'safety': bench_people_safety(tuple(a) or (1, 2), procs=procs)
     elif what == 'people_static': bench_people_static(procs=procs, trials=a[0] if a else 150)

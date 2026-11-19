@@ -4,6 +4,8 @@
 
 硬件全部是能买到的开源套件：**LeKiwi 三全向轮底盘 + SO-101 机械臂（5 轴 + 夹爪）+ LD19 激光雷达**，外加前置和腕部两个深度相机。
 
+在家里还能做的（第十四轮，**只在仿真里做了我们自己写的那部分，认人和语音识别在仿真里是替身/模拟**）：扫描家里建三维地图并导出，记住东西放在哪、换了场景后认出挪过的，靠头部相机分大人和小孩并在人靠近时放慢和停下，听中文命令（唤醒词、停止词、谁能让它做什么）。孩子的数据怎么处理：[`docs/privacy.md`](docs/privacy.md)。三维查看器：[`results/home_scan_seed1.html`](results/home_scan_seed1.html)（下载后用浏览器打开）。
+
 - 当前状态和已知限制：[`docs/status.md`](docs/status.md)；下一步计划：[`docs/roadmap.md`](docs/roadmap.md)
 - 试验结果和实物验收表：[`docs/validation.md`](docs/validation.md)
 - 要买的东西：[`docs/bom.md`](docs/bom.md)
@@ -70,6 +72,7 @@ python test_home.py scan 1      # 三维扫描：下一个最佳视点 / 覆盖�
 python test_home.py export 1    # 一次扫描导出点云（PLY）、能直接打开的三维查看器（HTML）和数字 -> results/home_scan_seed1.*
 python test_home.py inventory 1 2 3 4 5 6   # 物件记录：换了场景（挪了两件、拿走一件、新来一件）以后再识别 -> results/home_inventory.json
 python test_home.py people_static 150       # 人：站在 1–3 m 处能不能检出、身高量得准不准、分成大人还是小孩 -> results/home_people_static.json
+python test_home.py pairs       # 孩子挨着大人站（并排/一前一后，间隔 10–70 cm）：分不分得开、孩子会不会被当成大人 -> results/home_people_pairs.json
 python test_home.py identity    # 登记簿和认人的阈值（替身识别器，只测我们自己的逻辑）-> results/home_people_identity.json
 python test_home.py safety 1 2  # 人和机器人干活同场：成年人走过、孩子冲过来、幼儿在筐边、一家三口；安全层开/关 -> results/home_people_safety.json
 python test_home.py voice       # 中文命令：加噪声扫描、没喊唤醒词的闲聊、停止词、权限表、多轮对话、大模型接口 -> results/home_voice.json

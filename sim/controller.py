@@ -100,6 +100,7 @@ class Agent:
         self.arm_busy = False      # set by modes.Supervisor while an operator has the arm out in front of the lidar
         self.freeze = False        # set by modes.Supervisor while the robot is tilted or lying down: the lidar and camera see the room at the wrong angle, so no mapping, matching or detecting
         self.pose_before_fall = None
+        self.dyn_zones = []        # set by people.Guard: [(x, y, r)] where people are right now; a lidar hit inside one is a person, not a wall: it goes neither into the map nor into the scan matching
         self.zone_skip_t = -99.0   # when pick() last skipped an object because someone stands by it
         self.person_zones = []     # set by people.Guard: [(x, y, r)] around the people in the room; an object inside one is not started on (looked at again in 10 s)
         self.depth_hook = None     # set by home.py: called as hook(agent, x, y, th) with every front-camera frame, after detection (3D scan, object records)
@@ -140,6 +141,11 @@ class Agent:
         rng_ = self._scan_filter(ang, rng_)
         f = np.isfinite(rng_)
         spx, spy = P['lidar_pos'][0] + rng_[f] * np.cos(ang[f]), rng_[f] * np.sin(ang[f])
+        if self.dyn_zones:                           # people are not walls: their legs stay out of the scan matching and out of the map (they would be left behind as ghost obstacles)
+            ex, ey, eth = self.loc.est; wx0 = ex + math.cos(eth) * spx - math.sin(eth) * spy; wy0 = ey + math.sin(eth) * spx + math.cos(eth) * spy
+            dyn = np.zeros(len(spx), bool)
+            for zx, zy, zr in self.dyn_zones: dyn |= np.hypot(wx0 - zx, wy0 - zy) < zr
+            if dyn.any(): spx, spy = spx[~dyn], spy[~dyn]
         pre = self.loc.est[:2].copy(); path = self.loc._moved
         moved_ok = self.loc.correct(spx, spy)
         if SLIP_ON and moved_ok: self._track_slip(pre, self.loc.est[:2] - pre, path)
@@ -160,6 +166,7 @@ class Agent:
             lo[flat] = np.maximum(lo[flat] - 1, -3)
             hi = np.floor((lx + np.cos(a) * (rr + 0.015)) / CS).astype(int); hj = np.floor((ly + np.sin(a) * (rr + 0.015)) / CS).astype(int)
             ok = (hi >= 0) & (hi < GX) & (hj >= 0) & (hj < GY)
+            for zx, zy, zr in self.dyn_zones: ok &= np.hypot(lx + np.cos(a) * rr - zx, ly + np.sin(a) * rr - zy) >= zr      # a hit on a person marks nothing (the free space in front of him is still cleared)
             flat = np.unique(hj[ok] * GX + hi[ok])
             lo[flat] = np.minimum(lo[flat].astype(int) + MAP_HIT, 20).astype(np.int8)
         if len(rr):                                   # the safety layer always gets this scan's points

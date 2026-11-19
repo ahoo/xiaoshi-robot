@@ -128,6 +128,9 @@ class Script:
                     sp = st[2]; goal_d = dd - target
                 else: tx, ty = st[1], st[2]; sp = st[3]; goal_d = None
                 dx, dy = tx - self.x, ty - self.y; d = math.hypot(dx, dy)
+                self._k += dt
+                if not self._started: self._d0 = d; self._started = True
+                if self._k > 5.0 + 3.0 * self._d0 / max(sp, 0.1): self._step_done(); continue          # cannot get there (the robot is in the way): give up and carry on with the day
                 if d < 1e-6: self._step_done(); continue
                 if goal_d is not None: d = goal_d
                 self.yaw = math.atan2(dy, dx); step = min(sp * dt, d); nx, ny = self.x + dx / math.hypot(dx, dy) * step, self.y + dy / math.hypot(dx, dy) * step
@@ -286,6 +289,7 @@ TOP_BIAS = 0.05          # m: the depth-edge filter eats the top of the head; ad
 MIN_TOP = 0.75           # a person candidate is at least this tall (or, when its top is cut off by the picture, at least this much of it is seen)
 MIN_SPREAD = 0.22        # and its points above UPPER reach over at least this much height: a low shelf top is a thin slab, a person is not
 MAX_FOOT = 1.0           # m: a cluster wider than this is a wall or a sofa, not a person
+GROUP_FOOT = 0.70        # m: wider than this it is more than one person (a child by the hand of a grown-up): the pair is called 'unsure', i.e. treated as a child
 CHILD_BELOW, ADULT_FROM = 1.30, 1.50
 ADULT_WIDTH = 0.37       # shoulder width that marks a sitting adult
 IDENT_N = 12             # feature samples fused per track
@@ -302,13 +306,13 @@ def classify(h, w=None, lower_bound=False):
 
 class Track:
     _n = 0
-    def __init__(self, t, x, y, h, cut, w):
-        Track._n += 1; self.id = Track._n; self.t0 = self.t = t; self.x, self.y = x, y; self.vx = self.vy = 0.0; self.hits = 1; self.misses = 0
+    def __init__(self, t, x, y, h, cut, w, grp=False):
+        Track._n += 1; self.grp = [grp]; self.id = Track._n; self.t0 = self.t = t; self.x, self.y = x, y; self.vx = self.vy = 0.0; self.hits = 1; self.misses = 0
         self.hs = [] if cut else [h]; self.hmax_cut = h if cut else 0.0; self.ws = [w] if w else []; self.cut = cut; self.emb = []; self.frontal = []; self.who = None; self.who_conf = 0.0; self.truth = None
         self.cls = 'unsure'; self.coast = False; self.dist = 0.0; self.history = [(t, x, y)]
 
-    def update(self, t, x, y, h, cut, w):
-        dt = max(t - self.t, 1e-3); vx, vy = (x - self.x) / dt, (y - self.y) / dt; a = 0.5
+    def update(self, t, x, y, h, cut, w, grp=False):
+        self.grp = (self.grp + [grp])[-12:]; dt = max(t - self.t, 1e-3); vx, vy = (x - self.x) / dt, (y - self.y) / dt; a = 0.5
         self.vx, self.vy = (1 - a) * self.vx + a * vx, (1 - a) * self.vy + a * vy; self.x, self.y = x, y; self.t = t; self.hits += 1; self.misses = 0; self.coast = False
         if cut: self.hmax_cut = max(self.hmax_cut, h)
         else: self.hs = (self.hs + [h])[-12:]
@@ -369,7 +373,7 @@ class PersonDetector:
                 dx, dy = cx - pose[0], cy - pose[1]; n_ = math.hypot(dx, dy) + 1e-6; px, py = -dy / n_, dx / n_
                 s_ = x[band] * px + y[band] * py; w = float(np.percentile(s_, 97) - np.percentile(s_, 3))
             if self._is_furniture(x, y): continue
-            out.append(dict(x=cx, y=cy, h=top, cut=cut, w=w, n=int(m.sum())))
+            out.append(dict(x=cx, y=cy, h=top, cut=cut, w=w, n=int(m.sum()), grp=bool(foot > GROUP_FOOT)))
         return out
 
     def _is_furniture(self, x, y):
@@ -387,15 +391,15 @@ class PersonDetector:
                 if k in used: continue
                 px, py = k.predict(t); dd = math.hypot(px - d['x'], py - d['y'])
                 if dd < 0.7 and (best is None or dd < best[0]): best = (dd, k)
-            if best: best[1].update(t, d['x'], d['y'], d['h'], d['cut'], d['w']); used.add(best[1])
-            else: self.tracks.append(Track(t, d['x'], d['y'], d['h'], d['cut'], d['w']))
+            if best: best[1].update(t, d['x'], d['y'], d['h'], d['cut'], d['w'], d.get('grp', False)); used.add(best[1])
+            else: self.tracks.append(Track(t, d['x'], d['y'], d['h'], d['cut'], d['w'], d.get('grp', False)))
         for k in self.tracks:
             if k not in used:
                 k.misses += 1; k.coast = True
                 if t - k.t < 1.5: k.x, k.y = k.predict(t)[0], k.predict(t)[1]
         self.tracks = [k for k in self.tracks if t - k.t < 3.0]
         for k in self.tracks:
-            h, lb = k.height; k.cls = classify(h, k.width, lb); k.dist = math.hypot(k.x - pose[0], k.y - pose[1])
+            h, lb = k.height; k.cls = 'unsure' if sum(k.grp) * 2 > len(k.grp) else classify(h, k.width, lb); k.dist = math.hypot(k.x - pose[0], k.y - pose[1])
 
     def confirmed(self, min_hits=2): return [k for k in self.tracks if k.hits >= min_hits]
 
@@ -554,9 +558,10 @@ class Guard:
         """Before the mode runs this tick: True = pause it (and keep the base still, the arm where it is). Only for what is dangerous standing still is not: a person within the arm's reach
         while the arm is at work, a person coming at the robot fast, a person at touching distance. A person merely near is handled in post(): the robot just may not drive at them."""
         r, c = sup.r, self.c
-        if sup.mode in ('RIGHT', 'FAULT', 'TELEOP'): self.halted = False; r.hold_arm = False; sup.a.person_zones = []; return False
+        if sup.mode in ('RIGHT', 'FAULT', 'TELEOP'): self.halted = False; r.hold_arm = False; sup.a.person_zones = []; sup.a.dyn_zones = []; return False
         ppl = self._people(sup); arm_work = sup.a.state in ('抓取', '放置', '放下') or sup.a.arm_busy or not r.arm_done(0.08)
         t = r.t
+        sup.a.dyn_zones = [(p['k'].x, p['k'].y, 0.25 if p['kid'] else 0.32) for p in ppl if not p['k'].coast]       # keep their legs out of the map
         for p in ppl:                                              # where people were, and for how long that is still worth believing (a person standing still is probably still there)
             k = p['k']
             if not k.coast: self.mem[(id(k))] = (k.x, k.y, t, p['kid'], math.hypot(k.vx, k.vy) < 0.25)
