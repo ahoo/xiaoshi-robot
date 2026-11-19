@@ -61,6 +61,9 @@ BLIND_OBJ_FRAC = 0.35       # a cluster with more than this many real above-floo
                              # shiny thing with holes in it, not clear plastic (bench: clear 0.13-0.22 up to 1 m, black 0.2-1.8, shiny 0.7-3)
 FRAG_RATIO = 1.5              # a detection with this many times more no-reading pixels beside it than its own is a piece of a clear thing
                              # (black things: about 1.2 times, clear plastic: 6 or more)
+BLIND_DRIFT = 0.0005         # m/s: how fast the certainty about where a no-reading thing lies fades while it is not looked at (the wheels
+                             # can push it and nothing but the camera would tell); after 100 s a look from 1 m may correct a close-look position
+BLIND_LOOK_WIDE = 0.25       # m: after a close look that saw nothing where the thing should be, accept a cluster this far from it
 BLIND_MIN_RANGE = 0.14        # m from the camera foot: nearer clusters are only used by the close look in fetch
 BLIND_GONE = 3               # looks at the spot with no no-reading pixels there before the memory of it is dropped
 SLIP_WINDOW = 1.5            # s: lidar and odometry are compared over this long
@@ -351,13 +354,14 @@ class Agent:
 
     @staticmethod
     def _reset_blind(e):
-        """After a fetch that did not end in a grasp: start the thing over. The position it carries came from the last close look
-        (sigma 1.2 cm) and may be a few cm off, which a later look from farther away could not correct; the sides marked bad, the
-        'looked from the side already' record and the 'gave up on the side' flag belong to that estimate. (Round 12: a bottle that
-        could not be reached was only ever picked up because a wrong 'it is gone' made the robot forget all this by accident.)"""
+        """After a fetch that did not end in a grasp, drop the flags that would keep the next try from working: the side look
+        that was given up on, the count of close looks that saw nothing, the sides cached for the old geometry. Kept: which
+        sides were tried (`bad`) and from where it was looked at (`looks`), without which the second try repeats the first, and
+        the position with its certainty, which fades with time since it was last seen (BLIND_DRIFT) rather than being thrown
+        away: wiping it made an end-on bottle in patchy depth repeat the same failing round three times, keeping it locked
+        lost a bottle that had been pushed (round 12, materials seed 303)."""
         if not e.get('blind'): return
-        e['sigma'] = 0.06; e['looks'] = []
-        for k in ('bad', 'bad_span', 'side_gave_up', 'look_fail'): e.pop(k, None)
+        for k in ('side_gave_up', 'look_fail'): e.pop(k, None)
         e['dirs'] = None
 
     def _set_blind(self, e, o, ambiguous):
@@ -399,10 +403,12 @@ class Agent:
                     e = self.memory[k]; found.add(k)
                     if not e.get('blind'): continue
                     e['miss'] = 0
+                    eff = e['sigma'] + BLIND_DRIFT * (self.r.t - e.get('seen_t', self.r.t))        # fades while it is out of sight
+                    e['seen_t'] = self.r.t
                     if e['status'] == 'delivered':
                         self.log(f'{self._name(e)} 那里的地上还有看不清的东西，重新去拿'); e.update(status='pending', retry_at=0.0, looks=[])
                     # a close, whole look wins; a view that cannot tell the direction does not overwrite one that could
-                    if sig <= e['sigma'] * 1.1 and not (d['ambiguous'] and not e['ambiguous']):
+                    if sig <= eff * 1.1 and not (d['ambiguous'] and not e['ambiguous']):
                         e.update(sigma=sig, **o); self._set_blind(e, o, d['ambiguous'])
                     continue
                 q = next((q for q in cands if math.hypot(q['x'] - o['x'], q['y'] - o['y']) < 0.10), None)
@@ -411,7 +417,7 @@ class Agent:
                 if q['n'] < BLIND_CONFIRM: continue
                 cands.remove(q)
                 k = self._next_id; self._next_id += 1; found.add(k)
-                self.memory[k] = dict(id=k, status='pending', retry_at=0.0, fails=0, miss=0, sigma=sig, blind=True, looks=[], **o)
+                self.memory[k] = dict(id=k, status='pending', retry_at=0.0, fails=0, miss=0, sigma=sig, blind=True, looks=[], seen_t=self.r.t, **o)
                 self._set_blind(self.memory[k], o, d['ambiguous']); self.stats['blind_found'] = self.stats.get('blind_found', 0) + 1
                 self.log(f'发现{self._name(self.memory[k], True)}：深度图上一片没读数的地方，应该是透明的东西，距离 {d["dist"]:.2f} m')
         self._blind_cands = cands
@@ -923,7 +929,7 @@ class Agent:
             cands = [d for d in dets if d['n_px'] >= 60 and d['bottom'] < 0.04]
         if not cands: return None
         d = min(cands, key=lambda d: math.hypot(d['rel'][0] - ex, d['rel'][1] - ey))
-        if math.hypot(d['rel'][0] - ex, d['rel'][1] - ey) > (0.10 if blind else 0.08): return None
+        if math.hypot(d['rel'][0] - ex, d['rel'][1] - ey) > ((BLIND_LOOK_WIDE if e.get('look_fail') else 0.10) if blind else 0.08): return None
         if not (0.13 < d['rel'][0] < 0.42 and abs(d['rel'][1]) < 0.16): return None
         return d
 
@@ -965,6 +971,7 @@ class Agent:
             o = self._to_world(d, *self.pose())
             moved = math.hypot(o['x'] - e['x'], o['y'] - e['y'])
             e.update(sigma=0.012, **o)
+            if d.get('blind'): e['seen_t'] = r.t
             if d.get('blind'):
                 self._set_blind(e, o, d['ambiguous'])
                 x, y, _ = self.pose(); ang = math.atan2(y - e['y'], x - e['x'])
