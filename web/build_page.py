@@ -105,12 +105,12 @@ def main():
                      f'<td class="n">{sum(tlast(e) for e in e4) / max(d4, 1):.0f} → {sum(tlast(e) for e in e5) / max(d5, 1):.0f} 秒</td></tr>')
         return rows
     R7 = json.load(open(R('trials_round7.json')))['episodes']; R8 = json.load(open(R('trials_round8.json')))['episodes']
-    R9 = json.load(open(R('trials_round9.json')))['episodes']; R10 = json.load(open(R('trials_round10.json')))['episodes']
+    R9 = json.load(open(R('trials_round9.json')))['episodes']; R10 = json.load(open(R('trials_round10.json')))['episodes']; R11 = json.load(open(R('trials_round11.json')))['episodes']
     seg_cmp_rows = compare(R7, R8); pull_cmp_rows = compare(R8, R9)
     spoil_cmp_rows = ''
     for n in agg:
         cells = []
-        for eps in (R9, R10, T['episodes']):
+        for eps in (R10, R11, T['episodes']):
             es = [e for e in eps if e['condition'] == n]
             d, tt = sum(e['delivered'] for e in es), sum(e['total'] for e in es)
             cells.append(f'<td class="n">{d}/{tt}（{pct(d, tt)}）</td>' if es else '<td class="n">-</td>')
@@ -172,6 +172,8 @@ def main():
     pull_logs = [m for e in R9eps for _, m in e['log']]
     n_pull_try = sum('先把它扒出来' in m for m in pull_logs); n_pull_ok = sum('往外扒了' in m for m in pull_logs)
     allep = T['episodes']
+    blind_all = sum(e.get('blind_found', 0) for e in allep); blind_std = sum(e.get('blind_found', 0) for e in allep if e['condition'] != 'materials')
+    slips_all = sum(e.get('slips', 0) for e in allep); slips_eps = sum(e.get('slips', 0) > 0 for e in allep)
     loc_mean = sum(e['loc_err_mean'] for e in allep) / len(allep); loc_max = max(e['loc_err_max'] for e in allep)
     head_max = max(e['loc_head_err_max_deg'] for e in allep); odom = sum(e['odom_err'] for e in allep) / len(allep)
     PBall = json.load(open(R('perception_bench.json'))); PB = {k: v for k, v in PBall.items() if not k.startswith('_')}
@@ -207,7 +209,10 @@ def main():
         ('整机任务', '4×3 m 场地摆 5 件，离墙 ≥30 cm，做 10 次', f'送达 {pct(s["d"], s["tot"])}，每件 {s["t"]:.0f} 秒，{s["n"]} 次试验共碰撞 {s["coll"]} 次', '送达率不低于仿真 15 个百分点，没有倾翻'),
         ('贴边任务', '同上，物体离墙 12 cm 起', f'送达 {pct(nw["d"], nw["tot"])}', '只做记录'),
         ('扎堆任务', '同上，其中两对物体挨着放', f'送达 {pct(cl["d"], cl["tot"])}' if cl else '-', '只做记录'),
-        ('难材质', '黑袜子、黑方块、亮面小球、亮面玩具车、透明小瓶各放在 0.25、0.6、1 m 处拍 10 次，再各夹 10 次', '检出和近处误差见上表；透明瓶在仿真里一次都看不见', '黑色和反光的近处要看得见；透明的记录用什么办法补（彩色图识别）'),
+        ('难材质', '黑袜子、黑方块、亮面小球、亮面玩具车各放在 0.25、0.6、1 m 处拍 10 次，再各夹 10 次', '检出和近处误差见上表', '黑色和反光的近处要看得见'),
+        ('透明瓶：深度图上的空洞', '一个透明塑料瓶（带不带瓶盖、标签各试一次）躺在地上，放在 0.4、0.6、0.8、1.0 m 处，各转 0°、45°、90°（相对视线），在白天、日光灯、背光三种光线下各拍 10 帧，数瓶子轮廓里没有读数、读到地板、读到瓶身的像素各占多少', f'仿真设的是 60% 没读数、30% 读到后面的地板、10% 读到瓶身，逐像素独立；成片、更少空洞的情形见页面「透明瓶」一节', '没读数的像素占瓶子轮廓的比例不低于 35%，并且连成片（5×5 窗口里占 30% 以上）；比例更低、或者要靠瓶盖标签才有读数，说明这个办法对这种瓶子不灵，要换识别模型'),
+        ('透明瓶：找到并抓起来', '同上的瓶子，在 4×3 m 场地的 8 个随机位置和朝向各放一次（机器人事先不知道），数送达、数抓取次数、数有没有被推走', f'瓶子单独在房间里 12 局：见页面「透明瓶」一节；整机难材质条件瓶子 {mat_bottle[0]}/{mat_bottle[1]}', '不比仿真少 2 局；任何一次轮子压上瓶子都要记下，看瓶子是被推走了还是被绕开了'),
+        ('打滑检测', '房间里放一个看不见的低矮东西（透明瓶，或者一根细绳），让机器人直行压上去；另外正常跑 10 局，数没有任何东西时的误触发', f'仿真里 {len(T["episodes"])} 局整机试验共触发 {slips_all} 次（{slips_eps} 局）；单瓶房间里压上瓶子时能触发', '压上去时触发；正常跑 10 局误触发 0 次；记下 <code>SLIP_RATIO</code> 要不要调'),
         ('算力', '在树莓派 5 上跑 <code>profile_compute.py</code> 同样的模块（或者用录下来的数据离线跑），记每个模块每次的耗时', f'这台机器上合计约占一个核的 {100 * CP["total_share_of_one_core"]:.0f}%', '树莓派上合计不超过两个核'),
         ('扒出来', '方块、球、香蕉、袜子等各一件，分别放在离墙或柜子 2、4、6 cm 处，机器人从房间一侧去扒', '扒出来：' + '，'.join(f'{float(g) * 100:.0f} cm 处 {v["pulled"]}/{v["n"]}' for g, v in PU.items()), '4 cm 及以上不比仿真少一半以上；记录 2 cm 时是插不进去还是压到了东西'),
     ]
@@ -221,14 +226,63 @@ def main():
                      ('trials_round8.json', '第八轮：分割只用深度图，腕部深度相机确认夹持'),
                      ('trials_round9.json', '第九轮：贴得太近、站不进去时先把东西扒出来'),
                      ('trials_round10.json', '第十轮：深度图加上真实相机的毛病'),
-                     ('trials.json', '第十一轮：修好相机毛病带来的问题，雷达按规格书加误差（当前版本）')):
+                     ('trials_round11.json', '第十一轮：修好相机毛病带来的问题，雷达按规格书加误差'),
+                     ('trials.json', '第十二轮：透明瓶（当前版本）')):
         alle = json.load(open(R(fn)))['episodes']; eps = [e for e in alle if e['condition'] == 'standard']
         d = sum(e['delivered'] for e in eps); tot = sum(e['total'] for e in eps)
         round_rows += (f'<tr><td>{name}</td><td class="n">{d}/{tot}</td><td class="n">{sum(e["collisions"] > 0 for e in alle)} 次试验</td>'
                        f'<td class="n">{sum(e["max_tilt"] > 30 for e in alle)}</td><td class="n">{sum(e["max_tilt"] > 3 for e in alle)}/{len(alle)}</td>'
                        f'<td class="n">{sum(e["stuck"] for e in alle)}</td></tr>')
+    # the clear plastic bottle (round 12): bench and bottle-alone runs, from results/clear_bottle.json and results/clear_bench.json
+    CB = json.load(open(R('clear_bottle.json'))) if os.path.exists(R('clear_bottle.json')) else {}
+    CBN = json.load(open(R('clear_bench.json'))) if os.path.exists(R('clear_bench.json')) else {}
+    SETN = dict(both='两个办法都开（当前版本）', slip_only='只开打滑检测（不认空洞）', neither='都关（第十一轮的行为）')
+    def med(v): return f'{sorted(v)[len(v) // 2]:.0f} cm' if v else '-'
+    clear_ab_rows = ''
+    for name, lab in SETN.items():
+        sm = CB.get('ab', {}).get('summary', {}).get(name)
+        if not sm: continue
+        runs = [r for r in CB['ab']['runs'] if r['setting'] == name]
+        moved = med([r['bottle_moved_cm'] for r in runs if r['bottle_moved_cm'] is not None])
+        clear_ab_rows += (f'<tr><td>{lab}</td><td class="n {"good" if sm["delivered"] >= 0.9 * sm["n"] else "bad"}">{sm["delivered"]}/{sm["n"]}</td><td class="n">{sm["runs_touching"]}/{sm["n"]}（{sm["bottle_touches"]} 次）</td>'
+                          f'<td class="n">{moved if sm["delivered"] < sm["n"] else "-"}</td><td class="n">{sm["slips"]}</td><td class="n">{sm["grasp_fail"]}/{sm["grasp_attempts"]}</td></tr>')
+    clear_forced_rows = ''
+    for r in CB.get('forced', {}).get('runs', []):
+        clear_forced_rows += (f'<tr><td>{r["angle"]:+d}°</td><td class="n {"good" if r["delivered"] else "bad"}">{"送达" if r["delivered"] else "没送达"}</td><td class="n">{r["grasp_attempts"]}</td>'
+                              f'<td class="n">{r["looks"]}</td><td class="n">{r["sim_t"]:.0f} 秒</td></tr>')
+    ROBN = dict(patches_4px='空洞成片（4×4 像素一块，比例不变）', fewer_holes='空洞更少（40% 没读数、50% 读到地板，其余是瓶身）', both_rougher='两者叠加（35% 没读数、45% 读到地板，成片）')
+    clear_robust_rows = ''
+    fs = CB.get('forced', {}).get('summary', {}).get('forced')
+    if fs: clear_robust_rows += f'<tr><td>当前的仿真设定（60% 没读数、30% 读到地板，逐像素）</td><td class="n good">{fs["delivered"]}/{fs["n"]}</td><td class="n">{fs["grasp_fail"]}/{fs["grasp_attempts"]}</td></tr>'
+    for name, lab in ROBN.items():
+        sm = CB.get('robust', {}).get('summary', {}).get(name)
+        if sm: clear_robust_rows += f'<tr><td>{lab}</td><td class="n {"good" if sm["delivered"] == sm["n"] else "bad"}">{sm["delivered"]}/{sm["n"]}</td><td class="n">{sm["grasp_fail"]}/{sm["grasp_attempts"]}</td></tr>'
+    clear_pose_rows = ''
+    for key, lab in (('pose_far', '远处 0.4–1.0 m，机身转 ±35°'), ('pose_close', '近处 0.28–0.45 m，机身转 ±35°'), ('pose_stance', '下手站位 0.21–0.29 m（相机离瓶 13–18 cm）'), ('pose_stance_rough', '同上，深度图更苛刻（35% 没读数，成片）')):
+        v = CBN.get(key)
+        if not v: continue
+        eo = v.get('end_on_within_10deg', {})
+        clear_pose_rows += (f'<tr><td>{lab}</td><td class="n">{v["seen"]}/{v["n"]}</td><td class="n">{v["sure"]}</td>'
+                            f'<td class="n">{v.get("heading_err_median_deg", "-")}° / {v.get("heading_err_p90_deg", "-")}° / {v.get("heading_err_worst_deg", "-")}°</td>'
+                            f'<td class="n {"good" if v.get("wrong_over_25deg", 0) == 0 else "bad"}">{v.get("wrong_over_25deg", "-")}/{v["sure"]}</td><td class="n">{eo.get("flagged_ambiguous", "-")}/{eo.get("n", "-")}</td></tr>')
+    cg = CBN.get('grasp', {}).get('across', {})
+    csee = CBN.get('see', {})
+    def see_cell(o, d, k): v = csee.get(f'{o}:{d}'); return f'{v[k]:.0f}' if v and v.get(k) is not None else '-'
+    empt = CBN.get('empty', {}); see_seen = sum(v['seen'] for v in csee.values()); see_n = sum(v['n'] for v in csee.values())
+    rough = CBN.get('pose_stance_rough', {})
+    sig = CBN.get('signal', {}); sg4 = sig.get('0.4', {}); sg10 = sig.get('1.0', {})
+    clear_see_txt = '；'.join(f'{d} m 处 {see_cell("across", d, "near_bias_mm")} mm' for d in ('0.4', '0.6', '1.0', '1.2') if csee.get(f'across:{d}'))
     video = json.load(open(R('episode.json')))
     rep = {
+        'CLEAR_AB_ROWS': clear_ab_rows or '<tr><td colspan="6">还在跑</td></tr>', 'CLEAR_FORCED_ROWS': clear_forced_rows or '<tr><td colspan="5">还在跑</td></tr>',
+        'CLEAR_ROBUST_ROWS': clear_robust_rows or '<tr><td colspan="3">还在跑</td></tr>', 'CLEAR_POSE_ROWS': clear_pose_rows or '<tr><td colspan="6">还在跑</td></tr>',
+        'CLEAR_EMPTY': str(empt.get('frames', '-')), 'CLEAR_EMPTY_FALSE': str(empt.get('false_clusters', '-')), 'CLEAR_DETECT': f'{see_seen}/{see_n}' if see_n else '-',
+        'SIG_04_REAL': str(sg4.get('bottle_surface', '-')), 'SIG_04_KEPT': str(sg4.get('bottle_surface_after_edge_filter', '-')), 'SIG_04_HOLES': str(sg4.get('no_reading', '-')), 'SIG_04_SIL': str(sg4.get('silhouette_px', '-')),
+        'SIG_10_HOLES': str(sg10.get('no_reading', '-')),
+        'ROUGH_SURE': f'{rough["sure"]}/{rough["seen"]}' if rough else '-',
+        'CLEAR_GRASP': f'{cg["success"]}/{cg["n"]}' if cg else '-', 'CLEAR_SEE_NEAR': clear_see_txt or '-',
+        'BLIND_FOUND': str(blind_all), 'BLIND_FOUND_OTHER': str(blind_std), 'SLIPS_TOTAL': str(slips_all), 'SLIPS_EPS': f'{slips_eps}/{len(T["episodes"])}',
+
         'VIDEO_NOTE': f'第 {video["seed"]} 号随机布局，仿真时间 {video["sim_time"] / 60:.1f} 分钟，送达 {video["delivered"]}/{video["total"]}',
         'STD_DELIVERED': f'{s["d"]}/{s["tot"]}', 'STD_PCT': pct(s['d'], s['tot']), 'STD_N': str(s['n']), 'STD_TIME': f'{s["t"]:.0f}',
         'GRASP_TAPE': f'{gt_all[0]}/{gt_all[1]}', 'GRASP_TAPE_PCT': pct(*gt_all), 'GRASP_BARE': f'{gb_all[0]}/{gb_all[1]}', 'GRASP_BARE_PCT': pct(*gb_all),
@@ -259,7 +313,7 @@ def main():
     assert '{{' not in html, html[html.index('{{'):html.index('{{') + 40]
     os.makedirs(os.path.join(HERE, 'dist'), exist_ok=True)
     open(os.path.join(HERE, 'dist', 'index.html'), 'w', encoding='utf8').write(html)
-    for f in ('episode.mp4', 'episode.jpg'): shutil.copy(R(f), os.path.join(HERE, 'dist', f))
+    for f in ('episode.mp4', 'episode.jpg', 'clear.mp4', 'clear.jpg'): shutil.copy(R(f), os.path.join(HERE, 'dist', f))
 
     md = ['# 实物验收方案', '', '按顺序做，前一项不过先别做后一项。「仿真值」来自 `results/` 里的这一轮试验，由 `web/build_page.py` 自动填入。', '',
           '| # | 测什么 | 怎么测 | 仿真值 | 通过 |', '|---|---|---|---|---|']

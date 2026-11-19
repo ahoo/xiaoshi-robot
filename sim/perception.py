@@ -34,6 +34,7 @@ CELL = 0.015                 # m: grid for grouping points seen from above
 MAX_SIZE = 0.20              # m: a blob longer than this is not something to pick up (or two things merged)
 # No-reading clusters on the floor (clear plastic, and anything else the depth camera cannot measure): a patch of
 # pixels without depth, in the middle of floor that does return depth, is a thing we cannot see but know is there.
+NO_READING = 0.02            # m: a depth below this is no reading (spoil_depth writes 0; the camera's own near edge shows up as 0.05)
 HOLE_MIN_PX = 18             # no-reading pixels in one cluster (a 12 cm bottle at 1.2 m has about 70)
 HOLE_DENS = 0.30             # fraction of no-reading pixels in a 5x5 window that counts as inside a cluster
 HOLE_RANGE = (0.04, 1.30)    # m: the floor point under a cluster's lowest pixel must be this far from the camera foot
@@ -175,8 +176,8 @@ class FrontCamera:
         n_avg: frames averaged (only while the robot stands still, e.g. the close look before a grasp)."""
         self.capture(); self.basket_obs = None; self.low_pts = np.zeros((0, 2))
         P, valid = self._cloud(n_avg)
-        self.holes = self._find_holes()
         hgt = P[..., 2]
+        self.holes = self._find_holes(hgt)
         above = valid & (hgt > FLOOR_TOL)
         tall = above & (hgt > TALL)
         low = above & ~tall
@@ -249,14 +250,19 @@ class FrontCamera:
         t = (a * o[0] + b * o[1] + c - o[2]) / np.where(np.abs(den) < 1e-6, -1e-6, den)
         return o[:2] + ray[:, :2] * t[:, None], (den < -1e-3) & (t > 0)
 
-    def _find_holes(self):
+    def depth_ok_above(self, hgt):
+        """Pixels with a depth reading that are above the floor but not tall (a thing to pick up), not the robot, not edge-filtered."""
+        return (self.depth > 0.05) & (hgt > FLOOR_TOL) & (hgt < TALL) & ~self.self_mask
+
+    def _find_holes(self, hgt=None):
         """Clusters of pixels with no depth reading whose rays reach the floor close by. Returns a list of dicts in the
         chassis frame: n_px; near (x of the near edge: the floor point under the lowest no-reading pixel of each image
         column, which is where the thing meets the floor on the near side, to about a pixel); y0, y1 (its sideways
         extent there); far (x where the ray over the top of the cluster meets the floor: always beyond the thing, since
-        the camera looks down on it at a shallow angle); cut (touches the image edge). The depth camera's own
-        shadows and the robot's arm are not counted."""
-        hole = (self.depth <= 0.05) & ~self.self_mask
+        the camera looks down on it at a shallow angle); cut (touches the image edge); obj_frac (readings of something above
+        the floor within 3 pixels of the cluster, per pixel of the cluster: about 0.2 around clear plastic, 0.5-3 around
+        black or shiny things, whose holes sit among real surface). The robot's own arm is not counted."""
+        hole = (self.depth < NO_READING) & ~self.self_mask          # a real zero, not a small depth (the robot's own front edge is 5 cm from the lens)
         if hole.sum() < HOLE_MIN_PX: return []
         dens = ndimage.uniform_filter(hole.astype(np.float32), size=5)
         core = ndimage.binary_closing(dens > HOLE_DENS, structure=np.ones((3, 3)))
@@ -266,6 +272,10 @@ class FrontCamera:
             m = hole & (lab == k)
             if m.sum() < HOLE_MIN_PX: continue
             vv, uu = np.nonzero(m)
+            obj_frac = 0.0
+            if hgt is not None:
+                reg = ndimage.binary_dilation(lab == k, iterations=3)
+                obj_frac = float((self.depth_ok_above(hgt) & reg).sum() / m.sum())
             cols = np.unique(uu)
             low = np.array([vv[uu == c].max() for c in cols]); high = np.array([vv[uu == c].min() for c in cols])
             Q, ok = self.floor_hits(low, cols)
@@ -276,7 +286,7 @@ class FrontCamera:
             if y1 - y0 > HOLE_MAX_W: continue
             Qt, okt = self.floor_hits(high, cols)
             far = float(np.percentile(Qt[okt, 0], 90)) if okt.any() else float(Q[:, 0].max())
-            out.append(dict(n_px=int(m.sum()), near=float(np.percentile(Q[:, 0], 10)), y0=y0, y1=y1, far=far, edge=Q,
+            out.append(dict(n_px=int(m.sum()), near=float(np.percentile(Q[:, 0], 10)), y0=y0, y1=y1, far=far, edge=Q, obj_frac=obj_frac,
                             cut=bool(vv.max() >= H - 2 or uu.min() <= 1 or uu.max() >= W - 2),
                             rows=(int(vv.min()), int(vv.max())), cols=(int(uu.min()), int(uu.max()))))
         return out
@@ -295,7 +305,7 @@ class FrontCamera:
         u = int((Q[0, 0] / z) * f + W / 2); v = int(-(Q[0, 1] / z) * f + H / 2)
         if not (half <= u < W - half and half <= v < H - half): return None
         win = self.depth[v - half:v + half + 1, u - half:u + half + 1]
-        return float((win <= 0.05).mean())
+        return float((win < NO_READING).mean())
 
     def floor_visible(self, pts_body):
         """For floor points (chassis frame, z=0): is each one inside the image and not hidden behind something?"""

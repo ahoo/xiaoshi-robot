@@ -57,6 +57,8 @@ T_MAX = 600.0
 BLIND_PAD = 0.05             # m: a thing known only by a no-reading cluster, seen end-on, may be longer than it looks: the
                              # outline kept for the planner and the safety layer is padded this much all round
 BLIND_CONFIRM = 2            # sightings (camera frames) of a cluster before it becomes something to go and get
+BLIND_OBJ_FRAC = 0.35       # a cluster with more than this many real above-floor readings beside it, per no-reading pixel, is a black or
+                             # shiny thing with holes in it, not clear plastic (bench: clear 0.13-0.22 up to 1 m, black 0.2-1.8, shiny 0.7-3)
 FRAG_RATIO = 1.5              # a detection with this many times more no-reading pixels beside it than its own is a piece of a clear thing
                              # (black things: about 1.2 times, clear plastic: 6 or more)
 BLIND_MIN_RANGE = 0.14        # m from the camera foot: nearer clusters are only used by the close look in fetch
@@ -65,8 +67,8 @@ SLIP_WINDOW = 1.5            # s: lidar and odometry are compared over this long
 SLIP_MIN_PATH = 0.12         # m of odometry path in the window before a mismatch counts (below that: standing, or creeping)
 SLIP_RATIO = 0.5             # the scan matcher pulled the pose back by more than this share of the odometry path: the wheels
                              # turn but the robot does not follow (a wheel on a thing it cannot see, or pressed against it)
-GHOST_R = 0.06               # m: radius of the invisible obstacle remembered where the robot got stuck
-GHOST_LIFE = 150.0           # s
+GHOST_R = 0.04               # m: radius of the invisible obstacle remembered where the robot got stuck
+GHOST_LIFE = 60.0            # s: a preference, not a wall: goto forgets it when it leaves no way through (see there)
 SLIP_ON = True               # lidar/odometry mismatch -> back off and remember an invisible obstacle
 CLEAR_CUE = True             # no-reading clusters in the depth image -> things the camera cannot measure (clear plastic)
 
@@ -183,9 +185,18 @@ class Agent:
         x, y, th = self.pose(); d = self._cmd_w / max(float(np.hypot(*self._cmd_w)), 1e-6)
         c_ = np.array([x, y]) + d * (BODY_R + GHOST_R - 0.01)
         ang = np.linspace(0, 2 * math.pi, 12, endpoint=False)
-        self.ghosts.append(dict(x=float(c_[0]), y=float(c_[1]), t=self.r.t, outline=np.stack([c_[0] + GHOST_R * np.cos(ang), c_[1] + GHOST_R * np.sin(ang)], 1)))
+        # Only something nothing else explains is remembered: not where a known thing (to be picked up, being carried, the
+        # basket) or mapped furniture already is. The robot is often pressed against the very thing it is going to; a
+        # remembered obstacle on top of it would only make it unreachable.
+        known = any(float(np.min(np.hypot(e['outline'][:, 0] - c_[0], e['outline'][:, 1] - c_[1]))) < GHOST_R + 0.10 for e in self.memory.values() if e['status'] in ('pending', 'held'))
+        known = known or self._in_basket((c_[0], c_[1], 0.0), margin=GHOST_R + 0.05)
+        gi_, gj_ = int(c_[0] / CS), int(c_[1] / CS)
+        known = known or (0 <= gi_ < GX and 0 <= gj_ < GY and self.lo[max(0, gj_ - 1):gj_ + 2, max(0, gi_ - 1):gi_ + 2].max() > MAP_OCC)
+        if not known:
+            self.ghosts.append(dict(x=float(c_[0]), y=float(c_[1]), t=self.r.t, outline=np.stack([c_[0] + GHOST_R * np.cos(ang), c_[1] + GHOST_R * np.sin(ang)], 1)))
         self.stats['slips'] = self.stats.get('slips', 0) + 1
-        self.log('轮子转了、车没跟上（雷达和里程计对不上）：停下后退，前方记一个看不见的障碍')
+        self.stats['ghosts'] = self.stats.get('ghosts', 0) + (0 if known else 1)
+        self.log('轮子转了、车没跟上（雷达和里程计对不上）：停下后退' + ('，前方已经有已知的东西，不另记' if known else '，前方记一个看不见的障碍'))
         self.stop()
         c, s = math.cos(th), math.sin(th)
         for _ in range(60): self.cmd(-0.08 * (c * d[0] + s * d[1]), -0.08 * (-s * d[0] + c * d[1]), 0.0); yield
@@ -330,7 +341,7 @@ class Agent:
         for dt in dets:
             frag = False
             for h in self.cam.holes:
-                if h['n_px'] < 30: continue                  # (no range limit here: close up is where the pieces are largest)
+                if h['n_px'] < 30 or h['obj_frac'] > BLIND_OBJ_FRAC: continue      # (no range limit here: close up is where the pieces are largest)
                 d = clear_detection(h, self.cam)
                 if math.hypot(dt['rel'][0] - d['rel'][0], dt['rel'][1] - d['rel'][1]) > 0.15: continue
                 H_ = np.asarray(dt['hull']); L_dt = max(float(np.hypot(*(a - b))) for a in H_ for b in H_)
@@ -359,6 +370,7 @@ class Agent:
         if not self.held:
             for h in self.cam.holes:
                 if h['cut'] or h['n_px'] < 30: continue          # cut by the image edge: its extent is not whole
+                if h['obj_frac'] > BLIND_OBJ_FRAC: continue      # holes in a black or shiny thing that is measured anyway
                 if h['near'] - self.cam.t_bc[0] < BLIND_MIN_RANGE: continue     # right under the camera: the geometry is not reliable (fetch looks again from its stance)
                 d = clear_detection(h, self.cam)
                 if any(math.hypot(dt['rel'][0] - d['rel'][0], dt['rel'][1] - d['rel'][1]) < 0.15 for dt in dets): continue   # a thing with a few holes in it that is measured anyway
@@ -689,6 +701,12 @@ class Agent:
                 all_goals = goal_fn(D) if goal is not None else goals
                 res = self.astar(D, goals) if goals else None
                 if res is None and len(all_goals) > len(goals): res = self.astar(D, all_goals)
+                if res is None and self.ghosts:
+                    # The invisible obstacles remembered after a slip are a preference, not a wall: a 4 cm thing blown up by the
+                    # robot's own size can shut a 0.8 m passage (round 12, materials seed 301: two objects out of reach for good).
+                    # If they leave no way through, forget them and plan again.
+                    self.log('绕不开记下的看不见的障碍，先不管它'); self.ghosts = []
+                    D = self.costmap(ignore); goals = goal_fn(D); res = self.astar(D, goals) if goals else None
                 if res is None:
                     fails += 1; self.stop(); path = None
                     if fails >= 3: self.abort = 'no_path'; return None

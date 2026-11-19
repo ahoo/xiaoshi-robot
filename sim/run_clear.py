@@ -35,7 +35,7 @@ ANGLES = (0, 10, 30, 60, 90, -30, -60)
 ROBUST = [('patches_4px', dict(clear_block=4)), ('fewer_holes', dict(clear_holes=(0.4, 0.5))), ('both_rougher', dict(clear_holes=(0.35, 0.45), clear_block=4))]
 
 
-NAV = ('导航', '搬运', '巡视', '回位')
+NAV = ('导航', '巡视', '回位')               # driving about, not carrying it (the gripper touches it then) or grasping it
 
 
 def _go(robot, agent, t_end, stop_when_in=True):
@@ -56,11 +56,12 @@ def _go(robot, agent, t_end, stop_when_in=True):
             if stop_when_in and robot.t > 20 and agent._in_basket_world(robot.obj_pos(0)): break
     except StopIteration:
         pass
-    moved = float(np.linalg.norm(robot.obj_pos(0)[:2] - p0[:2]))
-    return dict(delivered=bool(agent._in_basket_world(robot.obj_pos(0))), sim_t=round(robot.t, 1), bottle_touches=hits, bottle_moved_cm=round(100 * moved, 1),
+    moved = float(np.linalg.norm(robot.obj_pos(0)[:2] - p0[:2])); delivered_ = bool(agent._in_basket_world(robot.obj_pos(0)))
+    return dict(delivered=delivered_, sim_t=round(robot.t, 1), bottle_touches=hits, bottle_moved_cm=round(100 * moved, 1) if not delivered_ else None,
                 grasp_attempts=agent.stats['grasp_attempts'], grasp_fail=agent.stats['grasp_fail'],
                 collisions=agent.stats['collisions'], stuck=agent.stats['stuck'], slips=agent.stats.get('slips', 0), floor_touch=agent.stats['floor_touch'],
-                pulls=agent.stats['pulls'], blind_entries=sum(bool(e.get('blind')) for e in agent.memory.values()), log=agent.log_lines)
+                pulls=agent.stats['pulls'], blind_entries=sum(bool(e.get('blind')) for e in agent.memory.values()),
+                looks=sum(('侧面' in m or '朝向' in m) for _, m in agent.log_lines), log=agent.log_lines)
 
 
 def job_ab(args):
@@ -94,7 +95,7 @@ def summarise(rows, key='setting'):
                          bottle_touches=sum(r['bottle_touches'] for r in sel), runs_touching=sum(r['bottle_touches'] > 0 for r in sel),
                          grasp_attempts=sum(r['grasp_attempts'] for r in sel), grasp_fail=sum(r['grasp_fail'] for r in sel), floor_touch=sum(r['floor_touch'] for r in sel),
                          mean_sim_t_delivered=round(float(np.mean([r['sim_t'] for r in sel if r['delivered']])), 1) if any(r['delivered'] for r in sel) else None,
-                         side_looks=sum(any('侧面' in m or '朝向' in m for _, m in r['log']) for r in sel))
+                         side_looks=sum(r['looks'] > 0 for r in sel))
     return out
 
 

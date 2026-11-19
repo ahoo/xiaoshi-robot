@@ -34,7 +34,9 @@ def _one(args):
 
 if __name__ == '__main__':
     os.makedirs(CACHE, exist_ok=True)
-    jobs = [(c['name'], s, c['clearance'], c['pad_friction'], c.get('clutter', False), c.get('materials', False)) for c in CONDITIONS for s in c['seeds']]
+    # the conditions most likely to show a problem with a new change go first (the output is sorted afterwards, so it does not matter)
+    first = ['materials', 'clutter', 'near_walls', 'bare_jaws', 'standard']
+    jobs = [(c['name'], s, c['clearance'], c['pad_friction'], c.get('clutter', False), c.get('materials', False)) for n in first for c in CONDITIONS if c['name'] == n for s in c['seeds']]
     with mp.Pool(int(sys.argv[1]) if len(sys.argv) > 1 else max(1, mp.cpu_count() - 1), maxtasksperchild=1) as pool:   # fresh process per episode: GL memory is not all returned
         out = []
         for r in pool.imap_unordered(_one, jobs):
