@@ -4,6 +4,7 @@
 
 硬件全部是能买到的开源套件：**LeKiwi 三全向轮底盘 + SO-101 机械臂（5 轴 + 夹爪）+ LD19 激光雷达**，外加前置和腕部两个深度相机。
 
+- 当前状态和已知限制：[`docs/status.md`](docs/status.md)；下一步计划：[`docs/roadmap.md`](docs/roadmap.md)
 - 试验结果和实物验收表：[`docs/validation.md`](docs/validation.md)
 - 要买的东西：[`docs/bom.md`](docs/bom.md)
 - 原始数据：[`results/`](results/)（每次试验的结果和事件日志）
