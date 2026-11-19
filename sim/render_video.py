@@ -4,6 +4,9 @@
   MUJOCO_GL=egl python render_video.py clear [seed] [out.mp4]       the clear plastic bottle alone in the room (layout of 'materials'
                                                                     seed); the chase view is replaced by the front depth image, red =
                                                                     no reading, the patch the robot finds the bottle by
+  MUJOCO_GL=egl python render_video.py modes [seed] [out.mp4]       one job under the supervisor: starts on the charging dock with a low battery, an
+                                                                    operator takes over and hands back, the robot is knocked over and gets up, goes
+                                                                    to charge when the battery runs low, and carries on
 
 Frames are taken every 0.25 s of simulated time and played at 20 fps, i.e. 5x speed.
 """
@@ -90,9 +93,30 @@ def run_clear_episode(seed, on_step):
     return res, agent, robot
 
 
-def main(seed=4, clearance=0.30, out='../results/episode.mp4', clear=False):
+def run_modes_episode(seed, on_step, holder):
+    """The integration scenario of the modes: see the module docstring. Returns (score sheet, supervisor)."""
+    import test_modes as T
+    from episode import make_layout, run_supervised
+    st = dict(fall=None, took=False, back=False)
+
+    def script(sup):
+        holder['sup'] = sup; r = sup.r; t = r.t
+        if not st['took'] and t > 45.0: st['took'] = True; sup.teleop(); st['t0'] = t
+        if st['took'] and not st['back']:
+            dt = t - st['t0']
+            if 1.0 <= dt < 7.0: sup.drive(0.12, 0.0, 0.0)
+            elif 7.5 <= dt < 11.0: sup.drive(0.0, 0.0, 0.7)
+            elif 11.5 <= dt < 16.0: sup.drive(0.0, 0.1, 0.0)
+            elif dt >= 17.0: st['back'] = True; sup.start_task()
+        if st['fall'] is None and t > 120.0 and sup.mode == 'TASK': st['fall'] = T.inject_fall(r, 'roll_l', 1.6)
+        if st['fall'] is not None: st['fall']()
+    objs, boxes = make_layout(seed)
+    return run_supervised(seed, objects=objs, boxes=boxes, dock=True, soc0=0.215, est_bias=0.0, perturbation=dict(lidar_model='ld19cal'), script=script, on_step=on_step, until=lambda s: s.task_done)
+
+
+def main(seed=4, clearance=0.30, out='../results/episode.mp4', clear=False, modes=False):
     f_big, f_mid, f_small = _font(34), _font(19), _font(15)
-    state = dict(ren_main=None, ren_side=None, n=0)
+    state = dict(ren_main=None, ren_side=None, n=0); holder = {}
     writer = imageio.get_writer(out, fps=20, codec='libx264', quality=None, macro_block_size=None, ffmpeg_params=['-crf', '27', '-preset', 'medium', '-pix_fmt', 'yuv420p'])
 
     def on_step(robot, agent):
@@ -112,7 +136,12 @@ def main(seed=4, clearance=0.30, out='../results/episode.mp4', clear=False):
         done = sum(agent._in_basket_world(robot.obj_pos(i)) for i in range(len(robot.objects)))
         y0 = MAIN[1] + 14
         d.text((20, y0), agent.state, font=f_big, fill=COL['orange'])
-        d.text((150, y0 + 10), f'仿真时间 {int(robot.t // 60):02d}:{int(robot.t % 60):02d}   已送达 {done}/{len(robot.objects)}   5 倍速   MuJoCo 物理仿真', font=f_mid, fill=COL['paper'])
+        extra = ''
+        if modes and holder.get('sup') is not None and holder['sup'].bat is not None:
+            s_ = holder['sup']; extra = f'   模式 {s_.mode}   电量 {100 * s_.bat.soc_est:.0f}%'
+            bx, by, bw = 20, y0 + 44, 200; d.rectangle([bx, by, bx + bw, by + 8], outline=COL['dim']); d.rectangle([bx, by, bx + bw * s_.bat.soc_est, by + 8], fill=COL['orange'] if s_.bat.soc_est > 0.2 else COL['warn'])
+        x_info = max(150, int(20 + d.textlength(agent.state, font=f_big) + 22))       # longer state names (离开充电座) must not run into the text beside them
+        d.text((x_info, y0 + 10), f'仿真时间 {int(robot.t // 60):02d}:{int(robot.t % 60):02d}   已送达 {done}/{len(robot.objects)}   5 倍速' + extra, font=f_mid, fill=COL['paper'])
         for i, (t, msg) in enumerate(agent.log_lines[-5:][::-1]):
             d.text((20, y0 + 56 + i * 28), f'{int(t // 60):02d}:{int(t % 60):02d}  {msg}', font=f_mid, fill=COL['paper'] if i == 0 else COL['dim'])
         d.text((MAIN[0] + 8, 2 * SIDE[1] + 12), '白：障碍  绿：可通行  黄点：雷达回波', font=f_small, fill=COL['dim'])
@@ -120,10 +149,14 @@ def main(seed=4, clearance=0.30, out='../results/episode.mp4', clear=False):
         d.text((MAIN[0] + 8, 2 * SIDE[1] + 68), 'LeKiwi 三全向轮底盘 + SO-101 机械臂', font=f_small, fill=COL['paper'])
         writer.append_data(np.asarray(frame))
 
-    res, agent, robot = run_clear_episode(seed, on_step) if clear else run_episode(seed, clearance, on_step=on_step)
+    if modes:
+        res, sup = run_modes_episode(seed, on_step, holder)
+        agent, robot = sup.a, sup.r
+    else:
+        res, agent, robot = run_clear_episode(seed, on_step) if clear else run_episode(seed, clearance, on_step=on_step)
     writer.close()
     import json
-    json.dump({k: res[k] for k in ('seed', 'clearance', 'objects', 'delivered', 'total', 'sim_time', 'grasp_attempts', 'grasp_fail', 'collisions')}, open(out.replace('.mp4', '.json'), 'w'))
+    json.dump({k: res.get(k) for k in ('seed', 'clearance', 'objects', 'delivered', 'total', 'sim_time', 'grasp_attempts', 'grasp_fail', 'collisions')}, open(out.replace('.mp4', '.json'), 'w'))
     rd = imageio.get_reader(out); n = rd.count_frames(); imageio.imwrite(out.replace('.mp4', '.jpg'), rd.get_data(int(n * 0.3)), quality=82); rd.close()
     print(res['delivered'], '/', res['total'], 'sim time', res['sim_time'], '->', out)
     return res
@@ -132,4 +165,5 @@ def main(seed=4, clearance=0.30, out='../results/episode.mp4', clear=False):
 if __name__ == '__main__':
     a = sys.argv
     if len(a) > 1 and a[1] == 'clear': main(int(a[2]) if len(a) > 2 else 301, 0.30, a[3] if len(a) > 3 else '../results/clear.mp4', clear=True)
+    elif len(a) > 1 and a[1] == 'modes': main(int(a[2]) if len(a) > 2 else 3, 0.30, a[3] if len(a) > 3 else '../results/modes.mp4', modes=True)
     else: main(int(a[1]) if len(a) > 1 else 4, float(a[2]) if len(a) > 2 else 0.30, a[3] if len(a) > 3 else '../results/episode.mp4')

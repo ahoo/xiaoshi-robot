@@ -96,6 +96,10 @@ class Agent:
         self.stats = dict(pulls=0, grasp_attempts=0, grasp_fail=0, dropped=0, missed_place=0, replans=0, stuck=0, collisions=0, floor_touch=0, max_tilt=0.0, dist=0.0)
         self._tick = 0; self._last_xy = np.array(robot.true_pose()[:2]); self._coll_t = -9.0; self._floor_t = -9.0
         self.ghosts = []; self._slip_hist = []; self.slip_flag = False; self._cmd_w = np.zeros(2); self._slip_t = -99.0
+        self.pause = None          # set by modes.Supervisor: a callable that says "stop at the next safe point" (low battery); None = never
+        self.arm_busy = False      # set by modes.Supervisor while an operator has the arm out in front of the lidar
+        self.freeze = False        # set by modes.Supervisor while the robot is tilted or lying down: the lidar and camera see the room at the wrong angle, so no mapping, matching or detecting
+        self.pose_before_fall = None
         m = robot.m
         self._floor = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, 'floor')
         # Where the basket is, in the robot's own map. It starts from where the user said it is, and is then corrected
@@ -115,11 +119,18 @@ class Agent:
         return float(x), float(y), float(th)
 
     def sense(self):
+        if self.freeze == 2: return                    # tilted or lying: nothing from the sensors is usable
         r = self.r
+        if self.freeze == 1:                            # upright again but the pose is unknown: only what is near the robot, for the safety layer
+            ang, rng_ = r.lidar(); rng_ = self._scan_filter(ang, rng_); f = np.isfinite(rng_)
+            x, y, th = self.pose(); sx, sy = P['lidar_pos'][0] + rng_[f] * np.cos(ang[f]), rng_[f] * np.sin(ang[f])
+            wx_, wy_ = x + math.cos(th) * sx - math.sin(th) * sy, y + math.sin(th) * sx + math.cos(th) * sy
+            near = np.hypot(wx_ - x, wy_ - y) < SAFE_R
+            self.scan_pts = np.stack([wx_[near], wy_[near]], 1); self.map_pts = np.zeros((0, 2)); return
         self._ncam += 1
         cam_now = self._ncam % 3 == 1                 # camera at 3.3 Hz, lidar at 10 Hz
         # --- lidar: correct the pose against the map, then update the map from the corrected pose
-        if self.state in ('抓取', '放置', '放下'):   # the arm is out in front of the lidar: neither match nor map
+        if self.arm_busy or self.state in ('抓取', '放置', '放下'):   # the arm is out in front of the lidar: neither match nor map
             if cam_now: self._sense_camera()
             return
         ang, rng_ = r.lidar()
@@ -548,6 +559,7 @@ class Agent:
             if rob1 == rob2: continue
             other, mine = (c.geom2, c.geom1) if rob1 else (c.geom1, c.geom2)
             if r.m.geom_bodyid[other] != 0: continue                      # only static world geometry counts
+            if mine == r.dock_nose and other in (r.dock_pad, r.dock_plate): continue      # touching the charger is what docking is, not a collision
             is_roller = r.m.geom_group[mine] == 1
             if other == self._floor:
                 if not is_roller and r.t - self._floor_t > 1.0: self._floor_t = r.t; self.stats['floor_touch'] += 1
@@ -1093,7 +1105,7 @@ class Agent:
         cands = [(math.hypot(o['x'] - self.basket['x'], o['y'] - self.basket['y']), j) for j, o in self.memory.items() if o['status'] == 'pending' and j != k]
         if cands: self.priority = min(cands)[1]
 
-    def explore_step(self):
+    def explore_step(self, stop_on_find=True):
         x, y, th = self.pose(); D = self.costmap()
         cells = []
         for j in range(CGY):
@@ -1109,7 +1121,7 @@ class Agent:
         # stop well inside camera range of the cell: standing 0.55 m off with a 0.6 m range (second sweep) meant each
         # spin barely saw the cell, and the sweep crept along 10 cm per spin
         rad = min(0.55, self.cam_range - 0.25)
-        goal = yield from self.goto(lambda D: [(cx, cy, None, rad)], check=lambda: 'found' if self.pick() is not None else None, timeout=60)
+        goal = yield from self.goto(lambda D: [(cx, cy, None, rad)], check=(lambda: 'found' if self.pick() is not None else None) if stop_on_find else None, timeout=60)
         if goal is None and self.abort == 'found': return True
         if goal is not None and not self.cov[j, i]: yield from self.spin()
         self.cov[j, i] = True
@@ -1129,15 +1141,20 @@ class Agent:
                 if best is None or d < best[0]: best = (d, k)
         return None if best is None else best[1]
 
-    def run(self):
+    def run(self, resume=False):
+        """The whole job. `resume`: pick it up again after the supervisor had the robot doing something else (charging, an operator, a
+        fall): the map, the memory and the clock carry on, so the look-round at start-up is skipped."""
         self.abort = None
-        yield from wait(self.r, 0.5)
-        self.state = '巡视'; self.log('开机，原地环顾建图')
-        yield from self.spin()
+        if not resume:
+            yield from wait(self.r, 0.5)
+            self.state = '巡视'; self.log('开机，原地环顾建图')
+            yield from self.spin()
         while True:
             yield from self._work()
             if self.help_needed:
                 self.stop(); self.state = '求助'; return
+            if self.pause is not None and self.pause():
+                self.stop(); self.state = '暂停'; return
             self.state = '回位'; self.log('没有待办，回起点')
             yield from self.goto(lambda D: [(HOME[0], HOME[1], HOME[2], 0.0)], check=lambda: 'found' if self.pick() is not None else None, timeout=90)
             if self.abort == 'found' and self.r.t < T_MAX:
@@ -1148,6 +1165,7 @@ class Agent:
     def _work(self):
         """Fetch what is known, explore for more, wait for skipped things to come due; until nothing is left or time is up."""
         while self.r.t < T_MAX:
+            if self.pause is not None and self.pause(): return         # asked to stop at a safe point (nothing in the gripper, between jobs)
             k = self.pick()
             if k is not None:
                 yield from self.fetch(k); self.target = None

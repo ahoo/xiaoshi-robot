@@ -1,0 +1,372 @@
+{
+ "runs": [
+  {
+   "seed": 1,
+   "soc0": null,
+   "dock": true,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 418.6,
+   "mode": "IDLE",
+   "fault": null,
+   "charges": 0,
+   "charge_log": [],
+   "collisions": 0,
+   "stuck": 0,
+   "soc_end": null,
+   "energy_wh": null,
+   "events": [
+    [
+     0.0,
+     "IDLE",
+     "→ TASK"
+    ],
+    [
+     418.6,
+     "TASK",
+     "→ IDLE"
+    ]
+   ]
+  },
+  {
+   "seed": 1,
+   "soc0": 0.21,
+   "dock": true,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 494.5,
+   "mode": "IDLE",
+   "fault": null,
+   "charges": 2,
+   "charge_log": [
+    {
+     "t": 102.7,
+     "reason": "low battery",
+     "soc_from": 0.189,
+     "soc_to": 0.9,
+     "minutes": 90.3
+    },
+    {
+     "t": 494.5,
+     "reason": "task done",
+     "soc_from": 0.812,
+     "soc_to": 0.9,
+     "minutes": 22.7
+    }
+   ],
+   "collisions": 0,
+   "stuck": 0,
+   "soc_end": 0.9001,
+   "energy_wh": 5.43,
+   "events": [
+    [
+     0.0,
+     "IDLE",
+     "→ TASK"
+    ],
+    [
+     69.1,
+     "TASK",
+     "→ CHARGE {'reason': 'low battery'}"
+    ],
+    [
+     69.1,
+     "CHARGE",
+     "去充电（low battery），电量 20%"
+    ],
+    [
+     102.7,
+     "CHARGE",
+     "充电 19% → 90%，用了 90 分钟（仿真里快进，物理时间没走）"
+    ],
+    [
+     107.5,
+     "CHARGE",
+     "→ TASK {'resume': True}"
+    ],
+    [
+     481.0,
+     "TASK",
+     "→ CHARGE {'reason': 'task done'}"
+    ],
+    [
+     481.0,
+     "CHARGE",
+     "去充电（task done），电量 81%"
+    ],
+    [
+     494.5,
+     "CHARGE",
+     "充电 81% → 90%，用了 23 分钟（仿真里快进，物理时间没走）"
+    ],
+    [
+     494.5,
+     "CHARGE",
+     "→ IDLE"
+    ]
+   ]
+  },
+  {
+   "seed": 1,
+   "soc0": 0.105,
+   "dock": true,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 388.9,
+   "mode": "IDLE",
+   "fault": null,
+   "charges": 2,
+   "charge_log": [
+    {
+     "t": 25.2,
+     "reason": "low battery",
+     "soc_from": 0.101,
+     "soc_to": 0.9,
+     "minutes": 99.9
+    },
+    {
+     "t": 388.9,
+     "reason": "task done",
+     "soc_from": 0.823,
+     "soc_to": 0.9,
+     "minutes": 21.2
+    }
+   ],
+   "collisions": 0,
+   "stuck": 0,
+   "soc_end": 0.9002,
+   "energy_wh": 4.07,
+   "events": [
+    [
+     0.0,
+     "IDLE",
+     "→ TASK"
+    ],
+    [
+     12.9,
+     "TASK",
+     "→ CHARGE {'reason': 'low battery'}"
+    ],
+    [
+     13.0,
+     "CHARGE",
+     "去充电（low battery），电量 10%"
+    ],
+    [
+     25.2,
+     "CHARGE",
+     "充电 10% → 90%，用了 100 分钟（仿真里快进，物理时间没走）"
+    ],
+    [
+     30.0,
+     "CHARGE",
+     "→ TASK {'resume': True}"
+    ],
+    [
+     375.8,
+     "TASK",
+     "→ CHARGE {'reason': 'task done'}"
+    ],
+    [
+     375.8,
+     "CHARGE",
+     "去充电（task done），电量 82%"
+    ],
+    [
+     388.9,
+     "CHARGE",
+     "充电 82% → 90%，用了 21 分钟（仿真里快进，物理时间没走）"
+    ],
+    [
+     388.9,
+     "CHARGE",
+     "→ IDLE"
+    ]
+   ]
+  },
+  {
+   "seed": 2,
+   "soc0": null,
+   "dock": true,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 452.6,
+   "mode": "IDLE",
+   "fault": null,
+   "charges": 0,
+   "charge_log": [],
+   "collisions": 0,
+   "stuck": 0,
+   "soc_end": null,
+   "energy_wh": null,
+   "events": [
+    [
+     0.0,
+     "IDLE",
+     "→ TASK"
+    ],
+    [
+     452.6,
+     "TASK",
+     "→ IDLE"
+    ]
+   ]
+  },
+  {
+   "seed": 2,
+   "soc0": 0.21,
+   "dock": true,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 541.3,
+   "mode": "IDLE",
+   "fault": null,
+   "charges": 2,
+   "charge_log": [
+    {
+     "t": 91.5,
+     "reason": "low battery",
+     "soc_from": 0.191,
+     "soc_to": 0.9,
+     "minutes": 90.2
+    },
+    {
+     "t": 541.2,
+     "reason": "task done",
+     "soc_from": 0.8,
+     "soc_to": 0.9,
+     "minutes": 24.1
+    }
+   ],
+   "collisions": 0,
+   "stuck": 0,
+   "soc_end": 0.9,
+   "energy_wh": 5.98,
+   "events": [
+    [
+     0.0,
+     "IDLE",
+     "→ TASK"
+    ],
+    [
+     57.1,
+     "TASK",
+     "→ CHARGE {'reason': 'low battery'}"
+    ],
+    [
+     57.2,
+     "CHARGE",
+     "去充电（low battery），电量 20%"
+    ],
+    [
+     91.5,
+     "CHARGE",
+     "充电 19% → 90%，用了 90 分钟（仿真里快进，物理时间没走）"
+    ],
+    [
+     96.3,
+     "CHARGE",
+     "→ TASK {'resume': True}"
+    ],
+    [
+     528.3,
+     "TASK",
+     "→ CHARGE {'reason': 'task done'}"
+    ],
+    [
+     528.3,
+     "CHARGE",
+     "去充电（task done），电量 80%"
+    ],
+    [
+     541.2,
+     "CHARGE",
+     "充电 80% → 90%，用了 24 分钟（仿真里快进，物理时间没走）"
+    ],
+    [
+     541.2,
+     "CHARGE",
+     "→ IDLE"
+    ]
+   ]
+  },
+  {
+   "seed": 2,
+   "soc0": 0.105,
+   "dock": true,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 507.7,
+   "mode": "IDLE",
+   "fault": null,
+   "charges": 2,
+   "charge_log": [
+    {
+     "t": 24.6,
+     "reason": "low battery",
+     "soc_from": 0.101,
+     "soc_to": 0.9,
+     "minutes": 99.9
+    },
+    {
+     "t": 507.7,
+     "reason": "task done",
+     "soc_from": 0.793,
+     "soc_to": 0.9,
+     "minutes": 24.8
+    }
+   ],
+   "collisions": 0,
+   "stuck": 1,
+   "soc_end": 0.9,
+   "energy_wh": 5.56,
+   "events": [
+    [
+     0.0,
+     "IDLE",
+     "→ TASK"
+    ],
+    [
+     12.9,
+     "TASK",
+     "→ CHARGE {'reason': 'low battery'}"
+    ],
+    [
+     12.9,
+     "CHARGE",
+     "去充电（low battery），电量 10%"
+    ],
+    [
+     24.6,
+     "CHARGE",
+     "充电 10% → 90%，用了 100 分钟（仿真里快进，物理时间没走）"
+    ],
+    [
+     29.5,
+     "CHARGE",
+     "→ TASK {'resume': True}"
+    ],
+    [
+     494.8,
+     "TASK",
+     "→ CHARGE {'reason': 'task done'}"
+    ],
+    [
+     494.8,
+     "CHARGE",
+     "去充电（task done），电量 79%"
+    ],
+    [
+     507.7,
+     "CHARGE",
+     "充电 79% → 90%，用了 25 分钟（仿真里快进，物理时间没走）"
+    ],
+    [
+     507.7,
+     "CHARGE",
+     "→ IDLE"
+    ]
+   ]
+  }
+ ]
+}

@@ -81,6 +81,61 @@ class Localizer:
             self.est[2] = (self.est[2] + odom[2] - t0 + math.pi) % (2 * math.pi) - math.pi
         self._odom_prev = odom.copy()
 
+    def global_search(self, px, py, center=None, radius=None, step=0.08, dth=math.radians(5), keep=3, n_refine=12):
+        """Where am I? Scan-match over a whole area and all headings, for when odometry means nothing (after a fall, or being carried).
+        (px, py): scan end points in the robot frame. center/radius: search a disc of that radius round `center` (default: the whole map).
+        Coarse pass with a wide likelihood field (the normal 2.5 cm one is far narrower than the grid step), then the best distinct few are refined in
+        two steps with narrower fields. Returns the distinct candidates [(score, x, y, theta), ...], best first (None if the map is still too thin
+        to match against); the scores are the plain 2.5 cm kernel, comparable with the ones the normal matcher reports."""
+        occ = self.hits >= MIN_HITS
+        if OCC_MODE == 'nms': occ &= self.hits >= NMS_FRAC * maximum_filter(self.hits, NMS_CELLS)
+        if occ.sum() < MIN_MAP_CELLS or len(px) < MIN_POINTS: return None
+        self._field = distance_transform_edt(~occ) * FINE; self._dirty = False
+        field = self._field; H, W = self.hits.shape
+        if len(px) > 80:
+            k = np.linspace(0, len(px) - 1, 80).astype(int); px, py = px[k], py[k]
+        if center is None: x0, x1, y0, y1 = 0.0, W * FINE, 0.0, H * FINE
+        else: x0, x1, y0, y1 = center[0] - radius, center[0] + radius, center[1] - radius, center[1] + radius
+        xs = np.arange(max(x0, 0.0), min(x1, W * FINE), step); ys = np.arange(max(y0, 0.0), min(y1, H * FINE), step)
+
+        def kern(xs_, ys_, t, sigma):
+            c, s = math.cos(t), math.sin(t); wx = c * px - s * py; wy = s * px + c * py
+            X = xs_[:, None, None] + wx[None, None, :]; Y = ys_[None, :, None] + wy[None, None, :]
+            X, Y = np.broadcast_arrays(X, Y)
+            d = map_coordinates(field, [Y.ravel() / FINE - 0.5, X.ravel() / FINE - 0.5], order=1, mode='nearest')
+            return np.exp(-0.5 * (d / sigma) ** 2).reshape(X.shape).mean(-1)
+
+        def distinct(c_, out, d_xy=0.25, d_th=30):
+            return all(math.hypot(c_[1] - o[1], c_[2] - o[2]) > d_xy or abs((c_[3] - o[3] + math.pi) % (2 * math.pi) - math.pi) > math.radians(d_th) for o in out)
+
+        cands = []                                                   # (score, x, y, theta), coarse
+        for t in np.arange(-math.pi, math.pi, dth):
+            sc = kern(xs, ys, t, 0.12)
+            for f in np.argsort(sc.ravel())[::-1][:keep]:
+                i, j = np.unravel_index(f, sc.shape); cands.append((float(sc[i, j]), float(xs[i]), float(ys[j]), float(t)))
+        cands.sort(reverse=True); top = []
+        for c_ in cands:                                              # the best few that differ from each other, not neighbours of the winner
+            if distinct(c_, top): top.append(c_)
+            if len(top) >= n_refine: break
+        refined = []
+        for sc0, cx, cy, ct in top:
+            best = (-1.0, cx, cy, ct)
+            for half_xy, st_xy, half_th, st_th, sigma in ((0.08, 0.03, math.radians(5), math.radians(1.5), 0.05), (0.03, 0.01, math.radians(1.5), math.radians(0.5), MATCH_SIGMA)):
+                bx, by, bt = best[1], best[2], best[3]; gx = _grid(half_xy, st_xy); best = (-1.0, bx, by, bt)
+                for t in bt + _grid(half_th, st_th):
+                    sc = kern(bx + gx, by + gx, t, sigma); i, j = np.unravel_index(np.argmax(sc), sc.shape)
+                    if sc[i, j] > best[0]: best = (float(sc[i, j]), float(bx + gx[i]), float(by + gx[j]), float(t))
+            refined.append(best)
+        refined.sort(reverse=True); out = []
+        for sc_, bx, by, bt in refined:
+            c_ = (sc_, bx, by, (bt + math.pi) % (2 * math.pi) - math.pi)
+            if distinct(c_, out, 0.3, 30): out.append(c_)
+        return out
+
+    def reset_pose(self, pose):
+        """Put the estimate at `pose` (after a global search). The matcher forgets its running score so the jump is not read as a bump."""
+        self.est[:] = pose; self.base = None; self._moved = 0.0; self._turned = 0.0
+
     def correct(self, px, py):
         """(px, py): scan end points in the robot frame. Updates self.est in place; returns True if it moved it."""
         occ = self.hits >= MIN_HITS

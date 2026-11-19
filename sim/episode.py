@@ -68,22 +68,8 @@ def make_layout(seed, clearance=0.30, n_boxes=None, clutter=False, materials=Fal
     return objs, boxes
 
 
-def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=None, clutter=False, perturbation=None, materials=False):
-    import model
-    import perturb
-    perturb.CUR = dict(perturbation or {})
-    if pad_friction is not None: model.P['pad_friction'] = pad_friction
-    objs, boxes = make_layout(seed, clearance, clutter=clutter, materials=materials)
-    robot = Robot(objs, seed=seed, extra_boxes=boxes)
-    agent = Agent(robot, seed=seed, verbose=verbose)
-    t0 = time.time(); gen = agent.run()
-    try:
-        while robot.t < T_MAX + 60:
-            next(gen); robot.step(); agent.after_step()
-            if on_step: on_step(robot, agent)
-    except StopIteration:
-        pass
-    # Score sheet (ground truth). The robot never knew which real object a memory stood for: match by position.
+def score_sheet(seed, clearance, objs, boxes, robot, agent, t0):
+    """Score sheet (ground truth). The robot never knew which real object a memory stood for: match by position."""
     outcome = {}
     for k, (kind, *_rest) in enumerate(objs):
         p = robot.obj_pos(k)
@@ -106,9 +92,59 @@ def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=
                t_last=max([p[0] for p in agent.score_events if p[3]], default=None),   # when the last thing really went in
                peak_torque=[round(float(v), 2) for v in robot.peak_torque], rms_torque=[round(float(v), 2) for v in np.sqrt(robot.torque_sq / robot.n_steps)],
                time_above_80pct=[round(float(v), 4) for v in robot.sat_steps / robot.n_steps], **{k: (round(v, 2) if isinstance(v, float) else v) for k, v in agent.stats.items()})
+    return res
+
+
+def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=None, clutter=False, perturbation=None, materials=False):
+    import model
+    import perturb
+    perturb.CUR = dict(perturbation or {})
+    if pad_friction is not None: model.P['pad_friction'] = pad_friction
+    objs, boxes = make_layout(seed, clearance, clutter=clutter, materials=materials)
+    robot = Robot(objs, seed=seed, extra_boxes=boxes)
+    agent = Agent(robot, seed=seed, verbose=verbose)
+    t0 = time.time(); gen = agent.run()
+    try:
+        while robot.t < T_MAX + 60:
+            next(gen); robot.step(); agent.after_step()
+            if on_step: on_step(robot, agent)
+    except StopIteration:
+        pass
+    res = score_sheet(seed, clearance, objs, boxes, robot, agent, t0)
     if pad_friction is not None: model.P['pad_friction'] = 1.0
     perturb.CUR = {}
     return res, agent, robot
+
+
+def run_supervised(seed, clearance=0.30, verbose=False, dock=False, soc0=None, cfg=None, script=None, t_end=None, start='task', materials=False, clutter=False,
+                   on_step=None, perturbation=None, robot_pose=None, objects=None, boxes=None, until=None, right=True, est_bias=None):
+    """The same room and job as run_episode, but under modes.Supervisor: a battery (soc0 = state of charge at the start; None = no battery model),
+    a charging dock (dock=True: the robot starts docked unless robot_pose says otherwise), modes, falls, an operator (`script(sup)` is called every tick).
+    start: 'task' (start the fetch job), 'idle' (wait for the script)."""
+    import perturb, righting
+    from model import DOCK_POSE
+    from modes import Supervisor
+    from power import Battery
+    perturb.CUR = dict(perturbation or {})
+    if objects is None: objects, boxes = make_layout(seed, clearance, clutter=clutter, materials=materials)
+    pose = robot_pose or (DOCK_POSE if dock else HOME)
+    robot = Robot(objects, seed=seed, extra_boxes=boxes or [], dock=dock, robot_pose=pose)
+    agent = Agent(robot, seed=seed, verbose=verbose)
+    bat = Battery(soc0, rng=np.random.default_rng(seed + 99), est_bias=est_bias) if soc0 is not None else None
+    sup = Supervisor(robot, agent, bat, cfg)
+    if right: righting.attach(sup)
+    if start == 'task': sup.start_task()
+    t0 = time.time()
+    def step(r, a):
+        if script: script(sup)
+        if on_step: on_step(r, a)
+    sup.run(t_end if t_end is not None else T_MAX + 60, on_step=step, until=until)
+    res = score_sheet(seed, clearance, objects, boxes or [], robot, agent, t0)
+    res['finished'] = res['finished'] or sup.task_done
+    res.update(mode=sup.mode, fault=sup.fault, sup_stats=dict(sup.stats), charge_log=sup.charge_log, fall_log=sup.fall_log, nav_results=sup.nav_results,
+               soc_end=None if bat is None else round(bat.soc, 4), energy_wh=None if bat is None else round(bat.drawn_wh, 2))
+    perturb.CUR = {}
+    return res, sup
 
 
 if __name__ == '__main__':

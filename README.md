@@ -23,7 +23,17 @@
 | `sim/lidar_models.py` | 雷达误差模型：高斯噪声；按 LD19 规格书的模型（每个表面固定偏差、1.5 cm 量化、混合点、野点） |
 | `sim/perturb.py` | 敏感度扫描用的误差开关（摩擦、重量、舵机零位、相机外参、里程计、雷达、深度；透明物体深度图里没读数的比例和成片程度） |
 | `sim/perception.py` | 前置深度相机：拟合地面、去掉家具，把剩下的点分成一件件东西，量轮廓、表面点和高度；地板上连成片没有读数的地方（透明塑料）单独找出来，只凭它估出近侧边缘、粗细、朝向和长度（`clear_detection`）；腕部深度相机：看两片夹爪之间有没有东西 |
-| `sim/episode.py` | 一次完整试验（随机布局 → 自主运行 → 成绩单） |
+| `sim/modes.py` | 模式管理层 `Supervisor`：自动任务 / 自主导航 / 遥控 / 充电 / 起身 / 待命 / 故障，以及谁能打断谁（摔倒 > 电量见底 > 操作员 > 电量偏低 > 任务结束）。还管 IMU 摔倒检测、电池记账、遥控的死人开关 |
+| `sim/power.py` | 电池和充电模型：容量、耗电（算力常数 + 每个舵机的电流）、库仑计读数误差、恒流恒压充电（充电时仿真快进，物理时间不走） |
+| `sim/dock.py` | 回充电座：规划到座前 0.4 m，倒车、按位姿估计修正横向和朝向，碰到触片就停，没接上就前进离开再来，最多 3 次 |
+| `sim/righting.py` | 摔倒后起身：等静止、按 IMU 重力方向分类躺姿、执行对应的手臂+轮子动作、检查、重试；起来以后用整张地图重新定位（多视角一致才接受） |
+| `sim/righting_maneuvers.json` | 起身动作库（每种躺姿一组 4 段的关节目标和轮速），由 `sim/search_righting.py` 搜出来 |
+| `sim/search_righting.py` | 起身动作的搜索工具：在带扰动的场景里（零位、摩擦、重量、落地姿态）用交叉熵法找，按新场景测成功率 |
+| `sim/teleop_server.py` | 遥控的 TCP 接口（一行一个 JSON）：速度、手臂（关节或手端位置）、切模式、去某个点、状态 |
+| `sim/teleop_client.py` | 终端键盘遥控客户端（连 `teleop_server.py`；w/s/a/d/q/e 开，1–4 手臂，t 接管、r 交还、c 去充电） |
+| `sim/test_modes.py` | 模式、充电座、遥控、导航、摔倒的台架 → `results/modes_*.json` |
+| `sim/test_righting.py` | 起身台架：每种躺姿的动作在新场景里的成功率，以及 28 次推倒 → `results/righting.json` |
+| `sim/episode.py` | 一次完整试验（随机布局 → 自主运行 → 成绩单）；`run_supervised` 是同一个试验放在模式管理层下（带电池、充电座、摔倒、操作员） |
 | `sim/run_trials.py` | 批量随机试验 → `results/trials.json` |
 | `sim/test_base.py`、`sim/test_grasp.py`、`sim/test_perception.py`、`sim/test_pull.py` | 底盘、抓取、相机、扒出来的台架测试 |
 | `sim/test_localization.py` | 定位台架：录一局真实轨迹，离线换不同雷达误差模型重放，一次约 20 秒 |
@@ -50,6 +60,16 @@ python test_localization.py bench 5,9   # 两套定位 × 六种雷达误差模�
 python profile_compute.py    # 机器人自己的算法各占多少 CPU
 python test_clear.py all      # 透明瓶台架，几分钟 -> results/clear_bench.json
 python run_clear.py ab 4      # 透明瓶单独在房间里（ab / forced / robust / heldout 四种：两个办法的对照、强制各种朝向、更苛刻的深度图、没参与开发的新种子），4 个进程 -> results/clear_bottle.json
+python test_modes.py dock 10  # 充电座：10 个随机起点倒车对接（PROCS=3 用 3 个进程），-> results/modes_dock.json
+python test_modes.py fall 16  # 摔倒：16 次随机位置、方向、力度的推倒，看能不能起来、起来后位置对不对
+python test_modes.py nav 6    # 自主导航：6 个随机布局各 6 个可达目标和 2 个到不了的目标
+python test_modes.py teleop   # 遥控：死人开关、安全层开/关、手臂指令、从自动任务接管再交还
+python test_modes.py lowbatt 2  # 整套任务带低电量：软停→充电→续作，电量紧急线
+python test_modes.py server   # 遥控 TCP 服务器：真的连一个 socket 去开机器人
+python test_modes.py explore 3  # 自主导航的巡视建图（只看不捡）
+python test_modes.py dockfail   # 充电座位置和机器人以为的偏 0/8/15/25 cm：小偏差照样对上，大偏差干净地失败
+python test_righting.py       # 起身台架（每种躺姿 24 个新场景 + 推倒扫描），约 5 分钟 -> results/righting.json
+MUJOCO_GL=egl python render_video.py modes 3 ../results/modes.mp4   # 一次任务里接管、摔倒、低电量充电连着发生的录像
 python run_trials.py 2       # 全部 56 次随机试验，2 个进程（双核约 2–3 小时，渲染相机图像占了一半时间）；中断后重跑会接着做
 MUJOCO_GL=egl python render_video.py 4    # 录像，需要能离屏渲染的环境
 python ../web/build_page.py  # 用 results/ 里的数字重新生成页面和 docs/validation.md
@@ -69,6 +89,10 @@ python ../web/build_page.py  # 用 results/ 里的数字重新生成页面和 do
 - 软物体是多段刚体加弹性铰链和柔性接触的近似，能复现压扁、垂挂和粘手，不是布料仿真。
 - 开机时停在充电座上，起点已知；收纳筐大致位置事先已知，精确位置由相机看到后修正。
 - 底盘、电池等的重量是估的；里程计误差和深度噪声的大小是按常见硬件估的。
+- **电池和充电**（第十三轮）：容量 50 Wh、算力和传感器耗电 10 W、每个舵机的电流（待机、铜损、做功/效率）、电池板读数的固定偏差（1σ 3%）、3 A 恒流到 80% 再恒压收尾，都是按数据手册和常见硬件估的（`sim/power.py`）。充电时仿真把时间快进，物理时间不走。
+- **充电座和后部充电探针**：设计出来的，没造过。「接上」在仿真里是探针几何上碰到触片并保持 1 秒，没有接触电阻、弹簧力、氧化。充电座位置事先已知（装的时候量好写进 `sim/model.py`），挪了要重新量。
+- **摔倒和起身**：IMU 读数是重力方向加噪声（0.25°）和固定偏差（0.5°），没有加速度干扰；起身的手臂加轮子动作是在仿真里搜出来的，要 30 rad/s² 的关节加速度，**实物没试过**；机身上只有雷达头和立柱是实体，相机支架、线缆、电池位置没建。
+- **遥控和导航**：网络延迟、丢包没有建模；导航只在 4×3 m 单房间里测过，没有会动的障碍物。
 
 ## 参考
 

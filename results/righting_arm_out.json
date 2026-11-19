@@ -1,0 +1,179 @@
+{
+ "arm": "reach down in front, pinch at (0.24, 0, 0.06) m, gripper open",
+ "trials": [
+  {
+   "kind": "roll_l",
+   "strength": 1.0,
+   "poses": [
+    "side_l",
+    "upright"
+   ],
+   "tilt0": 115.1,
+   "up": true,
+   "fell": true
+  },
+  {
+   "kind": "roll_l",
+   "strength": 1.4,
+   "poses": [
+    "side_r",
+    "upright"
+   ],
+   "tilt0": 115.1,
+   "up": true,
+   "fell": true
+  },
+  {
+   "kind": "roll_l",
+   "strength": 1.8,
+   "poses": [
+    "upright"
+   ],
+   "tilt0": 0.0,
+   "up": true,
+   "fell": false
+  },
+  {
+   "kind": "roll_l",
+   "strength": 2.2,
+   "poses": [
+    "side_l",
+    "upright"
+   ],
+   "tilt0": 115.1,
+   "up": true,
+   "fell": true
+  },
+  {
+   "kind": "roll_r",
+   "strength": 1.0,
+   "poses": [
+    "side_r",
+    "upright"
+   ],
+   "tilt0": 115.1,
+   "up": true,
+   "fell": true
+  },
+  {
+   "kind": "roll_r",
+   "strength": 1.4,
+   "poses": [
+    "side_l",
+    "side_r",
+    "upright"
+   ],
+   "tilt0": 115.1,
+   "up": true,
+   "fell": true
+  },
+  {
+   "kind": "roll_r",
+   "strength": 1.8,
+   "poses": [
+    "upright"
+   ],
+   "tilt0": 0.0,
+   "up": true,
+   "fell": false
+  },
+  {
+   "kind": "roll_r",
+   "strength": 2.2,
+   "poses": [
+    "side_l",
+    "side_r",
+    "upright"
+   ],
+   "tilt0": 120.1,
+   "up": true,
+   "fell": true
+  },
+  {
+   "kind": "pitch_f",
+   "strength": 1.0,
+   "poses": [
+    "upright"
+   ],
+   "tilt0": 0.0,
+   "up": true,
+   "fell": false
+  },
+  {
+   "kind": "pitch_f",
+   "strength": 1.4,
+   "poses": [
+    "upright"
+   ],
+   "tilt0": 0.0,
+   "up": true,
+   "fell": false
+  },
+  {
+   "kind": "pitch_f",
+   "strength": 1.8,
+   "poses": [
+    "upright"
+   ],
+   "tilt0": 0.0,
+   "up": true,
+   "fell": false
+  },
+  {
+   "kind": "pitch_f",
+   "strength": 2.2,
+   "poses": [
+    "fwd_b",
+    "upright"
+   ],
+   "tilt0": 71.3,
+   "up": true,
+   "fell": true
+  },
+  {
+   "kind": "pitch_b",
+   "strength": 1.0,
+   "poses": [
+    "upright"
+   ],
+   "tilt0": 0.0,
+   "up": true,
+   "fell": false
+  },
+  {
+   "kind": "pitch_b",
+   "strength": 1.4,
+   "poses": [
+    "upright"
+   ],
+   "tilt0": 0.0,
+   "up": true,
+   "fell": false
+  },
+  {
+   "kind": "pitch_b",
+   "strength": 1.8,
+   "poses": [
+    "side_r",
+    "upright"
+   ],
+   "tilt0": 115.1,
+   "up": true,
+   "fell": true
+  },
+  {
+   "kind": "pitch_b",
+   "strength": 2.2,
+   "poses": [
+    "side_r",
+    "upright"
+   ],
+   "tilt0": 115.1,
+   "up": true,
+   "fell": true
+  }
+ ],
+ "fell": 9,
+ "got_up": 9,
+ "n": 16
+}

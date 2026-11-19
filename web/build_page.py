@@ -34,6 +34,83 @@ def pct(a, b):
     return f'{100 * a / b:.0f}%' if b else '-'
 
 
+def modes_round():
+    """Round 13 (self-righting, charging, remote control, navigation): strings for the page and rows for the validation table, from results/modes_*.json
+    and results/righting.json. Missing files give '-' rather than an error, so the page builds while a bench is still running."""
+    def load(n):
+        fn = R(n); return json.load(open(fn)) if os.path.exists(fn) else None
+    D, D2, F, FJ, N, TL, LB, SV, RI, EX = (load(n) for n in ('modes_dock.json', 'modes_dock_ld19.json', 'modes_fall.json', 'modes_fall_job.json', 'modes_nav.json', 'modes_teleop.json',
+                                                            'modes_lowbatt.json', 'modes_server.json', 'righting.json', 'modes_explore.json'))
+    out = {}; rows = {}
+    med = lambda v: sorted(v)[len(v) // 2] if v else None
+    def dock_row(d, label):
+        if not d: return ''
+        ok = [r for r in d['runs'] if r['docked']]; c = [r['contact'] for r in ok if r['contact']]
+        return (f'<tr><td>{label}</td><td class="n">{len(ok)}/{len(d["runs"])}</td><td class="n">{sum(r["attempts"] > 1 for r in d["runs"])}</td><td class="n">{sum(r["collisions"] for r in d["runs"])}</td>'
+                f'<td class="n">{med([abs(x["dx_cm"]) for x in c]):.1f} / {max(abs(x["dx_cm"]) for x in c):.1f} cm</td><td class="n">{max(abs(x["yaw_deg"]) for x in c):.1f}°</td><td class="n">{med([x["t"] for x in c]):.0f} 秒</td></tr>') if c else ''
+    out['M13_DOCK_ROWS'] = dock_row(D, '雷达标定后（残余偏差 ±20 mm）') + dock_row(D2, '雷达没标定（LD19 规格书的偏差 ±45 mm）') or '<tr><td colspan="7">还在跑</td></tr>'
+    out['M13_DOCK_N'] = str(len(D['runs'])) if D else '-'
+    if D:
+        ok = [r for r in D['runs'] if r['docked']]; out['M13_DOCK_OK'] = f'{len(ok)}/{len(D["runs"])}'; out['M13_DOCK_MIN'] = f'{med([r["charge_min"] for r in ok]):.0f}'
+    else: out['M13_DOCK_OK'] = out['M13_DOCK_MIN'] = '-'
+    out['M13_DOCK_OK2'] = f'{sum(r["docked"] for r in D2["runs"])}/{len(D2["runs"])}' if D2 else '-'
+    # righting
+    if RI:
+        pp = RI['per_pose']; sw = RI['sweep']
+        out['M13_RIGHT_ROWS'] = ''.join(f'<tr><td>{n}</td><td class="n">{v["standard"]["upright"]}/{v["standard"]["n"]}</td><td class="n">{v["harsh"]["upright"]}/{v["harsh"]["n"]}</td></tr>'
+                                        for n, v in zip(('侧躺（左）', '侧躺（右）', '前倾趴着'), (pp['side_l'], pp['side_r'], pp['fwd'])))
+        out['M13_SWEEP'] = f'{sw["got_up"]}/{sw["fell"]}'; out['M13_SWEEP_N'] = str(sw['n']); out['M13_SWEEP_FELL'] = str(sw['fell'])
+    else: out['M13_RIGHT_ROWS'] = '<tr><td colspan="3">还在跑</td></tr>'; out['M13_SWEEP'] = out['M13_SWEEP_N'] = out['M13_SWEEP_FELL'] = '-'
+    if F:
+        down = [r for r in F['runs'] if r['falls'] > 0]
+        good = [r for r in down if r['reloc_err'] and r['reloc_err'][-1][0] < 0.05]; wrong = [r for r in down if r['reloc_err'] and r['reloc_err'][-1][0] >= 0.05]; lost = [r for r in down if r['fault']]
+        out['M13_FALL'] = f'{len(down)}/{len(F["runs"])}'; out['M13_FALL_UP'] = f'{sum(r["righted"] > 0 for r in down)}/{len(down)}'; out['M13_FALL_GOOD'] = f'{len(good)}/{len(down)}'
+        out['M13_FALL_WRONG'] = str(len(wrong)); out['M13_FALL_LOST'] = str(len(lost)); out['M13_FALL_COLL'] = str(sum(r['collisions'] for r in down))
+        out['M13_FALL_ERR'] = f'{100 * med([r["reloc_err"][-1][0] for r in good]):.1f}' if good else '-'
+    else:
+        for k in ('M13_FALL', 'M13_FALL_UP', 'M13_FALL_GOOD', 'M13_FALL_WRONG', 'M13_FALL_LOST', 'M13_FALL_COLL', 'M13_FALL_ERR'): out[k] = '-'
+    kind_cn = dict(roll_l='向左翻滚', roll_r='向右翻滚', pitch_f='向前栽', pitch_b='向后仰'); state_cn = {'搬运': '搬着东西', '巡视': '巡视中', '抓取': '抓取中', '导航': '去取东西的路上'}
+    def fj_row(r):
+        what = f'{kind_cn.get(r["kind"], r["kind"])}（{state_cn.get(r["state_at_fall"], r["state_at_fall"])}）'
+        if not r['falls']: return f'<tr><td>{what}</td><td class="n">没推倒</td><td class="n">-</td><td class="n">{r["delivered"]}/{r["total"]}</td><td class="n">{r["sim_time"]:.0f} 秒</td></tr>'
+        pos = '找回了位置' if r['reloc_err'] and r['reloc_err'][-1][0] < 0.05 else ('没找回，求助' if r['fault'] else '位置错了')
+        return f'<tr><td>{what}</td><td class="n">{"起来了" if r["righted"] else "没起来"}</td><td class="n">{pos}</td><td class="n">{r["delivered"]}/{r["total"]}</td><td class="n">{r["sim_time"]:.0f} 秒</td></tr>'
+    out['M13_FALLJOB_ROWS'] = ''.join(fj_row(r) for r in FJ['runs']) if FJ else '<tr><td colspan="5">还在跑</td></tr>'
+    # navigation
+    if N:
+        reach = [a for r in N['runs'] for a in r['arrivals'] if a['goal'] < 6]; bad = [a for r in N['runs'] for a in r['arrivals'] if a['goal'] >= 6]
+        arrived = [a for a in reach if a['result'] == 'arrived']; withh = [a for a in arrived if a['head_err_deg'] is not None]; noh = [a for a in arrived if a['head_err_deg'] is None]
+        out['M13_NAV'] = f'{len(arrived)}/{len(reach)}'; out['M13_NAV_BAD'] = f'{sum(a["result"] != "arrived" for a in bad)}/{len(bad)}'
+        out['M13_NAV_H'] = f'{med([a["err_cm"] for a in withh]):.1f}' if withh else '-'; out['M13_NAV_HW'] = f'{max(a["err_cm"] for a in withh):.1f}' if withh else '-'; out['M13_NAV_HD'] = f'{max(a["head_err_deg"] for a in withh):.1f}' if withh else '-'
+        out['M13_NAV_N'] = f'{med([a["err_cm"] for a in noh]):.1f}' if noh else '-'; out['M13_NAV_NW'] = f'{max(a["err_cm"] for a in noh):.1f}' if noh else '-'
+        out['M13_NAV_T'] = f'{med([a["secs"] for a in arrived]):.0f}'; out['M13_NAV_COLL'] = str(sum(r['collisions'] for r in N['runs'])); out['M13_NAV_LAY'] = str(len(N['runs']))
+    else:
+        for k in ('M13_NAV', 'M13_NAV_BAD', 'M13_NAV_H', 'M13_NAV_HW', 'M13_NAV_HD', 'M13_NAV_N', 'M13_NAV_NW', 'M13_NAV_T', 'M13_NAV_COLL', 'M13_NAV_LAY'): out[k] = '-'
+    out['M13_EXPLORE'] = '；'.join(f'{r["seed"]} 号布局 {r["t_end"]:.0f} 秒看完，找到 {r["objects_found"]}/{r["objects_total"]} 件，碰撞 {r["collisions"]}' for r in EX['runs']) if EX else '-'
+    # teleop
+    if TL:
+        a_on, a_off, dm, arm = TL['safety_on'], TL['safety_off'], TL['deadman'], TL['arm']
+        out['M13_TELE_ON_GAP'] = f'{a_on["gap_to_wall_cm"]:.1f}'; out['M13_TELE_ON_COLL'] = str(a_on['collisions']); out['M13_TELE_OFF_GAP'] = f'{a_off["gap_to_wall_cm"]:.1f}'; out['M13_TELE_OFF_COLL'] = str(a_off['collisions'])
+        out['M13_TELE_COAST'] = f'{dm["coast_cm"]:.1f}'; out['M13_TELE_STOP'] = f'{dm["stopped_after_s"]}'
+        out['M13_TELE_ARM'] = f'{arm.get("pinch_err_mm", "-")}'
+        tk = TL['takeover']; base = {r['seed']: r for r in tk if not r['takeover']}; took = {r['seed']: r for r in tk if r['takeover'] is True}; held = {r['seed']: r for r in tk if r['takeover'] == 'held'}
+        out['M13_TAKEOVER_ROWS'] = ''.join(f'<tr><td>{s} 号布局</td><td class="n">{base[s]["delivered"]}/{base[s]["total"]}，{base[s]["sim_time"]:.0f} 秒</td><td class="n">{took[s]["delivered"]}/{took[s]["total"]}，{took[s]["sim_time"]:.0f} 秒</td>'
+                                          + (f'<td class="n">{held[s]["delivered"]}/{held[s]["total"]}，{held[s]["sim_time"]:.0f} 秒{"（接管时手里有东西）" if held[s].get("held_when_taken") else "（没赶上拿着东西的时候）"}</td>' if s in held else '<td class="n">-</td>')
+                                          + f'<td class="n">{took[s]["collisions"] + (held[s]["collisions"] if s in held else 0)}</td></tr>' for s in sorted(base) if s in took)
+    else:
+        for k in ('M13_TELE_ON_GAP', 'M13_TELE_ON_COLL', 'M13_TELE_OFF_GAP', 'M13_TELE_OFF_COLL', 'M13_TELE_COAST', 'M13_TELE_STOP', 'M13_TELE_ARM'): out[k] = '-'
+        out['M13_TAKEOVER_ROWS'] = '<tr><td colspan="4">还在跑</td></tr>'
+    # low battery
+    if LB:
+        out['M13_LOWBATT_ROWS'] = ''.join(f'<tr><td>{r["seed"]} 号布局，起始电量 {"（不建电池模型）" if r["soc0"] is None else f"{100 * r["soc0"]:.1f}%"}</td><td class="n">{r["delivered"]}/{r["total"]}</td><td class="n">{r["sim_time"]:.0f} 秒</td>'
+                                          f'<td class="n">{r["charges"]}</td><td class="n">{"、".join(f"{c["soc_from"] * 100:.0f}%→{c["soc_to"] * 100:.0f}%" for c in r["charge_log"]) or "-"}</td><td class="n">{r["collisions"]}</td></tr>' for r in LB['runs'])
+    else: out['M13_LOWBATT_ROWS'] = '<tr><td colspan="6">还在跑</td></tr>'
+    V = load('modes.json')
+    out['M13_VIDEO_NOTE'] = f'第 {V["seed"]} 号随机布局，仿真时间 {V["sim_time"] / 60:.1f} 分钟，送达 {V["delivered"]}/{V["total"]}' if V else '-'
+    out['M13_SERVER'] = ('全部通过（够不到的 arm_to 和不认识的命令按预期被拒绝，goto 到了点，键盘客户端的按键映射对）' if SV and SV.get('client_keys_ok') and sum(not ok for c, ok in SV['replies']) == 2 and ['arm_to', False] in [list(r) for r in SV['replies']] and ['bogus', False] in [list(r) for r in SV['replies']] and SV.get('nav') and SV['nav'][0]['result'] == 'arrived' else '有问题') if SV else '-'
+    return out
+
+
 def main():
     T = json.load(open(R('trials.json'))); G = json.load(open(R('grasp_bench.json'))); B = json.load(open(R('base_bench.json')))
     M = json.load(open(R('model_facts.json')))
@@ -221,6 +298,23 @@ def main():
         ('算力', '在树莓派 5 上跑 <code>profile_compute.py</code> 同样的模块（或者用录下来的数据离线跑），记每个模块每次的耗时', f'这台机器上合计约占一个核的 {100 * CP["total_share_of_one_core"]:.0f}%', '树莓派上合计不超过两个核'),
         ('扒出来', '方块、球、香蕉、袜子等各一件，分别放在离墙或柜子 2、4、6 cm 处，机器人从房间一侧去扒', '扒出来：' + '，'.join(f'{float(g) * 100:.0f} cm 处 {v["pulled"]}/{v["n"]}' for g, v in PU.items()), '4 cm 及以上不比仿真少一半以上；记录 2 cm 时是插不进去还是压到了东西'),
     ]
+    m13 = modes_round()
+    valid += [
+        ('电池容量和耗电', '满电后让机器人开机不动 10 分钟记电流；再跑一遍标准任务（5 件）记掉的电量；最后放电到电池板的截止电压', '仿真按数据手册参数算出来的：容量 50 Wh；待机约 14 W（算力 10 W + 舵机待机 3.7 W），直行 0.15 m/s 约 45 W，原地转 0.8 rad/s 约 51 W（每个轮子的电机力矩均方根约 1 N·m，三个轮子互相顶着也算在内，可能偏高）；一局 5 件任务平均约 38 W，用掉 4–6 Wh（电池的 8–12%）。常量在 <code>sim/power.py</code> 和 <code>sim/robot.py</code> 顶部',
+         '容量、待机功率、行走功率都在估计值的 ±30% 内；超了就改 <code>power.py</code>，并按实测重设低电量阈值'),
+        ('电量读数误差', '满电、半电、低电各读一次电量计，对照外接电量表或放电曲线', '仿真假设库仑计每次开机有固定偏差（1σ 3%）；低电量线 20%，紧急线 10%，电池板 3% 断电', '读数偏差不超过 ±5%；超了就抬高两条线'),
+        ('充电座对接', '机器人在房间里 10 个随机位置、随机朝向各回充一次，用真雷达，不要手工摆正', f'{m13["M13_DOCK_OK"]} 第一次就对上，碰撞 0；触片宽 24 cm，横向偏差中位 1 cm 左右', '10 次里至少 9 次第一次对上，3 次内必成功，没有撞坏充电座'),
+        ('触片和探针', '对上后看充电电流是否稳定在 1 A 以上；反复对接 50 次，量顶针磨损和接触电阻；对上后轻轻碰一下机身，看会不会断开', '仿真里「接上」只是探针几何上碰到触片，没有接触电阻、弹簧力、氧化；对上后一步都不会动', '电流稳定；50 次后接触电阻变化不超过 50%；轻碰不断开'),
+        ('充电时间', '从 20% 充到 90%，记时间和电流曲线', f'估计：3 A 恒流到 80%，之后恒压收尾，从 49% 充到 90% 约 {m13["M13_DOCK_MIN"]} 分钟（仿真里快进，物理时间不走）', '在估计值的 ±30% 内'),
+        ('低电量续作', '把电量放到 21% 再开始整机任务，数：停在两件之间去充电的次数；充完能不能接着把活干完；再放到 10.5%，看紧急回充', '见页面「低电量」表：软停、充电、续作；紧急线在拿着东西时也回充', '不在半路断电；充完接着干完；紧急回充时手里的东西放下、不摔坏'),
+        ('摔倒检测', '正常任务连跑 1 小时数误报；再在软垫上把机器人推倒 10 次，数都检出没有', '仿真里正常工作最大倾角 3–4°（抓取时到 7°）；阈值 45° 持续 0.3 秒；IMU 噪声 0.25°、偏差 0.5°', '没有误报；10 次推倒都在 1 秒内检出；被人抱起来不算摔倒（用静止检查和 3 秒预警兜底）'),
+        ('起身', '软垫上，有人在旁边，手放在急停上。先把手臂加速度降到 5 rad/s² 试动作，没问题再逐步加到 30；侧躺左右各 10 次、前趴 10 次', f'仿真：{m13["M13_SWEEP_N"]} 次推倒里 {m13["M13_SWEEP_FELL"]} 次真的倒下，{m13["M13_SWEEP"].split("/")[0]} 次起来了；侧躺左右和前趴在 24 个新场景里都是 24/24（见页面「起身」表）；<b>实物没试过</b>，要用到比平时大得多的关节加速度，对摩擦和重量很敏感', '成功率不低于仿真 20 个百分点，没有零件损坏、线缆拉脱；不行就改成「摔倒后停下报警」（<code>auto_right=False</code>）'),
+        ('起身后重新定位', '推倒再起身 10 次，起来后看机器人认为的位置和实际位置差多少（在地上画线量）', f'仿真：找回位置 {m13["M13_FALL_GOOD"]}，中位误差 {m13["M13_FALL_ERR"]} cm，认错位置 {m13["M13_FALL_WRONG"]} 次，找不回去求助 {m13["M13_FALL_LOST"]} 次', '位置误差小于 5 cm；认错位置 0 次（宁可求助也不能认错）'),
+        ('遥控延迟和死人开关', '手机或键盘经 Wi-Fi 发速度指令，量从发出到轮子转的延迟；再拔掉网络（关 Wi-Fi），看多久停', f'仿真里没有网络延迟；死人开关 0.5 秒：松开后滑行 {m13["M13_TELE_COAST"]} cm，{m13["M13_TELE_STOP"]} 秒停稳', '延迟小于 200 ms；断网后 1 秒内停稳（死人开关 0.5 秒加上轮子减速）'),
+        ('遥控时的安全层', '遥控直冲墙，安全层开和关各一次（墙前放泡沫挡着，速度 0.15 m/s）', f'仿真：安全层开停在离墙 {m13["M13_TELE_ON_GAP"]} cm（碰撞 {m13["M13_TELE_ON_COLL"]}）；关了撞上（碰撞 {m13["M13_TELE_OFF_COLL"]}）', '开：离墙不少于 2 cm 停下；关：能撞上（说明开关是真的）'),
+        ('自主导航到点', '房间里 10 个目标点（一半带朝向），卷尺量落点；再点一个家具里面的点，看是不是立刻拒绝', f'仿真：{m13["M13_NAV"]} 个可达目标到达；带朝向落点中位 {m13["M13_NAV_H"]} cm、最差 {m13["M13_NAV_HW"]} cm、朝向差 ≤{m13["M13_NAV_HD"]}°；不带朝向落点中位 {m13["M13_NAV_N"]} cm；到不了的 {m13["M13_NAV_BAD"]} 立刻拒绝；碰撞 {m13["M13_NAV_COLL"]}',
+         '到达率 10/10；带朝向落点不超过 5 cm；不碰东西'),
+    ]
     valid_rows = ''.join(f'<tr><td class="n">{i + 1}</td><td>{a}</td><td>{b}</td><td>{c}</td><td>{d}</td></tr>' for i, (a, b, c, d) in enumerate(valid))
 
     round_rows = ''
@@ -327,12 +421,14 @@ def main():
         'ROBOT_MASS': f'{M["robot_mass"]:.2f}',
         'BARE_GF': f'{bj["gf"]}/{bj["ga"]}', 'STD_GF': f'{s["gf"]}/{s["ga"]}', 'STD_TILT': f'{s["tilt"]}/{s["n"]}', 'STD_COLL': str(s['coll']),
     }
+    rep.update(m13)
     html = open(os.path.join(HERE, 'page_template.html'), encoding='utf8').read()
     for k, v in rep.items(): html = html.replace('{{' + k + '}}', v)
     assert '{{' not in html, html[html.index('{{'):html.index('{{') + 40]
     os.makedirs(os.path.join(HERE, 'dist'), exist_ok=True)
     open(os.path.join(HERE, 'dist', 'index.html'), 'w', encoding='utf8').write(html)
-    for f in ('episode.mp4', 'episode.jpg', 'clear.mp4', 'clear.jpg'): shutil.copy(R(f), os.path.join(HERE, 'dist', f))
+    for f in ('episode.mp4', 'episode.jpg', 'clear.mp4', 'clear.jpg', 'modes.mp4', 'modes.jpg'):
+        if os.path.exists(R(f)): shutil.copy(R(f), os.path.join(HERE, 'dist', f))
     # What is published to claude.ai: the same page without its own document tags (the platform wraps its own <!doctype>/<head>/<body>
     # around it), <title> first, the page language set by a script because the <html lang> goes with the wrapper.
     import re
@@ -346,7 +442,7 @@ def main():
 
     md = ['# 实物验收方案', '', '按顺序做，前一项不过先别做后一项。「仿真值」来自 `results/` 里的这一轮试验，由 `web/build_page.py` 自动填入。', '',
           '| # | 测什么 | 怎么测 | 仿真值 | 通过 |', '|---|---|---|---|---|']
-    md += [f'| {i + 1} | {a} | {b} | {c} | {d} |'.replace('<code>', '`').replace('</code>', '`') for i, (a, b, c, d) in enumerate(valid)]
+    md += [f'| {i + 1} | {a} | {b} | {c} | {d} |'.replace('<code>', '`').replace('</code>', '`').replace('<b>', '**').replace('</b>', '**') for i, (a, b, c, d) in enumerate(valid)]
     if SE:
         md += ['', '## 敏感度：每次只让一项变差（标准条件 10 局）', '', '| 变差的那一项 | 第十轮代码 | 第十一轮代码 | 抓取失败/尝试（最新） | 定位最大误差（最新） |', '|---|---|---|---|---|']
         md += sens_md

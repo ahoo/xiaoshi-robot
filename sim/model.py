@@ -49,6 +49,12 @@ FURNITURE = [
 ]
 BASKET = dict(x=3.45, y=2.55, sx=0.30, sy=0.22, h=0.09, t=0.008)
 HOME = (0.45, 2.55, -math.pi / 2)
+# Charging dock (built only when asked for: build_xml(dock=True)). Wall-mounted: a back plate on the +y wall with one wide contact strip
+# at the height of the robot's rear "nose" (a charging probe on the rear of the chassis, above the rear wheel). The robot reverses
+# into it; any lateral position within the strip's width (+-HALF_W) makes contact, so the alignment needed is a few cm, not a few mm.
+DOCK = dict(x=0.45, wall_y=3.0, plate_half_w=0.12, plate_t=0.03, plate_h=0.30, pad_t=0.008, pad_z=0.122, pad_half_h=0.012, nose_len=0.175, nose_r=0.01, nose_z=0.122)
+DOCK['pad_y'] = DOCK['wall_y'] - DOCK['plate_t'] - DOCK['pad_t']          # y of the strip's front face
+DOCK_POSE = (DOCK['x'], DOCK['pad_y'] - DOCK['nose_len'], -math.pi / 2)    # chassis pose with the nose touching the strip
 
 def _quat_z(a):
     return f'{math.cos(a / 2):.6f} 0 0 {math.sin(a / 2):.6f}'
@@ -120,7 +126,7 @@ def _attrs(s):
     return out
 
 
-def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET):
+def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET, dock=False):
     """objects: list of (kind, x, y, yaw, spec) with spec from objects.sample(). Returns MJCF text. World frame: x right, y 'down' the room plan, z up."""
     defaults, assets, arm_body, arm_acts = _arm_parts()
     R = P['wheel_radius']
@@ -143,6 +149,14 @@ def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET):
     for k, (dx, dy, hx, hy) in enumerate([(0, -(b['sy'] / 2 - t / 2), b['sx'] / 2, t / 2), (0, b['sy'] / 2 - t / 2, b['sx'] / 2, t / 2),
                                           (-(b['sx'] / 2 - t / 2), 0, t / 2, b['sy'] / 2), (b['sx'] / 2 - t / 2, 0, t / 2, b['sy'] / 2)]):
         bk.append(f'<geom name="basket_w{k}" type="box" pos="{b["x"] + dx} {b["y"] + dy} {hh}" size="{hx} {hy} {hh}" rgba="1 0.42 0.17 1"/>')
+    nose = ''
+    if dock:
+        D = DOCK
+        furn.append(f'<geom name="dock_plate" type="box" pos="{D["x"]} {D["wall_y"] - D["plate_t"] / 2} {D["plate_h"] / 2}" size="{D["plate_half_w"]} {D["plate_t"] / 2} {D["plate_h"] / 2}" rgba="0.25 0.28 0.32 1"/>')
+        furn.append(f'<geom name="dock_pad" type="box" pos="{D["x"]} {D["wall_y"] - D["plate_t"] - D["pad_t"] / 2} {D["pad_z"]}" size="{D["plate_half_w"]} {D["pad_t"] / 2} {D["pad_half_h"]}" rgba="0.85 0.65 0.2 1" friction="0.3 0.005 0.0001"/>')
+        zc = D['nose_z'] - (P['wheel_radius'] + 0.0005)          # nose height in the chassis frame
+        nose = (f'<geom name="dock_nose" type="capsule" fromto="-0.10 0 {zc} {-(D["nose_len"] - D["nose_r"])} 0 {zc}" size="{D["nose_r"]}" contype="2" conaffinity="1" group="4" friction="0.3 0.005 0.0001" mass="0"/>'
+                f'<geom class="rvis" type="capsule" fromto="-0.10 0 {zc} {-(D["nose_len"] - D["nose_r"])} 0 {zc}" size="{D["nose_r"]}" rgba="0.85 0.65 0.2 1" mass="0"/>')
     parts = [objects_lib.xml(f'obj{i}', spec, x, y, yaw) for i, (k, x, y, yaw, spec) in enumerate(objects)]
     objs = '\n'.join(b for _, b in parts); obj_assets = ''.join(a for a, _ in parts)
     wheels = '\n'.join(_wheel_xml(i, a) for i, a in enumerate(P['wheel_angles']))
@@ -187,7 +201,10 @@ def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET):
       <geom class="rvis" type="box" pos="-0.06 0 0.1" size="0.045 0.032 0.012" rgba="0.2 0.5 0.3 1"/>
       <geom class="rvis" type="cylinder" pos="{lx} {ly} {lz - 0.004}" size="0.019 0.017" rgba="0.1 0.1 0.1 1"/>
       <geom class="rvis" type="cylinder" pos="{lx} {ly} {lz - 0.036}" size="0.004 0.016" rgba="0.7 0.7 0.7 1"/>
+      <geom name="lidar_head" type="cylinder" pos="{lx} {ly} {lz - 0.004}" size="0.0195 0.017" contype="2" conaffinity="1" group="4" friction="0.5 0.005 0.0001" mass="0"/>
+      <geom name="lidar_post" type="cylinder" pos="{lx} {ly} {lz - 0.0385}" size="0.008 0.0215" contype="2" conaffinity="1" group="4" friction="0.5 0.005 0.0001" mass="0"/>
       <geom class="rvis" type="box" pos="0.1 0 0.07" size="0.006 0.02 0.012" rgba="0.1 0.1 0.1 1"/>
+      {nose}
       <site name="lidar" pos="{lx} {ly} {lz}" size="0.004" group="4"/>
       <site name="base_center" pos="0 0 0" size="0.004" group="4"/>
       <camera name="front" pos="0.108 0 0.075" xyaxes="0 -1 0 0.42 0 0.91" fovy="72"/>
