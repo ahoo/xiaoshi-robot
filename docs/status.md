@@ -1,7 +1,7 @@
 # 小拾取物机器人：设计与仿真现状（2026-11-19，第十三轮）
 
 - 代码仓库：https://github.com/ahoo/xiaoshi-robot （main 分支）
-- 结果页面：https://claude.ai/artifact/RKrf6fjHQ6JeapNeRMNe85 （线上是 v0.8 透明瓶，这一轮的 v0.9 页面已经生成在 [`web/dist/`](../web/dist/) 里，还没有重新发布）；页面的构建产物都在 `web/dist/`（`artifact.html` 就是发布用的文件）
+- 结果页面：https://claude.ai/artifact/RKrf6fjHQ6JeapNeRMNe85 （线上是第 9 版 = v0.9 起身·充电·遥控·导航，只有你自己能打开，分享要在页面的 Share 菜单里设）；页面的构建产物都在 [`web/dist/`](../web/dist/)（`artifact.html` 就是发布用的文件，`modes.mp4` 和 `modes.jpg` 是新加的录像）
 - 下一步计划：[`roadmap.md`](roadmap.md)；实物验收表：[`validation.md`](validation.md)；物料：[`bom.md`](bom.md)
 
 ## 第十三轮（当前版本）：摔倒自己起来、没电自己充、遥控、自主导航
