@@ -32,6 +32,15 @@ FLOOR_TOL = 0.008            # m above the fitted floor plane: below this a poin
 TALL = 0.13                  # m: points above this belong to furniture, walls, cartons
 CELL = 0.015                 # m: grid for grouping points seen from above
 MAX_SIZE = 0.20              # m: a blob longer than this is not something to pick up (or two things merged)
+# No-reading clusters on the floor (clear plastic, and anything else the depth camera cannot measure): a patch of
+# pixels without depth, in the middle of floor that does return depth, is a thing we cannot see but know is there.
+HOLE_MIN_PX = 18             # no-reading pixels in one cluster (a 12 cm bottle at 1.2 m has about 70)
+HOLE_DENS = 0.30             # fraction of no-reading pixels in a 5x5 window that counts as inside a cluster
+HOLE_RANGE = (0.04, 1.30)    # m: the floor point under a cluster's lowest pixel must be this far from the camera foot
+HOLE_MAX_W = 0.22            # m: wider than this on the floor is a dropout of the whole floor, not a thing to pick up
+LONG_MIN = 0.09             # m: a cluster this wide (sideways) shows the long axis of what lies there; narrower: end-on, or short
+SIDE_MIN = 40.0              # degrees between the direction found and the line of sight: nearer end-on than this is not believed
+FAR_LIMIT = 0.55             # m from the camera: beyond this the lower edge of a cluster is too coarse to give a direction
 
 
 def object_materials(m, robot):
@@ -60,9 +69,13 @@ def spoil_depth(depth, lab, gmat, rng, background=None):
         d[(mat == 2) & ((f < 0.25) | (px < 0.05))] = 0.0
         clear = mat == 3
         if clear.any():
-            d[clear & (px < 0.6)] = 0.0
+            # share of a clear thing's pixels without a reading / showing the floor behind it (the rest: its real surface);
+            # block: side of the squares the choice is made in (1: every pixel on its own; real holes come in patches)
+            ph, pf = perturb.get('clear_holes', (0.6, 0.3)); blk = int(perturb.get('clear_block', 1))
+            pc = px if blk <= 1 else np.kron(rng.random((Hh // blk + 1, Ww // blk + 1)), np.ones((blk, blk)))[:Hh, :Ww]
+            d[clear & (pc < ph)] = 0.0
             if background is not None:
-                see = clear & (px >= 0.6) & (px < 0.9); d[see] = background[see]
+                see = clear & (pc >= ph) & (pc < ph + pf); d[see] = background[see]
     # flying pixels on depth edges (left/right and up/down neighbours differ by more than 5 cm)
     for ax in (0, 1):
         a = np.take(d, range(0, d.shape[ax] - 1), axis=ax); b = np.take(d, range(1, d.shape[ax]), axis=ax)
@@ -162,6 +175,7 @@ class FrontCamera:
         n_avg: frames averaged (only while the robot stands still, e.g. the close look before a grasp)."""
         self.capture(); self.basket_obs = None; self.low_pts = np.zeros((0, 2))
         P, valid = self._cloud(n_avg)
+        self.holes = self._find_holes()
         hgt = P[..., 2]
         above = valid & (hgt > FLOOR_TOL)
         tall = above & (hgt > TALL)
@@ -227,9 +241,61 @@ class FrontCamera:
     def _cut(self, vv, uu):
         return bool(vv.max() >= H - 2 or vv.min() <= 1 or uu.min() <= 1 or uu.max() >= W - 2 or self.occl_top[vv, uu].sum() >= 3)
 
+    def floor_hits(self, vv, uu):
+        """Where the rays through pixels (row vv, column uu) meet the fitted floor plane: (x, y) in the chassis frame and
+        a flag for rays that do meet it ahead of the camera."""
+        ray = self.ray[vv, uu] @ self.R_bc.T; o = self.t_bc; a, b, c = self.floor
+        den = ray[:, 2] - a * ray[:, 0] - b * ray[:, 1]
+        t = (a * o[0] + b * o[1] + c - o[2]) / np.where(np.abs(den) < 1e-6, -1e-6, den)
+        return o[:2] + ray[:, :2] * t[:, None], (den < -1e-3) & (t > 0)
+
+    def _find_holes(self):
+        """Clusters of pixels with no depth reading whose rays reach the floor close by. Returns a list of dicts in the
+        chassis frame: n_px; near (x of the near edge: the floor point under the lowest no-reading pixel of each image
+        column, which is where the thing meets the floor on the near side, to about a pixel); y0, y1 (its sideways
+        extent there); far (x where the ray over the top of the cluster meets the floor: always beyond the thing, since
+        the camera looks down on it at a shallow angle); cut (touches the image edge). The depth camera's own
+        shadows and the robot's arm are not counted."""
+        hole = (self.depth <= 0.05) & ~self.self_mask
+        if hole.sum() < HOLE_MIN_PX: return []
+        dens = ndimage.uniform_filter(hole.astype(np.float32), size=5)
+        core = ndimage.binary_closing(dens > HOLE_DENS, structure=np.ones((3, 3)))
+        lab, n = ndimage.label(core, structure=np.ones((3, 3)))
+        out = []
+        for k in range(1, n + 1):
+            m = hole & (lab == k)
+            if m.sum() < HOLE_MIN_PX: continue
+            vv, uu = np.nonzero(m)
+            cols = np.unique(uu)
+            low = np.array([vv[uu == c].max() for c in cols]); high = np.array([vv[uu == c].min() for c in cols])
+            Q, ok = self.floor_hits(low, cols)
+            if ok.sum() < 3: continue
+            Q = Q[ok]; dist = np.hypot(Q[:, 0] - self.t_bc[0], Q[:, 1] - self.t_bc[1])
+            if not (HOLE_RANGE[0] < np.percentile(dist, 20) < HOLE_RANGE[1]): continue
+            y0, y1 = float(np.percentile(Q[:, 1], 2)), float(np.percentile(Q[:, 1], 98))
+            if y1 - y0 > HOLE_MAX_W: continue
+            Qt, okt = self.floor_hits(high, cols)
+            far = float(np.percentile(Qt[okt, 0], 90)) if okt.any() else float(Q[:, 0].max())
+            out.append(dict(n_px=int(m.sum()), near=float(np.percentile(Q[:, 0], 10)), y0=y0, y1=y1, far=far, edge=Q,
+                            cut=bool(vv.max() >= H - 2 or uu.min() <= 1 or uu.max() >= W - 2),
+                            rows=(int(vv.min()), int(vv.max())), cols=(int(uu.min()), int(uu.max()))))
+        return out
+
     def close(self):
         """Free the two offscreen renderers (each holds a GL context; they are not released with the object)."""
         self.seg.close(); self.dep.close()
+
+    def hole_fraction(self, pt_body, half=3):
+        """Share of pixels without a reading in a (2 half + 1)^2 window around where the floor point pt_body (chassis
+        frame) shows up in the image; None if it is outside the image or behind the camera."""
+        Q = (np.asarray(pt_body, float).reshape(1, 3) - self.t_bc) @ self.R_bc
+        z = -Q[0, 2]
+        if z < 0.05: return None
+        f = (H / 2) / math.tan(math.radians(self.r.m.cam_fovy[self.cam]) / 2)
+        u = int((Q[0, 0] / z) * f + W / 2); v = int(-(Q[0, 1] / z) * f + H / 2)
+        if not (half <= u < W - half and half <= v < H - half): return None
+        win = self.depth[v - half:v + half + 1, u - half:u + half + 1]
+        return float((win <= 0.05).mean())
 
     def floor_visible(self, pts_body):
         """For floor points (chassis frame, z=0): is each one inside the image and not hidden behind something?"""
@@ -242,6 +308,60 @@ class FrontCamera:
         for i in np.nonzero(ok)[0]:
             res[i] = self.depth[int(v[i]), int(u[i])] >= z[i] - 0.06
         return res
+
+
+def clear_detection(h, cam):
+    """A detection (same fields as FrontCamera.detect gives) for something known only by its no-reading cluster `h`.
+    What the cluster tells: the near edge (where it meets the floor), the sideways extent, and the ray that just clears
+    its top. Not known: the depth of it along the line of sight. The assumption made here: it is as high as it is
+    thick (a bottle or a ball, a lump), with its top at the middle, as for every other thing the camera sees only from
+    one side (skills.best_band). With the camera at height hc and x = c, near edge n and far-ray floor point f (both
+    measured from the camera foot), the ray over the top touches it at height w above the floor, w/2 beyond the near
+    edge:  w = hc (1 - (n + w/2) / f)  ->  w = hc (1 - n/f) / (1 + hc / (2 f)).
+    Its direction: a thing lying on the floor shows a long side as a line of floor points along the lower edge of the
+    cluster; that line's direction is the long axis and its length the length (when the cluster is wide enough to tell,
+    LONG_MIN). Seen end-on, or short, the cluster is as wide as the thing is thick and says nothing about its length:
+    `ambiguous` is set, and the controller looks again from the side.
+    The detection describes the whole footprint (a half-round cylinder on its long axis), not just the visible half."""
+    c, hc = cam.t_bc[0], cam.t_bc[2]
+    f = max(h['far'] - c, 0.1); lw = h['y1'] - h['y0']; Q = h['edge'].copy()
+    # The lowest ray that still meets a round thing of radius r touches it low on the near side and continues to the
+    # floor, landing (1 - sin a + (1 - cos a) cos a / sin a) r beyond where the thing touches the floor (a: the ray's
+    # angle below horizontal; about 0.7 r at 35 degrees). Take that off the near edge, with r = w/2 from the round prior.
+    near = h['near']
+    for _ in range(2):
+        n = max(near - c, 0.02); f = max(f, n + 0.02)
+        w = float(np.clip(hc * (1 - n / f) / (1 + hc / (2 * f)), 0.025, 0.07))
+        al = math.atan2(hc, max(h['near'] - c, 0.05))
+        near = h['near'] - (w / 2) * (1 - math.sin(al) + (1 - math.cos(al)) * math.cos(al) / math.sin(al))
+    Q[:, 0] += near - h['near']
+    far_off = (h['near'] - c) > FAR_LIMIT                    # too far for the lower edge to be more than a pixel or two high
+    a = np.array([0.0, 1.0]); L = max(lw, w); ambiguous = lw < LONG_MIN or far_off; fit = None
+    mid = np.array([near, 0.5 * (h['y0'] + h['y1'])])                      # middle of the lower-edge line
+    if not ambiguous and len(Q) >= 6:
+        q = Q - Q.mean(0); _, evec = np.linalg.eigh(q.T @ q / len(q)); ev_ = _
+        a_ = evec[:, 1]                                                      # principal direction of the edge points
+        if a_[1] < 0: a_ = -a_
+        s_ = q @ a_; lo_, hi_ = np.percentile(s_, [2, 98]); L_ = float(max(hi_ - lo_, w)); mid_ = Q.mean(0) + a_ * 0.5 * (lo_ + hi_)
+        fit = (float(np.sqrt(max(ev_[0], 0.0))), float(ev_[1] / max(ev_[0], 1e-9)))     # spread across the line (m), ratio along/across
+        # Seen nearly end-on (the direction within SIDE_MIN of the line of sight), the lower edge is the near end of the
+        # thing plus a little of its side, and the fitted direction is not to be trusted (bench: 10-30 degrees off, and
+        # flipping between looks): then it is as unknown as if it were short.
+        sight = mid_ - np.array([c, 0.0]); sight = sight / max(float(np.hypot(*sight)), 1e-6)
+        if abs(float(a_ @ sight)) < math.cos(math.radians(SIDE_MIN)): a, L, mid = a_, L_, mid_
+        else: ambiguous = True
+    # the lower-edge line sits on the near side of the thing; the middle of the thing is w/2 farther from the camera
+    nrm = np.array([-a[1], a[0]])
+    if nrm @ (mid - np.array([c, 0.0])) < 0: nrm = -nrm
+    ctr = mid + nrm * w / 2
+    ss = np.linspace(-L / 2, L / 2, max(3, int(L / 0.01) + 1)); tt = np.linspace(-w / 2, w / 2, 9)
+    z = np.maximum(w / 2 + np.sqrt(np.maximum(0.0, (w / 2) ** 2 - tt ** 2)), 0.004)
+    pts = np.array([[*(ctr + s_ * a + t_ * nrm), zz] for s_ in ss for t_, zz in zip(tt, z)])
+    corners = np.array([ctr + sa * (L / 2) * a + sn * (w / 2) * nrm for sa in (-1, 1) for sn in (-1, 1)])
+    hull = corners[ConvexHull(corners).vertices]
+    heading = float(math.atan2(a[1], a[0]) % math.pi)
+    return dict(rel=np.array([ctr[0], ctr[1], w / 2]), top=w, bottom=0.0, hull=hull, pts=pts, heading=heading, elong=L / w if L > 1.3 * w else 1.0,
+                width=w, n_px=h['n_px'], dist=float(np.hypot(ctr[0] - c, ctr[1])), cut=h['cut'], blind=True, ambiguous=bool(ambiguous), length=float(L), fit=fit)
 
 
 def _looks_like_basket(xy, top, size=(0.30, 0.22), h=0.09):

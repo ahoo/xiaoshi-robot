@@ -29,7 +29,7 @@ def make_layout(seed, clearance=0.30, n_boxes=None, clutter=False, materials=Fal
     clutter: the second and fourth objects are put right next to the first and third (edges 0.5-5 cm apart), the
     way things end up in a heap, so the camera may see each pair as one blob.
     materials: each object is black or shiny (patchy depth), and a sixth object is added: a small clear plastic bottle,
-    which a depth camera hardly sees at all. Drawn from a separate random stream, so the layout is otherwise the same."""
+    which a depth camera cannot measure (it shows up as a patch of missing depth, see controller._sense_clear). Drawn from a separate random stream, so the layout is otherwise the same."""
     rng = np.random.default_rng(seed)
     kinds = [O.KINDS[i] for i in rng.choice(len(O.KINDS), 5, replace=False)]
     specs = [O.sample(k, rng) for k in kinds]

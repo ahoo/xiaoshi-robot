@@ -10,6 +10,8 @@ model, so the trials show which real-world error the task is most sensitive to. 
   lidar_noise    - multiplies lidar range noise
   lidar_model    - name of a lidar error model in lidar_models.MODELS (e.g. 'ld19'); replaces the Gaussian noise
   depth_noise    - multiplies depth-camera noise
+  clear_holes    - (share without reading, share showing the floor behind) of a clear thing's pixels; default (0.6, 0.3)
+  clear_block    - side in pixels of the squares those are drawn in; 1 (default) = every pixel on its own, 4 = patches
 """
 CUR = {}
 
