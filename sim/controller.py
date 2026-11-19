@@ -349,6 +349,17 @@ class Agent:
             if not frag: keep.append(dt)
         return keep
 
+    @staticmethod
+    def _reset_blind(e):
+        """After a fetch that did not end in a grasp: start the thing over. The position it carries came from the last close look
+        (sigma 1.2 cm) and may be a few cm off, which a later look from farther away could not correct; the sides marked bad, the
+        'looked from the side already' record and the 'gave up on the side' flag belong to that estimate. (Round 12: a bottle that
+        could not be reached was only ever picked up because a wrong 'it is gone' made the robot forget all this by accident.)"""
+        if not e.get('blind'): return
+        e['sigma'] = 0.06; e['looks'] = []
+        for k in ('bad', 'bad_span', 'side_gave_up', 'look_fail'): e.pop(k, None)
+        e['dirs'] = None
+
     def _set_blind(self, e, o, ambiguous):
         """Outlines of something known only by a no-reading cluster: `outline_core` as measured, `outline` (what the planner
         and the safety layer keep away from) padded when its length is unknown. The thing being fetched is kept away
@@ -410,7 +421,10 @@ class Agent:
             wx_, wy_ = e['x'] - x, e['y'] - y
             B = np.array([c * wx_ + s_ * wy_, -s_ * wx_ + c * wy_, 0.0])
             if not 0.35 < math.hypot(B[0], B[1]) < 1.0: continue
-            frac = self.cam.hole_fraction(B)
+            # the centre of a thing seen end-on can be several cm off along the line of sight: look over the whole core outline
+            pts_ = [B] + [np.array([c * (px_ - x) + s_ * (py_ - y), -s_ * (px_ - x) + c * (py_ - y), 0.0]) for px_, py_ in e.get('outline_core', e['outline'])]
+            fr_ = [self.cam.hole_fraction(q_, half=4) for q_ in pts_]
+            frac = None if all(f_ is None for f_ in fr_) else max(f_ for f_ in fr_ if f_ is not None)
             if frac is not None and frac < 0.02:
                 e['miss'] += 1
                 if e['miss'] >= BLIND_GONE:
@@ -930,6 +944,10 @@ class Agent:
                 pulled = yield from self.pull_out(k)
                 if pulled: continue
                 if k not in self.memory: return False
+            if goal is None and e.get('blind') and e.get('bad_span') and not e.get('side_gave_up'):
+                # no way to the side we wanted to look from (against furniture, a wall): take it from where it can be reached
+                e['side_gave_up'] = True; e.pop('bad', None); e.pop('bad_span', None); e['dirs'] = None
+                self.log(f'{cn} 侧面站不进去，就从能站的一侧下手'); continue
             if goal is None:
                 e['fails'] += 1; e['retry_at'] = r.t + 30 * e['fails']; e['why'] = '够不到' if self.abort == 'no_path' else '导航超时'
                 self.log(f'{cn} {e["why"]}，先跳过'); return False
@@ -955,7 +973,7 @@ class Agent:
                     # is. Look once more from the side (a stance 60 degrees or more round from this one); if that is
                     # no better either, it is a short thing and is taken from where we are.
                     looks = e.setdefault('looks', [])
-                    if restand < 4 and all(abs(wrap(ang - a_)) < 1.0 for a_ in looks):
+                    if restand < 4 and not e.get('side_gave_up') and all(abs(wrap(ang - a_)) < 1.0 for a_ in looks):
                         looks.append(ang); restand += 1; e['bad'] = list(looks); e['bad_span'] = 1.0; e['dirs'] = None
                         if self.grasp_dirs(e):
                             self.log(f'{cn} 这个角度看不出多长，换到侧面再看'); continue
@@ -1122,6 +1140,7 @@ class Agent:
             k = self.pick()
             if k is not None:
                 yield from self.fetch(k); self.target = None
+                if k in self.memory and self.memory[k]['status'] == 'pending': self._reset_blind(self.memory[k])
                 if self.help_needed: return
                 self.held = False
                 continue

@@ -257,6 +257,12 @@ def main():
     for name, lab in ROBN.items():
         sm = CB.get('robust', {}).get('summary', {}).get(name)
         if sm: clear_robust_rows += f'<tr><td>{lab}</td><td class="n {"good" if sm["delivered"] == sm["n"] else "bad"}">{sm["delivered"]}/{sm["n"]}</td><td class="n">{sm["grasp_fail"]}/{sm["grasp_attempts"]}</td></tr>'
+    hs = CB.get('heldout', {}).get('summary', {})
+    h1, h2 = hs.get('bottle_alone_new_seeds'), hs.get('materials_new_seeds')
+    clear_held_rows = ''
+    if h1: clear_held_rows += f'<tr><td>瓶子单独在房间里（种子 401–412）</td><td class="n good">{h1["delivered"]}/{h1["n"]}</td><td class="n">{h1["grasp_fail"]}/{h1["grasp_attempts"]}</td><td class="n">{h1["runs_touching"]}/{h1["n"]}</td><td class="n">{h1["collisions"]}</td></tr>'
+    if h2: clear_held_rows += (f'<tr><td>整机难材质：五件黑色或反光的加瓶子（种子 401–408）</td><td class="n good">{h2["regular_delivered"] + h2["bottle_delivered"]}/{h2["regular_total"] + h2["n"]}'
+                               f'（瓶子 {h2["bottle_delivered"]}/{h2["n"]}）</td><td class="n">{h2["grasp_fail"]}/{h2["grasp_attempts"]}</td><td class="n">-</td><td class="n">{h2["collisions"]}</td></tr>')
     clear_pose_rows = ''
     for key, lab in (('pose_far', '远处 0.4–1.0 m，机身转 ±35°'), ('pose_close', '近处 0.28–0.45 m，机身转 ±35°'), ('pose_stance', '下手站位 0.21–0.29 m（相机离瓶 13–18 cm）'), ('pose_stance_rough', '同上，深度图更苛刻（35% 没读数，成片）')):
         v = CBN.get(key)
@@ -274,6 +280,7 @@ def main():
     clear_see_txt = '；'.join(f'{d} m 处 {see_cell("across", d, "near_bias_mm")} mm' for d in ('0.4', '0.6', '1.0', '1.2') if csee.get(f'across:{d}'))
     video = json.load(open(R('episode.json')))
     rep = {
+        'CLEAR_HELD_ROWS': clear_held_rows or '<tr><td colspan="5">还在跑</td></tr>',
         'CLEAR_AB_ROWS': clear_ab_rows or '<tr><td colspan="6">还在跑</td></tr>', 'CLEAR_FORCED_ROWS': clear_forced_rows or '<tr><td colspan="5">还在跑</td></tr>',
         'CLEAR_ROBUST_ROWS': clear_robust_rows or '<tr><td colspan="3">还在跑</td></tr>', 'CLEAR_POSE_ROWS': clear_pose_rows or '<tr><td colspan="6">还在跑</td></tr>',
         'CLEAR_EMPTY': str(empt.get('frames', '-')), 'CLEAR_EMPTY_FALSE': str(empt.get('false_clusters', '-')), 'CLEAR_DETECT': f'{see_seen}/{see_n}' if see_n else '-',

@@ -1,12 +1,14 @@
 """The clear plastic bottle on its own: does the robot find it, pick it up and bring it in?  ->  results/clear_bottle.json
 
-  python run_clear.py ab [procs]       seeds 301-312 (the 'materials' layouts), the bottle alone in the room, with the two
+  python run_clear.py ab [procs] [settings]   seeds 301-312 (the 'materials' layouts), the bottle alone in the room, with the two
                                        remedies on / only the wheel-slip one / neither (round 11 behaviour)
   python run_clear.py forced [procs]   the bottle 0.8 m ahead of the robot on open floor, its axis at 0, 10, 30, 60, 90, -30
                                        and -60 degrees to the line of sight, no turn on the spot at start-up (so that the first
                                        view is the one a robot driving up to it would have); one run each
   python run_clear.py robust [procs]   the forced set again with rougher clear-plastic depth: patches instead of single
                                        pixels, fewer pixels without a reading, both (perturb.py: clear_holes, clear_block)
+  python run_clear.py heldout [procs]  seeds that were never used while the method was developed: the bottle alone (401-412) and the whole
+                                       'materials' condition (401-408: five black or shiny things and the bottle)
   python run_clear.py check            a few seconds: one run, to see that everything works
 
 The depth model of clear plastic is the weakest assumption here: how much of a real bottle gives no reading depends on the
@@ -73,6 +75,18 @@ def job_ab(args):
     res.update(setting=name, seed=seed); return res
 
 
+def job_materials(args):
+    """The whole 'materials' condition (black and shiny things and the bottle) for one seed."""
+    name, seed = args
+    from episode import run_episode
+    C.CLEAR_CUE, C.SLIP_ON = True, True
+    res, agent, robot = run_episode(seed, 0.30, materials=True)
+    reg = [v for k, v in res['outcome'].items() if k != 'bottle']
+    return dict(setting=name, seed=seed, delivered=res['outcome'].get('bottle') == '已送达', regular_delivered=sum(v == '已送达' for v in reg), regular_total=len(reg), sim_t=res['sim_time'],
+                collisions=res['collisions'], stuck=res['stuck'], slips=res.get('slips', 0), blind_found=res.get('blind_found', 0), grasp_attempts=res['grasp_attempts'], grasp_fail=res['grasp_fail'],
+                floor_touch=res['floor_touch'], pulls=res['pulls'], bottle_touches=0, looks=0, log=agent.log_lines)
+
+
 def job_forced(args):
     name, angle, pert = args
     C.CLEAR_CUE, C.SLIP_ON = True, True; perturb.CUR = dict(pert)
@@ -91,6 +105,10 @@ def summarise(rows, key='setting'):
     out = {}
     for name in dict.fromkeys(r[key] for r in rows):
         sel = [r for r in rows if r[key] == name]
+        if 'regular_total' in sel[0]:
+            out[name] = dict(n=len(sel), bottle_delivered=sum(r['delivered'] for r in sel), regular_delivered=sum(r['regular_delivered'] for r in sel), regular_total=sum(r['regular_total'] for r in sel), collisions=sum(r['collisions'] for r in sel),
+                             stuck=sum(r['stuck'] for r in sel), slips=sum(r['slips'] for r in sel), blind_found=sum(r['blind_found'] for r in sel), grasp_fail=sum(r['grasp_fail'] for r in sel), grasp_attempts=sum(r['grasp_attempts'] for r in sel))
+            continue
         out[name] = dict(n=len(sel), delivered=sum(r['delivered'] for r in sel), collisions=sum(r['collisions'] for r in sel), stuck=sum(r['stuck'] for r in sel), slips=sum(r['slips'] for r in sel),
                          bottle_touches=sum(r['bottle_touches'] for r in sel), runs_touching=sum(r['bottle_touches'] > 0 for r in sel),
                          grasp_attempts=sum(r['grasp_attempts'] for r in sel), grasp_fail=sum(r['grasp_fail'] for r in sel), floor_touch=sum(r['floor_touch'] for r in sel),
@@ -100,9 +118,14 @@ def summarise(rows, key='setting'):
 
 
 def _save(key, rows):
+    """Write the runs of one mode. Rerunning only some settings (e.g. 'ab' with just 'both') replaces those and keeps the others."""
     data = json.load(open(OUT)) if os.path.exists(OUT) else {}
-    data[key] = dict(summary=summarise(rows), runs=[{k: v for k, v in r.items() if k != 'log'} for r in rows])
-    data[key]['failure_logs'] = [dict(setting=r['setting'], seed=r.get('seed', r.get('angle')), log=r['log']) for r in rows if not r['delivered']]
+    old = data.get(key, {}); new_names = {r['setting'] for r in rows}
+    keep_runs = [r for r in old.get('runs', []) if r['setting'] not in new_names]
+    keep_logs = [f for f in old.get('failure_logs', []) if f['setting'] not in new_names]
+    runs = keep_runs + [{k: v for k, v in r.items() if k != 'log'} for r in rows]
+    data[key] = dict(summary=summarise(runs), runs=runs,
+                     failure_logs=keep_logs + [dict(setting=r['setting'], seed=r.get('seed', r.get('angle')), log=r['log']) for r in rows if not r['delivered']])
     json.dump(data, open(OUT, 'w'), ensure_ascii=False, indent=1)
     for k, v in data[key]['summary'].items(): print(key, k, v, flush=True)
 
@@ -112,9 +135,13 @@ if __name__ == '__main__':
     if mode == 'check':
         r = job_forced(('check', 60, {})); print({k: v for k, v in r.items() if k != 'log'})
         sys.exit()
-    if mode == 'ab': jobs, fn = [(n, s, o['cue'], o['slip']) for n, o in AB for s in range(301, 313)], job_ab
+    only = sys.argv[3].split(',') if len(sys.argv) > 3 else None          # e.g. 'both': rerun just that setting
+    if mode == 'ab': jobs, fn = [(n, s, o['cue'], o['slip']) for n, o in AB if only is None or n in only for s in range(301, 313)], job_ab
     elif mode == 'forced': jobs, fn = [('forced', a, {}) for a in ANGLES], job_forced
+    elif mode == 'heldout': jobs, fn = [('bottle_alone_new_seeds', s, True, True) for s in range(401, 413)], job_ab
     elif mode == 'robust': jobs, fn = [(n, a, p) for n, p in ROBUST for a in ANGLES], job_forced
     else: sys.exit(__doc__)
     with mp.Pool(procs, maxtasksperchild=1) as pool: rows = pool.map(fn, jobs, chunksize=1)
+    if mode == 'heldout':
+        with mp.Pool(procs, maxtasksperchild=1) as pool: rows += pool.map(job_materials, [('materials_new_seeds', s) for s in range(401, 409)], chunksize=1)
     _save(mode, rows)
