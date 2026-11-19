@@ -28,7 +28,7 @@
 | `sim/test_base.py`、`sim/test_grasp.py`、`sim/test_perception.py`、`sim/test_pull.py` | 底盘、抓取、相机、扒出来的台架测试 |
 | `sim/test_localization.py` | 定位台架：录一局真实轨迹，离线换不同雷达误差模型重放，一次约 20 秒 |
 | `sim/test_clear.py` | 透明瓶台架：空洞簇给出的位置、粗细、朝向、长度准不准（远处、近处、下手站位，机身转着看），空房间误报，只凭空洞抓一次 → `results/clear_bench.json` |
-| `sim/run_clear.py` | 透明瓶单独在房间里：两个办法分开开关的对照、强制各种朝向、更苛刻的深度图 → `results/clear_bottle.json` |
+| `sim/run_clear.py` | 透明瓶单独在房间里：两个办法分开开关的对照、强制各种朝向、更苛刻的深度图、没参与开发的新种子（含整机难材质）→ `results/clear_bottle.json` |
 | `sim/render_video.py` | 把一次试验渲染成录像 |
 | `third_party/so101/` | SO-101 官方 MuJoCo 模型（Apache-2.0，来自 TheRobotStudio/SO-ARM100） |
 | `web/` | 结果页面的模板和生成脚本；`web/concept-v0.1/` 是第一版概念演示，不是物理仿真 |
@@ -49,7 +49,7 @@ python test_localization.py record 5    # 录第 5 号布局的轨迹（一局�
 python test_localization.py bench 5,9   # 两套定位 × 六种雷达误差模型 -> results/loc_bench.json
 python profile_compute.py    # 机器人自己的算法各占多少 CPU
 python test_clear.py all      # 透明瓶台架，几分钟 -> results/clear_bench.json
-python run_clear.py ab 4      # 透明瓶单独在房间里（ab / forced / robust 三种），4 个进程 -> results/clear_bottle.json
+python run_clear.py ab 4      # 透明瓶单独在房间里（ab / forced / robust / heldout 四种：两个办法的对照、强制各种朝向、更苛刻的深度图、没参与开发的新种子），4 个进程 -> results/clear_bottle.json
 python run_trials.py 2       # 全部 56 次随机试验，2 个进程（双核约 2–3 小时，渲染相机图像占了一半时间）；中断后重跑会接着做
 MUJOCO_GL=egl python render_video.py 4    # 录像，需要能离屏渲染的环境
 python ../web/build_page.py  # 用 results/ 里的数字重新生成页面和 docs/validation.md

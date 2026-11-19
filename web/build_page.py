@@ -36,6 +36,8 @@ def pct(a, b):
 def main():
     T = json.load(open(R('trials.json'))); G = json.load(open(R('grasp_bench.json'))); B = json.load(open(R('base_bench.json')))
     M = json.load(open(R('model_facts.json')))
+    CB = json.load(open(R('clear_bottle.json'))) if os.path.exists(R('clear_bottle.json')) else {}
+    CBN = json.load(open(R('clear_bench.json'))) if os.path.exists(R('clear_bench.json')) else {}
     agg = {}
     for c in T['conditions']:
         eps = [e for e in T['episodes'] if e['condition'] == c['name']]
@@ -186,6 +188,8 @@ def main():
     det_near = sum(PB[k]['0.235']['near_edge_err_mm'] for k in PB) / len(PB); far = [PB[k]['1.5']['centre_err_mm'] for k in PB if PB[k]['1.5']['centre_err_mm'] is not None]; det_far = sum(far) / len(far)
     det_rate = (sum(PB[k][d]['detected'] for k in PB for d in ('0.6', '1.0', '1.5')), sum(PB[k][d]['n'] for k in PB for d in ('0.6', '1.0', '1.5')))
     nw, bj = agg['near_walls'], agg['bare_jaws']
+    so = CB.get('ab', {}).get('summary', {}).get('slip_only'); so_runs = [r for r in CB.get('ab', {}).get('runs', []) if r['setting'] == 'slip_only']
+    slip_only_txt = (f'{so["runs_touching"]}/{so["n"]} 局碰到瓶子共 {so["bottle_touches"]} 次，检测器只在 {sum(r["slips"] > 0 for r in so_runs)} 局触发') if so else '（单瓶对照还在跑）'
     valid = [
         ('称重', '整机和机械臂分别上秤', f'整机 {M["robot_mass"]:.2f} kg，其中机械臂 {M["arm_mass"]:.2f} kg', '差 10% 以上就改 <code>model.py</code> 的 <code>P</code> 重跑'),
         ('舵机零位', '机械臂按官方流程校准后，让夹爪尖依次碰地面上画好的 5 个点（离机身 20–30 cm），量指尖偏差', '敏感度扫描：零位偏 2°（1σ）时送达率下降最多（见上表）', '每个点偏差不超过 5 mm；超了重新校准'),
@@ -212,7 +216,7 @@ def main():
         ('难材质', '黑袜子、黑方块、亮面小球、亮面玩具车各放在 0.25、0.6、1 m 处拍 10 次，再各夹 10 次', '检出和近处误差见上表', '黑色和反光的近处要看得见'),
         ('透明瓶：深度图上的空洞', '一个透明塑料瓶（带不带瓶盖、标签各试一次）躺在地上，放在 0.4、0.6、0.8、1.0 m 处，各转 0°、45°、90°（相对视线），在白天、日光灯、背光三种光线下各拍 10 帧，数瓶子轮廓里没有读数、读到地板、读到瓶身的像素各占多少', f'仿真设的是 60% 没读数、30% 读到后面的地板、10% 读到瓶身，逐像素独立；成片、更少空洞的情形见页面「透明瓶」一节', '没读数的像素占瓶子轮廓的比例不低于 35%，并且连成片（5×5 窗口里占 30% 以上）；比例更低、或者要靠瓶盖标签才有读数，说明这个办法对这种瓶子不灵，要换识别模型'),
         ('透明瓶：找到并抓起来', '同上的瓶子，在 4×3 m 场地的 8 个随机位置和朝向各放一次（机器人事先不知道），数送达、数抓取次数、数有没有被推走', f'瓶子单独在房间里 12 局：见页面「透明瓶」一节；整机难材质条件瓶子 {mat_bottle[0]}/{mat_bottle[1]}', '不比仿真少 2 局；任何一次轮子压上瓶子都要记下，看瓶子是被推走了还是被绕开了'),
-        ('打滑检测', '房间里放一个看不见的低矮东西（透明瓶，或者一根细绳），让机器人直行压上去；另外正常跑 10 局，数没有任何东西时的误触发', f'仿真里 {len(T["episodes"])} 局整机试验共触发 {slips_all} 次（{slips_eps} 局）；单瓶房间里压上瓶子时能触发', '压上去时触发；正常跑 10 局误触发 0 次；记下 <code>SLIP_RATIO</code> 要不要调'),
+        ('打滑检测', '房间里放一个看不见的低矮东西（透明瓶，或者一根细绳），让机器人直行压上去 10 次，数检测器触发几次，再用卷尺量车实际走了多远，看轮子有没有真的打滑；另外正常跑 10 局，数没有任何东西时的误触发', f'仿真里 {len(T["episodes"])} 局整机试验共触发 {slips_all} 次（{slips_eps} 局）；单瓶房间里只开打滑检测时，底盘 {slip_only_txt}：轻轻蹭过的不构成打滑；真打滑能检出（一次里程计 13.0 cm，仿真真值 6.6 cm）', '正常跑 10 局误触发 0 次；压上去时触发几次只做记录，不要拿它当通用的低矮障碍检测；记下 <code>SLIP_RATIO</code> 要不要调'),
         ('算力', '在树莓派 5 上跑 <code>profile_compute.py</code> 同样的模块（或者用录下来的数据离线跑），记每个模块每次的耗时', f'这台机器上合计约占一个核的 {100 * CP["total_share_of_one_core"]:.0f}%', '树莓派上合计不超过两个核'),
         ('扒出来', '方块、球、香蕉、袜子等各一件，分别放在离墙或柜子 2、4、6 cm 处，机器人从房间一侧去扒', '扒出来：' + '，'.join(f'{float(g) * 100:.0f} cm 处 {v["pulled"]}/{v["n"]}' for g, v in PU.items()), '4 cm 及以上不比仿真少一半以上；记录 2 cm 时是插不进去还是压到了东西'),
     ]
@@ -234,8 +238,6 @@ def main():
                        f'<td class="n">{sum(e["max_tilt"] > 30 for e in alle)}</td><td class="n">{sum(e["max_tilt"] > 3 for e in alle)}/{len(alle)}</td>'
                        f'<td class="n">{sum(e["stuck"] for e in alle)}</td></tr>')
     # the clear plastic bottle (round 12): bench and bottle-alone runs, from results/clear_bottle.json and results/clear_bench.json
-    CB = json.load(open(R('clear_bottle.json'))) if os.path.exists(R('clear_bottle.json')) else {}
-    CBN = json.load(open(R('clear_bench.json'))) if os.path.exists(R('clear_bench.json')) else {}
     SETN = dict(both='两个办法都开（当前版本）', slip_only='只开打滑检测（不认空洞）', neither='都关（第十一轮的行为）')
     def med(v): return f'{sorted(v)[len(v) // 2]:.0f} cm' if v else '-'
     clear_ab_rows = ''
@@ -276,16 +278,25 @@ def main():
     def see_cell(o, d, k): v = csee.get(f'{o}:{d}'); return f'{v[k]:.0f}' if v and v.get(k) is not None else '-'
     empt = CBN.get('empty', {}); see_seen = sum(v['seen'] for v in csee.values()); see_n = sum(v['n'] for v in csee.values())
     rough = CBN.get('pose_stance_rough', {})
+    rr = CB.get('robust', {}).get('summary', {}).get('both_rougher')
+    rr_fail = [f for f in CB.get('robust', {}).get('failure_logs', []) if f['setting'] == 'both_rougher']
+    rr_ghosts = sum('发现物体#' in m for _, m in rr_fail[0]['log']) if rr_fail else 0
     sig = CBN.get('signal', {}); sg4 = sig.get('0.4', {}); sg10 = sig.get('1.0', {})
     clear_see_txt = '；'.join(f'{d} m 处 {see_cell("across", d, "near_bias_mm")} mm' for d in ('0.4', '0.6', '1.0', '1.2') if csee.get(f'across:{d}'))
     video = json.load(open(R('episode.json')))
+    S12 = json.load(open(R('sensitivity_round12.json'))) if os.path.exists(R('sensitivity_round12.json')) else None
+    def s12(name):
+        es = [e for e in S12['episodes'] if e['setting'] == name] if S12 else []
+        return (f'{sum(e["delivered"] for e in es)}/{sum(e["total"] for e in es)}', sum(e.get('slips', 0) for e in es)) if es else ('-', '-')
     rep = {
+        'SENS12_LIDAR': s12('lidar')[0], 'SENS12_LD19': s12('ld19')[0], 'SENS12_SLIPS': str(s12('lidar')[1] + s12('ld19')[1]) if S12 else '-',
         'CLEAR_HELD_ROWS': clear_held_rows or '<tr><td colspan="5">还在跑</td></tr>',
         'CLEAR_AB_ROWS': clear_ab_rows or '<tr><td colspan="6">还在跑</td></tr>', 'CLEAR_FORCED_ROWS': clear_forced_rows or '<tr><td colspan="5">还在跑</td></tr>',
         'CLEAR_ROBUST_ROWS': clear_robust_rows or '<tr><td colspan="3">还在跑</td></tr>', 'CLEAR_POSE_ROWS': clear_pose_rows or '<tr><td colspan="6">还在跑</td></tr>',
         'CLEAR_EMPTY': str(empt.get('frames', '-')), 'CLEAR_EMPTY_FALSE': str(empt.get('false_clusters', '-')), 'CLEAR_DETECT': f'{see_seen}/{see_n}' if see_n else '-',
         'SIG_04_REAL': str(sg4.get('bottle_surface', '-')), 'SIG_04_KEPT': str(sg4.get('bottle_surface_after_edge_filter', '-')), 'SIG_04_HOLES': str(sg4.get('no_reading', '-')), 'SIG_04_SIL': str(sg4.get('silhouette_px', '-')),
         'SIG_10_HOLES': str(sg10.get('no_reading', '-')),
+        'RR_DELIVERED': f'{rr["delivered"]}/{rr["n"]}' if rr else '-', 'RR_GF': f'{rr["grasp_fail"]}/{rr["grasp_attempts"]}' if rr else '-', 'RR_STUCK': str(rr['stuck']) if rr else '-', 'RR_GHOSTS': str(rr_ghosts),
         'ROUGH_SURE': f'{rough["sure"]}/{rough["seen"]}' if rough else '-',
         'CLEAR_GRASP': f'{cg["success"]}/{cg["n"]}' if cg else '-', 'CLEAR_SEE_NEAR': clear_see_txt or '-',
         'BLIND_FOUND': str(blind_all), 'BLIND_FOUND_OTHER': str(blind_std), 'SLIPS_TOTAL': str(slips_all), 'SLIPS_EPS': f'{slips_eps}/{len(T["episodes"])}',
