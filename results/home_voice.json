@@ -1,0 +1,1315 @@
+{
+ "sweep": [
+  {
+   "cer": 0.0,
+   "child": false,
+   "ok": 430,
+   "confirmed": 14,
+   "reask": 0,
+   "wrong": 0,
+   "wrong_motion": 0,
+   "missed_wake": 0,
+   "n": 444,
+   "by_intent": {
+    "tidy": {
+     "n": 48,
+     "ok": 48
+    },
+    "fetch_item": {
+     "n": 48,
+     "ok": 48
+    },
+    "where_is": {
+     "n": 48,
+     "ok": 48
+    },
+    "list_items": {
+     "n": 24,
+     "ok": 24
+    },
+    "what_new": {
+     "n": 30,
+     "ok": 30
+    },
+    "scan_home": {
+     "n": 30,
+     "ok": 30
+    },
+    "go_to": {
+     "n": 36,
+     "ok": 36
+    },
+    "charge": {
+     "n": 24,
+     "ok": 24
+    },
+    "who_here": {
+     "n": 24,
+     "ok": 24
+    },
+    "enrol": {
+     "n": 18,
+     "ok": 18
+    },
+    "forget": {
+     "n": 12,
+     "ok": 12
+    },
+    "name_item": {
+     "n": 12,
+     "ok": 12
+    },
+    "status": {
+     "n": 18,
+     "ok": 18
+    },
+    "privacy": {
+     "n": 18,
+     "ok": 18
+    },
+    "greet": {
+     "n": 12,
+     "ok": 12
+    },
+    "identity": {
+     "n": 12,
+     "ok": 12
+    },
+    "help": {
+     "n": 12,
+     "ok": 12
+    },
+    "cancel": {
+     "n": 6,
+     "ok": 6
+    },
+    "resume": {
+     "n": 12,
+     "ok": 12
+    }
+   }
+  },
+  {
+   "cer": 0.04,
+   "child": false,
+   "ok": 422,
+   "confirmed": 19,
+   "reask": 1,
+   "wrong": 2,
+   "wrong_motion": 0,
+   "missed_wake": 0,
+   "n": 444,
+   "by_intent": {
+    "tidy": {
+     "n": 48,
+     "ok": 48
+    },
+    "fetch_item": {
+     "n": 48,
+     "ok": 47
+    },
+    "where_is": {
+     "n": 48,
+     "ok": 48
+    },
+    "list_items": {
+     "n": 24,
+     "ok": 24
+    },
+    "what_new": {
+     "n": 30,
+     "ok": 30
+    },
+    "scan_home": {
+     "n": 30,
+     "ok": 30
+    },
+    "go_to": {
+     "n": 36,
+     "ok": 36
+    },
+    "charge": {
+     "n": 24,
+     "ok": 24
+    },
+    "who_here": {
+     "n": 24,
+     "ok": 24
+    },
+    "enrol": {
+     "n": 18,
+     "ok": 17
+    },
+    "forget": {
+     "n": 12,
+     "ok": 12
+    },
+    "name_item": {
+     "n": 12,
+     "ok": 11
+    },
+    "status": {
+     "n": 18,
+     "ok": 18
+    },
+    "privacy": {
+     "n": 18,
+     "ok": 18
+    },
+    "greet": {
+     "n": 12,
+     "ok": 12
+    },
+    "identity": {
+     "n": 12,
+     "ok": 12
+    },
+    "help": {
+     "n": 12,
+     "ok": 12
+    },
+    "cancel": {
+     "n": 6,
+     "ok": 6
+    },
+    "resume": {
+     "n": 12,
+     "ok": 12
+    }
+   }
+  },
+  {
+   "cer": 0.08,
+   "child": false,
+   "ok": 391,
+   "confirmed": 40,
+   "reask": 8,
+   "wrong": 5,
+   "wrong_motion": 0,
+   "missed_wake": 0,
+   "n": 444,
+   "by_intent": {
+    "tidy": {
+     "n": 48,
+     "ok": 48
+    },
+    "fetch_item": {
+     "n": 48,
+     "ok": 45
+    },
+    "where_is": {
+     "n": 48,
+     "ok": 48
+    },
+    "list_items": {
+     "n": 24,
+     "ok": 24
+    },
+    "what_new": {
+     "n": 30,
+     "ok": 29
+    },
+    "scan_home": {
+     "n": 30,
+     "ok": 30
+    },
+    "go_to": {
+     "n": 36,
+     "ok": 36
+    },
+    "charge": {
+     "n": 24,
+     "ok": 23
+    },
+    "who_here": {
+     "n": 24,
+     "ok": 23
+    },
+    "enrol": {
+     "n": 18,
+     "ok": 16
+    },
+    "forget": {
+     "n": 12,
+     "ok": 11
+    },
+    "name_item": {
+     "n": 12,
+     "ok": 10
+    },
+    "status": {
+     "n": 18,
+     "ok": 18
+    },
+    "privacy": {
+     "n": 18,
+     "ok": 18
+    },
+    "greet": {
+     "n": 12,
+     "ok": 11
+    },
+    "identity": {
+     "n": 12,
+     "ok": 11
+    },
+    "help": {
+     "n": 12,
+     "ok": 12
+    },
+    "cancel": {
+     "n": 6,
+     "ok": 6
+    },
+    "resume": {
+     "n": 12,
+     "ok": 12
+    }
+   }
+  },
+  {
+   "cer": 0.15,
+   "child": false,
+   "ok": 355,
+   "confirmed": 63,
+   "reask": 14,
+   "wrong": 12,
+   "wrong_motion": 0,
+   "missed_wake": 0,
+   "n": 444,
+   "by_intent": {
+    "tidy": {
+     "n": 48,
+     "ok": 48
+    },
+    "fetch_item": {
+     "n": 48,
+     "ok": 45
+    },
+    "where_is": {
+     "n": 48,
+     "ok": 45
+    },
+    "list_items": {
+     "n": 24,
+     "ok": 24
+    },
+    "what_new": {
+     "n": 30,
+     "ok": 29
+    },
+    "scan_home": {
+     "n": 30,
+     "ok": 29
+    },
+    "go_to": {
+     "n": 36,
+     "ok": 35
+    },
+    "charge": {
+     "n": 24,
+     "ok": 23
+    },
+    "who_here": {
+     "n": 24,
+     "ok": 22
+    },
+    "enrol": {
+     "n": 18,
+     "ok": 13
+    },
+    "forget": {
+     "n": 12,
+     "ok": 11
+    },
+    "name_item": {
+     "n": 12,
+     "ok": 8
+    },
+    "status": {
+     "n": 18,
+     "ok": 18
+    },
+    "privacy": {
+     "n": 18,
+     "ok": 16
+    },
+    "greet": {
+     "n": 12,
+     "ok": 11
+    },
+    "identity": {
+     "n": 12,
+     "ok": 11
+    },
+    "help": {
+     "n": 12,
+     "ok": 12
+    },
+    "cancel": {
+     "n": 6,
+     "ok": 6
+    },
+    "resume": {
+     "n": 12,
+     "ok": 12
+    }
+   }
+  },
+  {
+   "cer": 0.25,
+   "child": false,
+   "ok": 288,
+   "confirmed": 118,
+   "reask": 20,
+   "wrong": 18,
+   "wrong_motion": 0,
+   "missed_wake": 0,
+   "n": 444,
+   "by_intent": {
+    "tidy": {
+     "n": 48,
+     "ok": 47
+    },
+    "fetch_item": {
+     "n": 48,
+     "ok": 44
+    },
+    "where_is": {
+     "n": 48,
+     "ok": 41
+    },
+    "list_items": {
+     "n": 24,
+     "ok": 24
+    },
+    "what_new": {
+     "n": 30,
+     "ok": 30
+    },
+    "scan_home": {
+     "n": 30,
+     "ok": 28
+    },
+    "go_to": {
+     "n": 36,
+     "ok": 33
+    },
+    "charge": {
+     "n": 24,
+     "ok": 24
+    },
+    "who_here": {
+     "n": 24,
+     "ok": 22
+    },
+    "enrol": {
+     "n": 18,
+     "ok": 12
+    },
+    "forget": {
+     "n": 12,
+     "ok": 12
+    },
+    "name_item": {
+     "n": 12,
+     "ok": 9
+    },
+    "status": {
+     "n": 18,
+     "ok": 17
+    },
+    "privacy": {
+     "n": 18,
+     "ok": 17
+    },
+    "greet": {
+     "n": 12,
+     "ok": 9
+    },
+    "identity": {
+     "n": 12,
+     "ok": 12
+    },
+    "help": {
+     "n": 12,
+     "ok": 12
+    },
+    "cancel": {
+     "n": 6,
+     "ok": 4
+    },
+    "resume": {
+     "n": 12,
+     "ok": 9
+    }
+   }
+  },
+  {
+   "cer": 0.04,
+   "child": true,
+   "ok": 421,
+   "confirmed": 10,
+   "reask": 8,
+   "wrong": 5,
+   "wrong_motion": 0,
+   "missed_wake": 0,
+   "n": 444,
+   "by_intent": {
+    "tidy": {
+     "n": 48,
+     "ok": 48
+    },
+    "fetch_item": {
+     "n": 48,
+     "ok": 45
+    },
+    "where_is": {
+     "n": 48,
+     "ok": 48
+    },
+    "list_items": {
+     "n": 24,
+     "ok": 24
+    },
+    "what_new": {
+     "n": 30,
+     "ok": 29
+    },
+    "scan_home": {
+     "n": 30,
+     "ok": 30
+    },
+    "go_to": {
+     "n": 36,
+     "ok": 36
+    },
+    "charge": {
+     "n": 24,
+     "ok": 23
+    },
+    "who_here": {
+     "n": 24,
+     "ok": 23
+    },
+    "enrol": {
+     "n": 18,
+     "ok": 16
+    },
+    "forget": {
+     "n": 12,
+     "ok": 11
+    },
+    "name_item": {
+     "n": 12,
+     "ok": 10
+    },
+    "status": {
+     "n": 18,
+     "ok": 18
+    },
+    "privacy": {
+     "n": 18,
+     "ok": 18
+    },
+    "greet": {
+     "n": 12,
+     "ok": 11
+    },
+    "identity": {
+     "n": 12,
+     "ok": 11
+    },
+    "help": {
+     "n": 12,
+     "ok": 12
+    },
+    "cancel": {
+     "n": 6,
+     "ok": 6
+    },
+    "resume": {
+     "n": 12,
+     "ok": 12
+    }
+   }
+  },
+  {
+   "cer": 0.08,
+   "child": true,
+   "ok": 399,
+   "confirmed": 27,
+   "reask": 8,
+   "wrong": 10,
+   "wrong_motion": 0,
+   "missed_wake": 0,
+   "n": 444,
+   "by_intent": {
+    "tidy": {
+     "n": 48,
+     "ok": 48
+    },
+    "fetch_item": {
+     "n": 48,
+     "ok": 45
+    },
+    "where_is": {
+     "n": 48,
+     "ok": 48
+    },
+    "list_items": {
+     "n": 24,
+     "ok": 24
+    },
+    "what_new": {
+     "n": 30,
+     "ok": 29
+    },
+    "scan_home": {
+     "n": 30,
+     "ok": 30
+    },
+    "go_to": {
+     "n": 36,
+     "ok": 36
+    },
+    "charge": {
+     "n": 24,
+     "ok": 23
+    },
+    "who_here": {
+     "n": 24,
+     "ok": 23
+    },
+    "enrol": {
+     "n": 18,
+     "ok": 13
+    },
+    "forget": {
+     "n": 12,
+     "ok": 11
+    },
+    "name_item": {
+     "n": 12,
+     "ok": 8
+    },
+    "status": {
+     "n": 18,
+     "ok": 18
+    },
+    "privacy": {
+     "n": 18,
+     "ok": 18
+    },
+    "greet": {
+     "n": 12,
+     "ok": 11
+    },
+    "identity": {
+     "n": 12,
+     "ok": 11
+    },
+    "help": {
+     "n": 12,
+     "ok": 12
+    },
+    "cancel": {
+     "n": 6,
+     "ok": 6
+    },
+    "resume": {
+     "n": 12,
+     "ok": 12
+    }
+   }
+  }
+ ],
+ "noise": {
+  "chatter_no_wake": {
+   "n": 576,
+   "not_ignored": 0,
+   "false_stops": 0
+  },
+  "stop_words_detected": {
+   "adult_quiet": 1.0,
+   "adult_noisy": 0.965,
+   "child_quiet": 1.0,
+   "child_noisy": 0.97
+  },
+  "wake_word_caught": {
+   "0.0": 1.0,
+   "0.05": 1.0,
+   "0.1": 1.0,
+   "0.2": 1.0
+  }
+ },
+ "permissions": {
+  "rows": [
+   {
+    "intent": "tidy",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "tidy",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "tidy",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "tidy",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "fetch_item",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "fetch_item",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "fetch_item",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "fetch_item",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "where_is",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "where_is",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "where_is",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "where_is",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "list_items",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "list_items",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "list_items",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "list_items",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "what_new",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "what_new",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "what_new",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "what_new",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "scan_home",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "scan_home",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "scan_home",
+    "role": "child",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "scan_home",
+    "role": "unknown",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "go_to",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "go_to",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "go_to",
+    "role": "child",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "go_to",
+    "role": "unknown",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "charge",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "charge",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "charge",
+    "role": "child",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "charge",
+    "role": "unknown",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "who_here",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "who_here",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "who_here",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "who_here",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "enrol",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "enrol",
+    "role": "adult",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "enrol",
+    "role": "child",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "enrol",
+    "role": "unknown",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "forget",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "forget",
+    "role": "adult",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "forget",
+    "role": "child",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "forget",
+    "role": "unknown",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "name_item",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "name_item",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "name_item",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "name_item",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "status",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "status",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "status",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "status",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "privacy",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "privacy",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "privacy",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "privacy",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "greet",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "greet",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "greet",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "greet",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "identity",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "identity",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "identity",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "identity",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "help",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "help",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "help",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "help",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "cancel",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "cancel",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "cancel",
+    "role": "child",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "cancel",
+    "role": "unknown",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "resume",
+    "role": "owner",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "resume",
+    "role": "adult",
+    "expected_allowed": true,
+    "denied": false,
+    "ok": true
+   },
+   {
+    "intent": "resume",
+    "role": "child",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   },
+   {
+    "intent": "resume",
+    "role": "unknown",
+    "expected_allowed": false,
+    "denied": true,
+    "ok": true
+   }
+  ],
+  "wrong": 0,
+  "n": 76
+ },
+ "dialogues": [
+  {
+   "name": "follow-up window",
+   "ok": true,
+   "detail": [
+    "identity",
+    "ignored: no wake word"
+   ]
+  },
+  {
+   "name": "asks for the missing item",
+   "ok": true,
+   "detail": [
+    "要哪一个东西？",
+    "where_is",
+    [
+     [
+      "where_is",
+      {
+       "item": "ball"
+      }
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "\"it\" = the last item",
+   "ok": true,
+   "detail": [
+    [
+     "fetch_item",
+     {
+      "place": "收纳筐",
+      "item": 7
+     }
+    ]
+   ]
+  },
+  {
+   "name": "confirm then yes",
+   "ok": true,
+   "detail": [
+    "go_to",
+    [
+     [
+      "go_to",
+      {
+       "place": "沙发"
+      }
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "confirm then no",
+   "ok": true,
+   "detail": [
+    "cancelled",
+    []
+   ]
+  },
+  {
+   "name": "a child cannot confirm a scan",
+   "ok": true,
+   "detail": [
+    "denied",
+    []
+   ]
+  },
+  {
+   "name": "mute works and sticks",
+   "ok": true,
+   "detail": [
+    "privacy",
+    "ignored: muted"
+   ]
+  },
+  {
+   "name": "forget asks and then forgets",
+   "ok": true,
+   "detail": [
+    "要我忘掉小明的特征吗？删掉就找不回来了",
+    "好了，已经忘掉小明了"
+   ]
+  },
+  {
+   "name": "a child cannot make it forget",
+   "ok": true,
+   "detail": "这个要大人来说哦"
+  },
+  {
+   "name": "LLM proposal still has to be confirmed",
+   "ok": true,
+   "detail": [
+    "confirm",
+    "confirmed",
+    [
+     [
+      "tidy",
+      {}
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "LLM proposal is refused for a child",
+   "ok": true,
+   "detail": "denied"
+  },
+  {
+   "name": "LLM nonsense intent is refused",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "LLM timeout falls back",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "LLM free text is not spoken to a child",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "LLM free text is spoken to a grown-up",
+   "ok": true,
+   "detail": "llm reply"
+  }
+ ],
+ "ms_per_parse": 18.9
+}

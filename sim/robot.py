@@ -84,6 +84,7 @@ class Robot:
         self.odom = np.zeros(3)                  # dead-reckoned pose from wheel encoders (starts at the true pose)
         self.wheel_scale = 1 + self.rng.normal(0, ODOM_SCALE * perturb.get('odom', 1.0), 3)   # each wheel's real radius differs from the nominal one
         self.peak_torque = np.zeros(9); self.torque_sq = np.zeros(9); self.n_steps = 0; self.sat_steps = np.zeros(9)
+        self.hold_arm = False                    # set by people.Guard: the arm (and gripper) stays where it is while someone is within reach
         self._flim = self.m.actuator_forcerange[:9, 1].copy()
         self.servo_j = 0.0                       # electrical energy the nine servos have drawn so far (J)
         self.imu_rng = np.random.default_rng(seed + 4321)      # its own stream: reading the IMU never disturbs the lidar/odometry noise
@@ -187,6 +188,7 @@ class Robot:
         # joint targets are approached with a velocity that ramps up (8 rad/s^2) and eases in, like the servo's own profile
         v_des = np.clip(5.0 * (self.arm_target - self.arm_cmd), -self.arm_speed, self.arm_speed)
         v_des[5] = np.clip(8.0 * (self.arm_target[5] - self.arm_cmd[5]), -3.0, 3.0)
+        if self.hold_arm: v_des[:] = 0.0
         self.arm_vel += np.clip(v_des - self.arm_vel, -self.arm_acc * CTRL_DT, self.arm_acc * CTRL_DT)
         cmd0 = self.arm_cmd.copy()
         self.arm_cmd += self.arm_vel * CTRL_DT

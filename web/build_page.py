@@ -34,6 +34,94 @@ def pct(a, b):
     return f'{100 * a / b:.0f}%' if b else '-'
 
 
+
+def home_round_rows(start):
+    """Round 14 (3D home map, object records, people and children, voice): rows 41-52 of the validation table, from results/home_*.json. Missing files give '-'.
+    They go into docs/validation.md only; the published page does not have them yet."""
+    def load(n):
+        fn = R(n); return json.load(open(fn)) if os.path.exists(fn) else None
+    SC, EX, INV, INV1, PS, ID, SF, VO, DAY = (load(n) for n in ('home_scan.json', 'home_scan_export.json', 'home_inventory.json', 'home_inventory_s1.json', 'home_people_static.json', 'home_people_identity.json',
+                                                                  'home_people_safety.json', 'home_voice.json', 'home_day.json'))
+    mean = lambda v: sum(v) / len(v) if v else float('nan')
+    rows = []
+    # 41, 42: the 3D map
+    if EX:
+        vt = EX.get('vs_truth', []); names_ok = sum(1 for v in vt if v['guess'] == {'carton0': '箱子', 'carton1': '箱子'}.get(v['truth'], {'sofa': '沙发', 'table': '桌子', 'shelf': '架子', 'plant': '盆栽', 'chair': '椅子', 'carton': '箱子'}.get(v['truth'])))
+        c41 = (f'仿真（4×3 m、{EX["true_furniture"]} 件家具、LD19 标定）：找到 {len(vt)} 件，名字猜对 {names_ok}，墙 {EX["walls"]}/4；家具中心差 {min(v["centre_err_cm"] for v in vt):.0f}–{max(v["centre_err_cm"] for v in vt):.0f} cm，'
+               f'长边偏大 {min(v["long_side_cm"] for v in vt):.0f}–{max(v["long_side_cm"] for v in vt):.0f} cm；召回 {EX["recall"]}、精度 {EX["precision"]}（对仿真真值）') if vt else '-'
+    else: c41 = '-'
+    rows.append(('三维地图：位置和尺寸', '地上先收干净，开扫描；扫完用卷尺量家具的位置、长宽高和 4 面墙的长度，和地图里的盒子比', c41,
+                 '家具中心差不超过 10 cm；墙都找到；没有凭空多出来的家具。高度只做记录：相机离地 12 cm，只看得到下面 0.3–0.6 m'))
+    if SC:
+        by = {p: [r for r in SC['runs'] if r['planner'] == p] for p in ('nbv', 'tour')}
+        f = lambda p: f'{mean([r["sim_s"] for r in by[p]]):.0f} 秒、{mean([r["stops"] for r in by[p]]):.0f} 个点、{mean([r["path_m"] for r in by[p]]):.1f} m、召回 {mean([r["recall"] for r in by[p]]):.3f}'
+        c42 = f'下一个最佳视点（{len(by["nbv"])} 个布局平均）：{f("nbv")}；覆盖巡视：{f("tour")}；碰撞 {sum(r["collisions"] for r in SC["runs"])}'
+    else: c42 = '-'
+    rows.append(('三维扫描的用时和路程', '同上，记用时、走的路程、停几个点、碰撞', c42, '不超过仿真的 1.5 倍，碰撞 0'))
+    rows.append(('建图和人体检测的算力', '树莓派 5 上跑 `mapping3d`（每帧积分、最后分析）和 `people` 的检测，记每帧耗时和占几个核',
+                 f'这台机器（Xeon 2.3 GHz）上建图每帧约 {round(mean([r["ms_per_frame"] for r in SC["runs"]])) if SC else "-"} ms（3.3 Hz），人体检测每帧约 {PS["summary"]["ms_per_frame"] if PS else "-"} ms（5 Hz）',
+                 '合计不超过一个核；超了隔帧积分或降体素分辨率'))
+    # 44, 45: object records
+    if INV:
+        t = INV['totals']
+        c44 = (f'仿真 {len(INV["runs"])} 个布局：没动的 {t["kept"][0]}/{t["kept"][1]}，挪过的 {t["moved"][0]}/{t["moved"][1]} 认出是同一件，新来的 {t["new"][0]}/{t["new"][1]}，拿走的 {t["removed"][0]}/{t["removed"][1]} 标了“不见了”'
+               f'（另 {INV.get("removed_unchecked", 0)} 件机器人没走到那边，标“还没核实”，没有说错），认错 {INV.get("wrong_identity", 0)}，凭空多出来的 {INV.get("ghosts", 0)}')
+    else: c44 = '-'
+    rows.append(('物件记录：换了场景认不认得', '地上摆 5 件玩具扫一遍；挪两件、拿走一件、加一件新的；再扫一遍。数：挪过的是不是还叫原来的名字，拿走的有没有标“不见了”，新的有没有被当成旧的', c44,
+                 '挪过的至少 9/12 认对；把新的认成旧的不超过 1 次；没走到的不能说成“不见了”'))
+    if INV1:
+        sm = INV1['summary']; s, m = sm['standard'], sm['hard_materials']
+        c45 = (f'仿真八种东西颜色各不相同，**是最好情况**：标准布局找到 {s["found"]}/{s["objects"]}、种类猜对 {s["kind_correct"]}/{s["found"]}、多出来的条目 {s["extra_items"]}；'
+               f'黑色/反光材质布局找到 {m["found"]}/{m["objects"]}、种类猜对 {m["kind_correct"]}/{m["found"]}')
+    else: c45 = '-'
+    rows.append(('物件种类猜测', '8 种实物各 3 件，含颜色相同和不同的，黑色和反光的也放', c45, '只做记录；颜色相同的分不开，黑色的没有颜色，真要分类用识别模型（路线图）'))
+    # 46, 47: people
+    if PS:
+        s = PS['summary']; bd = s['by_distance']; allf = [v for v in bd.values() if v]
+        sc = s['size_class']
+        c46 = (f'仿真：站姿检出 {100 * sum(v["found"] * v["n"] for v in allf) / sum(v["n"] for v in allf):.0f}%（1–3 m）；身高误差中位 {100 * mean([v["h_err_median"] for v in allf]):.1f} cm；位置误差中位 {100 * mean([v["pos_err_median"] for v in allf]):.0f} cm；'
+               f'空房间 {s["false_tracks_empty_room"]["frames"]} 次里误报 {s["false_tracks_empty_room"]["with_a_track"]} 次')
+        c47 = (f'仿真：站着的孩子 {sc["stand/child"]["child"]}/{sum(sc["stand/child"].values())} 分成小孩，站着的大人 {sc["stand/adult"]["adult"]}/{sum(sc["stand/adult"].values())} 分成大人，**孩子被分成大人 {s["child_called_adult"]} 次**；'
+               f'坐着的大人 {sc["sit/adult"]["child"] + sc["sit/adult"]["unsure"]}/{sum(sc["sit/adult"].values())} 被分成小孩或不确定（保守，按小孩对待）；坐着的小孩 {sc["sit/child"]["child"]}/{sum(sc["sit/child"].values())}；'
+               f'坐着的检出 {100 * s["sitting"]["found"]:.0f}%（0.7 m 高的幼儿坐着检不出）')
+    else: c46 = c47 = '-'
+    rows.append(('人：检出和身高', '立杆相机装好后量安装高度和仰角；身高已知的大人和孩子站在 1、2、3 m 处，正对和背对各 5 次，读检测到的身高', c46, '身高误差中位不超过 5 cm；检出不低于 90%；空房间没有误报'))
+    rows.append(('人：大人还是小孩', '家里每个人和一两个访客孩子各站 1–3 m；再坐在沙发上、蹲着各 10 次', c47, '孩子被分成大人 0 次（硬指标）；坐着的大人被当成小孩只影响便利，不影响安全'))
+    if ID:
+        fr = ID['enrolled_by_distance_frontal_12looks']; sd = ID['enrolled_by_distance_side_12looks']
+        c48 = (f'**仿真里是替身**，只测登记簿和阈值：登记过的人正对 1–4 m 认对 {100 * fr["1.0"]["right"]:.0f}%–{100 * fr["4.0"]["right"]:.0f}%，侧对 1 m {100 * sd["1.0"]["right"]:.0f}%、3 m {100 * sd["3.0"]["right"]:.0f}%、4 m {100 * sd["4.0"]["right"]:.0f}%（其余“不认识”）；'
+               f'认成别人 0；陌生人和没登记的亲戚孩子误认 0（这个 0 是替身的性质，不能当真）；没有同意不能登记、看得太少不能登记、说“忘掉”以后当场认不出')
+    else: c48 = '-'
+    rows.append(('认人（真模型）', '把家里的孩子（监护人同意）登记，各站 1–4 m、正对和侧对各 20 次，数认对、认成别人、认不出；访客孩子和没登记的亲戚孩子各 20 次，数被误认几次；拿照片、视频放在机器人前面试能不能骗过', c48,
+                 '2 m 内正对认对不低于 90%；陌生人误认不高于 1%；照片/视频骗不过（做不到就不要把认人用在放权限上，本来也不用）'))
+    rows.append(('隐私：不存图、能删', '登记一个人，说“忘掉他”，查登记簿文件和整个存储有没有残留；运行一整天后在机器人上找图片和音频文件；唤醒词之前抓包',
+                 '仿真：忘掉后登记簿里没有这个人、认不出；登记簿里只有 角色、' + str(ID and 24 or '-') + ' 个数、看了几次、同意人、时间；代码里没有写图片或音频的地方',
+                 '删除后无残留；存储里没有任何图片或音频；唤醒前、没开大模型时没有对外网络请求'))
+    # 50: safety
+    if SF:
+        by = {}
+        for r in SF['runs']: by.setdefault(r['scenario'], {})[r['guard']] = r
+        parts = []
+        for sc_, nm in (('adult_cross', '成人走过'), ('child_run', '孩子冲过来'), ('toddler_basket', '幼儿在筐边'), ('family', '一家三口')):
+            if sc_ not in by: continue
+            on, off = by[sc_].get(True), by[sc_].get(False)
+            if on and off: parts.append(f'{nm}：安全层关 送达 {off["delivered"]}/{off["total"]}、碰到人 {sum(off.get("contacts", []))} 次，开 送达 {on["delivered"]}/{on["total"]}、碰到人 {sum(on.get("contacts", []))} 次、最近 {min(on.get("min_gap_cm", [0])):.0f} cm')
+        c50 = '仿真：' + '；'.join(parts) if parts else '-'
+    else: c50 = '-'
+    rows.append(('人靠近时的安全层', '泡沫人偶（孩子和大人的高度）放在行进路线上，0.15 m/s 开过去；真人（大人）从侧面走过；数停下的距离、放慢的距离、碰到几次', c50, '不碰到人偶；停下时离成人 ≥ 20 cm、离孩子 ≥ 35 cm；没有人的时候不乱停'))
+    if VO:
+        nz = VO['noise']; st = nz['stop_words_detected']; sw = {(r['cer'], r['child']): r for r in VO['sweep']}
+        c51 = (f'仿真（模拟识别器，不是声学测试）：{nz["chatter_no_wake"]["n"]} 句家里闲聊 {nz["chatter_no_wake"]["not_ignored"]} 次被当成命令，误停 {nz["chatter_no_wake"]["false_stops"]}；'
+               f'停止词 成人 {100 * st["adult_quiet"]:.0f}%/{100 * st["adult_noisy"]:.0f}%（安静/吵），孩子 {100 * st["child_quiet"]:.0f}%/{100 * st["child_noisy"]:.0f}%')
+        sw_txt = '，'.join(f'{int(100 * c)}%：{(sw[(c, False)]["ok"] + sw[(c, False)]["confirmed"]) / sw[(c, False)]["n"] * 100:.0f}%' for c in (0.0, 0.04, 0.08, 0.15, 0.25) if (c, False) in sw)
+        c52 = (f'仿真：识别错误率 {sw_txt}（直接做对加先确认一次）；做成了和说的不一样的移动命令 {sum(r["wrong_motion"] for r in VO["sweep"])} 次；权限表 {VO["permissions"]["n"]} 格错 {VO["permissions"]["wrong"]}；'
+               f'多轮对话脚本 {sum(d["ok"] for d in VO["dialogues"])}/{len(VO["dialogues"])}；每句理解约 {VO["ms_per_parse"]} ms')
+    else: c51 = c52 = '-'
+    rows.append(('语音：唤醒和停止', '客厅里开着电视（约 60 dB）说话和放新闻，数唤醒；成人和孩子在 1、3、5 m 处各说“停”“别动”20 次', c51, '误唤醒每小时不超过 1 次；停止词 3 m 内不低于 95%，孩子也是'))
+    rows.append(('语音：听懂', '照 `sim/voice_data.py` 的 74 句话真人念（成人、孩子各一遍，开着电视）', c52, '听懂（含先确认一次）不低于 90%；做了和说的不一样的移动命令 0 次'))
+    return [(str(start + i + 1), a, b, c, d) for i, (a, b, c, d) in enumerate(rows)]
+
+
 def modes_round():
     """Round 13 (self-righting, charging, remote control, navigation): strings for the page and rows for the validation table, from results/modes_*.json
     and results/righting.json. Missing files give '-' rather than an error, so the page builds while a bench is still running."""
@@ -443,6 +531,7 @@ def main():
     md = ['# 实物验收方案', '', '按顺序做，前一项不过先别做后一项。「仿真值」来自 `results/` 里的这一轮试验，由 `web/build_page.py` 自动填入。', '',
           '| # | 测什么 | 怎么测 | 仿真值 | 通过 |', '|---|---|---|---|---|']
     md += [f'| {i + 1} | {a} | {b} | {c} | {d} |'.replace('<code>', '`').replace('</code>', '`').replace('<b>', '**').replace('</b>', '**') for i, (a, b, c, d) in enumerate(valid)]
+    md += [f'| {n} | {a} | {b_} | {c} | {d} |' for n, a, b_, c, d in home_round_rows(len(valid))]          # round 14: only in the document, not on the published page
     if SE:
         md += ['', '## 敏感度：每次只让一项变差（标准条件 10 局）', '', '| 变差的那一项 | 第十轮代码 | 第十一轮代码 | 抓取失败/尝试（最新） | 定位最大误差（最新） |', '|---|---|---|---|---|']
         md += sens_md

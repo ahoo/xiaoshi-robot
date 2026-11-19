@@ -126,8 +126,10 @@ def _attrs(s):
     return out
 
 
-def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET, dock=False):
-    """objects: list of (kind, x, y, yaw, spec) with spec from objects.sample(). Returns MJCF text. World frame: x right, y 'down' the room plan, z up."""
+def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET, dock=False, people=(), head_cam=False):
+    """objects: list of (kind, x, y, yaw, spec) with spec from objects.sample(). Returns MJCF text. World frame: x right, y 'down' the room plan, z up.
+    people: keys of people.SPECS (mocap humans a script moves, body names p0_*, p1_*, ...). head_cam: a depth camera on a 0.5 m mast, tilted 28 degrees up
+    (the mast is drawn but has no mass or collision; people.HeadCam reads it). Both are off by default and then the model is exactly what it was."""
     defaults, assets, arm_body, arm_acts = _arm_parts()
     R = P['wheel_radius']
     lx, ly, lz = P['lidar_pos']
@@ -163,6 +165,15 @@ def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET, dock=Fals
     wheel_acts = '\n'.join(f'<velocity name="wheel{i}" joint="wheel{i}" kv="3" ctrlrange="-7 7" forcerange="{-P["servo_stall"]} {P["servo_stall"]}"/>' for i in range(3))
     rx, ry, rth = robot_pose
     cm = P['chassis_com']
+    ppl = ''
+    if people:
+        import people as people_lib
+        ppl = people_lib.people_xml(list(people))
+    head = ''
+    if head_cam:
+        head = ('<camera name="head" pos="-0.08 0 0.45" xyaxes="0 -1 0 -0.469 0 0.883" fovy="60"/>'
+                '<geom class="rvis" type="cylinder" pos="-0.08 0 0.22" size="0.006 0.22" rgba="0.15 0.15 0.17 1"/>'
+                '<geom class="rvis" type="box" pos="-0.075 0 0.45" size="0.02 0.045 0.015" rgba="0.1 0.1 0.12 1"/>')
     return f'''<mujoco model="xiaoshi">
   <compiler angle="radian" meshdir="{os.path.join(SO101_DIR, 'assets')}" autolimits="true"/>
   <option timestep="0.002" integrator="implicitfast" cone="elliptic" impratio="10" noslip_iterations="4"/>
@@ -209,10 +220,12 @@ def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET, dock=Fals
       <site name="base_center" pos="0 0 0" size="0.004" group="4"/>
       <camera name="front" pos="0.108 0 0.075" xyaxes="0 -1 0 0.42 0 0.91" fovy="72"/>
       <camera name="chase" mode="trackcom" pos="-0.9 -0.9 0.9" xyaxes="0.707 -0.707 0 0.42 0.42 0.8" fovy="50"/>
+      {head}
       {wheels}
       {arm_body}
     </body>
     {objs}
+    {ppl}
   </worldbody>
   <actuator>
     {wheel_acts}

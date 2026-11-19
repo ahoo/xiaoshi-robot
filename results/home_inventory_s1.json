@@ -1,0 +1,496 @@
+{
+ "runs": [
+  {
+   "seed": 1,
+   "materials": false,
+   "objects": 5,
+   "found": 5,
+   "items": 5,
+   "duplicates_or_ghosts": [],
+   "kind_correct": 5,
+   "kinds": [
+    [
+     "car",
+     "car",
+     0.31,
+     "matte"
+    ],
+    [
+     "cube",
+     "cube",
+     0.74,
+     "matte"
+    ],
+    [
+     "lbrick",
+     "lbrick",
+     0.83,
+     "matte"
+    ],
+    [
+     "sock",
+     "sock",
+     0.53,
+     "matte"
+    ],
+    [
+     "ball",
+     "ball",
+     0.55,
+     "matte"
+    ]
+   ],
+   "missed": [],
+   "coloured": 5,
+   "t": 151.3,
+   "collisions": 0,
+   "events": []
+  },
+  {
+   "seed": 2,
+   "materials": false,
+   "objects": 5,
+   "found": 5,
+   "items": 5,
+   "duplicates_or_ghosts": [],
+   "kind_correct": 5,
+   "kinds": [
+    [
+     "car",
+     "car",
+     0.16,
+     "matte"
+    ],
+    [
+     "cube",
+     "cube",
+     0.81,
+     "matte"
+    ],
+    [
+     "banana",
+     "banana",
+     0.18,
+     "matte"
+    ],
+    [
+     "ball",
+     "ball",
+     0.81,
+     "matte"
+    ],
+    [
+     "plush",
+     "plush",
+     0.78,
+     "matte"
+    ]
+   ],
+   "missed": [],
+   "coloured": 5,
+   "t": 145.2,
+   "collisions": 0,
+   "events": []
+  },
+  {
+   "seed": 3,
+   "materials": false,
+   "objects": 5,
+   "found": 5,
+   "items": 5,
+   "duplicates_or_ghosts": [],
+   "kind_correct": 5,
+   "kinds": [
+    [
+     "ball",
+     "ball",
+     0.81,
+     "matte"
+    ],
+    [
+     "banana",
+     "banana",
+     0.96,
+     "matte"
+    ],
+    [
+     "cube",
+     "cube",
+     0.79,
+     "matte"
+    ],
+    [
+     "sock",
+     "sock",
+     0.69,
+     "matte"
+    ],
+    [
+     "plush",
+     "plush",
+     0.76,
+     "matte"
+    ]
+   ],
+   "missed": [],
+   "coloured": 5,
+   "t": 130.0,
+   "collisions": 0,
+   "events": []
+  },
+  {
+   "seed": 4,
+   "materials": false,
+   "objects": 5,
+   "found": 5,
+   "items": 5,
+   "duplicates_or_ghosts": [],
+   "kind_correct": 5,
+   "kinds": [
+    [
+     "lbrick",
+     "lbrick",
+     0.83,
+     "matte"
+    ],
+    [
+     "rock",
+     "rock",
+     0.67,
+     "matte"
+    ],
+    [
+     "car",
+     "car",
+     0.33,
+     "matte"
+    ],
+    [
+     "banana",
+     "banana",
+     0.96,
+     "matte"
+    ],
+    [
+     "plush",
+     "plush",
+     0.79,
+     "matte"
+    ]
+   ],
+   "missed": [],
+   "coloured": 5,
+   "t": 170.0,
+   "collisions": 0,
+   "events": []
+  },
+  {
+   "seed": 5,
+   "materials": false,
+   "objects": 5,
+   "found": 5,
+   "items": 5,
+   "duplicates_or_ghosts": [],
+   "kind_correct": 5,
+   "kinds": [
+    [
+     "rock",
+     "rock",
+     0.67,
+     "matte"
+    ],
+    [
+     "lbrick",
+     "lbrick",
+     0.83,
+     "matte"
+    ],
+    [
+     "car",
+     "car",
+     0.24,
+     "matte"
+    ],
+    [
+     "banana",
+     "banana",
+     0.97,
+     "matte"
+    ],
+    [
+     "cube",
+     "cube",
+     0.68,
+     "matte"
+    ]
+   ],
+   "missed": [],
+   "coloured": 5,
+   "t": 148.6,
+   "collisions": 0,
+   "events": []
+  },
+  {
+   "seed": 6,
+   "materials": false,
+   "objects": 5,
+   "found": 5,
+   "items": 5,
+   "duplicates_or_ghosts": [],
+   "kind_correct": 5,
+   "kinds": [
+    [
+     "sock",
+     "sock",
+     0.69,
+     "matte"
+    ],
+    [
+     "ball",
+     "ball",
+     0.75,
+     "matte"
+    ],
+    [
+     "plush",
+     "plush",
+     0.73,
+     "matte"
+    ],
+    [
+     "banana",
+     "banana",
+     0.96,
+     "matte"
+    ],
+    [
+     "car",
+     "car",
+     0.36,
+     "matte"
+    ]
+   ],
+   "missed": [],
+   "coloured": 5,
+   "t": 143.4,
+   "collisions": 0,
+   "events": []
+  },
+  {
+   "seed": 1,
+   "materials": true,
+   "objects": 6,
+   "found": 5,
+   "items": 5,
+   "duplicates_or_ghosts": [],
+   "kind_correct": 4,
+   "kinds": [
+    [
+     "car",
+     "car",
+     0.59,
+     "shiny"
+    ],
+    [
+     "cube",
+     "cube",
+     0.7,
+     "shiny"
+    ],
+    [
+     "lbrick",
+     "lbrick",
+     0.83,
+     "shiny"
+    ],
+    [
+     "sock",
+     "sock",
+     0.46,
+     "shiny"
+    ],
+    [
+     "ball",
+     "rock",
+     0.03,
+     "black"
+    ]
+   ],
+   "missed": [
+    [
+     "bottle",
+     "clear"
+    ]
+   ],
+   "coloured": 5,
+   "t": 154.3,
+   "collisions": 0,
+   "events": []
+  },
+  {
+   "seed": 2,
+   "materials": true,
+   "objects": 6,
+   "found": 5,
+   "items": 5,
+   "duplicates_or_ghosts": [],
+   "kind_correct": 3,
+   "kinds": [
+    [
+     "car",
+     "car",
+     0.32,
+     "shiny"
+    ],
+    [
+     "cube",
+     "cube",
+     0.81,
+     "shiny"
+    ],
+    [
+     "banana",
+     "sock",
+     0.01,
+     "black"
+    ],
+    [
+     "ball",
+     "ball",
+     0.79,
+     "shiny"
+    ],
+    [
+     "plush",
+     "cube",
+     0.02,
+     "black"
+    ]
+   ],
+   "missed": [
+    [
+     "bottle",
+     "clear"
+    ]
+   ],
+   "coloured": 5,
+   "t": 141.5,
+   "collisions": 0,
+   "events": []
+  },
+  {
+   "seed": 3,
+   "materials": true,
+   "objects": 6,
+   "found": 5,
+   "items": 5,
+   "duplicates_or_ghosts": [],
+   "kind_correct": 4,
+   "kinds": [
+    [
+     "ball",
+     "ball",
+     0.81,
+     "shiny"
+    ],
+    [
+     "banana",
+     "sock",
+     0.11,
+     "black"
+    ],
+    [
+     "cube",
+     "cube",
+     0.79,
+     "shiny"
+    ],
+    [
+     "sock",
+     "sock",
+     0.1,
+     "black"
+    ],
+    [
+     "plush",
+     "plush",
+     0.71,
+     "matte"
+    ]
+   ],
+   "missed": [
+    [
+     "bottle",
+     "clear"
+    ]
+   ],
+   "coloured": 5,
+   "t": 133.9,
+   "collisions": 0,
+   "events": []
+  },
+  {
+   "seed": 4,
+   "materials": true,
+   "objects": 6,
+   "found": 3,
+   "items": 3,
+   "duplicates_or_ghosts": [],
+   "kind_correct": 3,
+   "kinds": [
+    [
+     "lbrick",
+     "lbrick",
+     0.83,
+     "shiny"
+    ],
+    [
+     "car",
+     "car",
+     0.33,
+     "matte"
+    ],
+    [
+     "banana",
+     "banana",
+     0.02,
+     "black"
+    ]
+   ],
+   "missed": [
+    [
+     "rock",
+     "black"
+    ],
+    [
+     "plush",
+     "black"
+    ],
+    [
+     "bottle",
+     "clear"
+    ]
+   ],
+   "coloured": 3,
+   "t": 152.7,
+   "collisions": 0,
+   "events": []
+  }
+ ],
+ "summary": {
+  "standard": {
+   "runs": 6,
+   "objects": 30,
+   "found": 30,
+   "kind_correct": 30,
+   "extra_items": 0
+  },
+  "hard_materials": {
+   "runs": 4,
+   "objects": 24,
+   "found": 18,
+   "kind_correct": 14,
+   "extra_items": 0
+  }
+ }
+}

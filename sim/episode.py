@@ -117,10 +117,12 @@ def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=
 
 
 def run_supervised(seed, clearance=0.30, verbose=False, dock=False, soc0=None, cfg=None, script=None, t_end=None, start='task', materials=False, clutter=False,
-                   on_step=None, perturbation=None, robot_pose=None, objects=None, boxes=None, until=None, right=True, est_bias=None):
+                   on_step=None, perturbation=None, robot_pose=None, objects=None, boxes=None, until=None, right=True, est_bias=None, people=None, setup=None):
     """The same room and job as run_episode, but under modes.Supervisor: a battery (soc0 = state of charge at the start; None = no battery model),
     a charging dock (dock=True: the robot starts docked unless robot_pose says otherwise), modes, falls, an operator (`script(sup)` is called every tick).
-    start: 'task' (start the fetch job), 'idle' (wait for the script)."""
+    start: 'task' (start the fetch job), 'idle' (wait for the script).
+    people: None, or dict(names=[people.SPECS keys], steps=[a people.Script step list per person], who=[...], family=[...], guard=True, head_cam=True): simulated people
+    walk through the room (people.py) and the supervisor runs the head camera and, if guard, the safety layer."""
     import perturb, righting
     from model import DOCK_POSE
     from modes import Supervisor
@@ -128,11 +130,17 @@ def run_supervised(seed, clearance=0.30, verbose=False, dock=False, soc0=None, c
     perturb.CUR = dict(perturbation or {})
     if objects is None: objects, boxes = make_layout(seed, clearance, clutter=clutter, materials=materials)
     pose = robot_pose or (DOCK_POSE if dock else HOME)
-    robot = Robot(objects, seed=seed, extra_boxes=boxes or [], dock=dock, robot_pose=pose)
+    pk = {} if not people else dict(people=list(people['names']), head_cam=True)
+    robot = Robot(objects, seed=seed, extra_boxes=boxes or [], dock=dock, robot_pose=pose, **pk)
     agent = Agent(robot, seed=seed, verbose=verbose)
     bat = Battery(soc0, rng=np.random.default_rng(seed + 99), est_bias=est_bias) if soc0 is not None else None
     sup = Supervisor(robot, agent, bat, cfg)
+    if people:
+        import people as people_lib
+        sup.attach_people(people_lib.PeopleSystem(robot, agent, people['names'], [people_lib.Script(st) for st in people['steps']], who=people.get('who'), family=people.get('family'), seed=seed,
+                                                  guard=people.get('guard', True), static_map=people.get('static_map'), guard_cfg=people.get('guard_cfg'), registry_path=people.get('registry_path'), comply=people.get('comply')))
     if right: righting.attach(sup)
+    if setup: setup(sup)                           # e.g. attach the home features (3D map, object records, voice) before the first tick
     if start == 'task': sup.start_task()
     t0 = time.time()
     def step(r, a):

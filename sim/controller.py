@@ -100,6 +100,9 @@ class Agent:
         self.arm_busy = False      # set by modes.Supervisor while an operator has the arm out in front of the lidar
         self.freeze = False        # set by modes.Supervisor while the robot is tilted or lying down: the lidar and camera see the room at the wrong angle, so no mapping, matching or detecting
         self.pose_before_fall = None
+        self.zone_skip_t = -99.0   # when pick() last skipped an object because someone stands by it
+        self.person_zones = []     # set by people.Guard: [(x, y, r)] around the people in the room; an object inside one is not started on (looked at again in 10 s)
+        self.depth_hook = None     # set by home.py: called as hook(agent, x, y, th) with every front-camera frame, after detection (3D scan, object records)
         m = robot.m
         self._floor = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, 'floor')
         # Where the basket is, in the robot's own map. It starts from where the user said it is, and is then corrected
@@ -308,6 +311,7 @@ class Agent:
             self.visible[k] = dt['dist']
         for k in seen:
             if k in self.memory: self.memory[k]['miss'] = 0
+        if self.depth_hook is not None: self.depth_hook(self, x, y, th)      # after this frame's objects are matched: agent.visible and agent.memory are current
         found = self._sense_clear(dets, x, y, th)
         # Negative evidence: the floor where a remembered object should be is in plain view and nothing is there.
         # (Pushed away by a wheel, or a duplicate.) Only from 0.35 m (closer, a flat object hardly hides the floor
@@ -1132,11 +1136,13 @@ class Agent:
         p = self.priority
         if p is not None:
             e = self.memory.get(p)
-            if e and e['status'] == 'pending' and e['retry_at'] <= self.r.t: return p
+            if e and e['status'] == 'pending' and e['retry_at'] <= self.r.t and not (self.person_zones and any(math.hypot(e['x'] - zx, e['y'] - zy) < zr for zx, zy, zr in self.person_zones)): return p
             if self.r.t - self.basket_blocked_t < 25.0: return None   # no point picking up anything else yet
             self.priority = None
         for k, e in self.memory.items():
             if e['status'] == 'pending' and e['retry_at'] <= self.r.t:
+                if self.person_zones and any(math.hypot(e['x'] - zx, e['y'] - zy) < zr for zx, zy, zr in self.person_zones):
+                    e['retry_at'] = self.r.t + 10.0; self.zone_skip_t = self.r.t; continue                 # someone is standing by it: another one first, and look again in a few seconds
                 d = math.hypot(e['x'] - x, e['y'] - y)
                 if best is None or d < best[0]: best = (d, k)
         return None if best is None else best[1]

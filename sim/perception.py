@@ -145,6 +145,11 @@ class FrontCamera:
         self.self_mask = np.isin(lab, self.self_geoms)          # the robot's own arm and body
         return self.depth
 
+    def rgb(self):
+        """The colour image of the same view, for the 3D scan and the object records (detection never uses it)."""
+        if getattr(self, '_col', None) is None: self._col = mujoco.Renderer(self.r.m, H, W)
+        self._col.update_scene(self.r.d, 'front'); return self._col.render().copy()
+
     def _cloud(self, n_avg=1):
         """All pixels as noisy points in the chassis frame, with height above the fitted floor plane. n_avg: frames
         averaged while standing still (a temporal filter): the random part of the depth noise shrinks by sqrt(n_avg)."""
@@ -176,6 +181,7 @@ class FrontCamera:
         n_avg: frames averaged (only while the robot stands still, e.g. the close look before a grasp)."""
         self.capture(); self.basket_obs = None; self.low_pts = np.zeros((0, 2))
         P, valid = self._cloud(n_avg)
+        self.last_cloud = (P, valid)                   # for the 3D scan (home.py): the same points, not a second noisy draw
         hgt = P[..., 2]
         self.holes = self._find_holes(hgt)
         above = valid & (hgt > FLOOR_TOL)

@@ -2,6 +2,8 @@
 
   TASK    the autonomous fetch job (controller.Agent.run): find things, pick them up, take them to the basket
   NAV     autonomous navigation: to a point (optionally with a heading), through a list of points, or explore the room; nothing is picked up
+  SCAN    map the home in 3D: drive to the stop from which most not-yet-seen volume is in view, turn once, repeat (mapping3d.py, home.py)
+  FETCH   go and get one particular thing (from the object records) and take it to the basket
   TELEOP  a person drives: velocity commands with a dead-man timeout, the arm by joint angle or by hand position; through the safety layer or raw
   CHARGE  to the dock, reverse in, charge (fast-forwarded), drive off
   RIGHT   get back on the wheels after a fall
@@ -63,6 +65,9 @@ class Supervisor:
         self.resume = None                     # (mode, kwargs) to go back to after CHARGE
         self.resume_right = None               # same, after RIGHT
         self.nav_queue = []; self.nav_results = []
+        self.home = None                       # home.Home: the 3D map, the object records, the people, the voice (None: none of that)
+        self.ppl = None                        # people.PeopleSystem (simulated people, head camera, tracks, safety guard); None: no people
+        self.scan_done = False
         self._running = False; self._deferred = None
         self._soft_req = False; self._fall_ticks = 0; self.tilt_imu = 0.0; self._last_j = robot.servo_j
         self.fault = None; self.warn = None; self.fall_log = []; self.charge_log = []
@@ -89,6 +94,8 @@ class Supervisor:
         self.request('NAV', goals=g)
 
     def explore(self): self.request('NAV', goals=[], explore=True)
+    def scan_home(self, planner='nbv', **kw): self.request('SCAN', planner=planner, **kw)
+    def fetch_item(self, k): self.request('FETCH', k=k)
 
     def drive(self, vx, vy, wz):
         """Teleop velocity command, body frame (m/s, m/s, rad/s). Must be repeated faster than the dead-man timeout."""
@@ -122,7 +129,9 @@ class Supervisor:
     def tick(self):
         """One 20 ms control period."""
         self._intake(); self._watch()
-        if self._gen is not None:
+        g = self.ppl.guard if self.ppl is not None else None
+        halted = g is not None and g.pre(self)                 # a person is too close: the mode stays where it is this tick
+        if self._gen is not None and not halted:
             self._running = True; finished = False
             try: next(self._gen)
             except StopIteration: self._gen = None; finished = True
@@ -131,7 +140,14 @@ class Supervisor:
                 mode, kw = self._deferred; self._deferred = None
                 if finished or self._gen is not None: self._switch(mode, **kw)
             elif finished: self._on_done()
+        if g is not None and not halted: g.post(self)
+        if self.ppl is not None: self.ppl.before_physics()
         self.r.step(); self.a.after_step(); self._account()
+        if self.ppl is not None: self.ppl.after_physics()
+
+    def attach_people(self, system):
+        """people.PeopleSystem: from now on every tick moves the simulated people, runs the head camera and the guard."""
+        self.ppl = system
 
     def run(self, t_end, on_step=None, until=None):
         while self.r.t < t_end:
@@ -151,7 +167,7 @@ class Supervisor:
     def _soft_stop(self):
         """Asked by the autonomous jobs at their safe points (controller.Agent.pause)."""
         if self._soft_req: return True
-        if self.bat is None or not self.cfg['auto_charge'] or self.mode not in ('TASK', 'NAV'): return False
+        if self.bat is None or not self.cfg['auto_charge'] or self.mode not in ('TASK', 'NAV', 'SCAN'): return False
         return self.bat.soc_est < self.cfg['soc_soft']
 
     # ------------------------------------------------------------------ switching
@@ -216,6 +232,10 @@ class Supervisor:
                 self.task_done = True; self._event('任务结束')
                 if self.bat is not None and self.cfg['auto_charge'] and self.bat.soc_est < self.cfg['soc_full'] - 0.05: self.resume = None; self._switch('CHARGE', reason='task done')
                 else: self._switch('IDLE')
+        elif mode == 'SCAN':
+            if not self.scan_done and self._soft_stop():
+                self.resume = ('SCAN', dict(self._kw)); self._event('电量低，停在两个扫描点之间去充电'); self._switch('CHARGE', reason='low battery')
+            else: self._switch('IDLE')
         elif mode == 'NAV':
             if (self.nav_queue or self.nav_explore) and self._soft_stop():
                 self.resume = ('NAV', dict(explore=self.nav_explore)); self._event('电量低，停在两个目标之间去充电'); self._switch('CHARGE', reason='low battery')
@@ -295,6 +315,46 @@ class Supervisor:
             self.nav_results.append(res); self.stats['nav_ok' if goal is not None else 'nav_fail'] += 1
             self._event(f'{"到了" if goal is not None else "没到：" + str(a.abort)}（{res["secs"]} 秒）')
             self.nav_queue.pop(0)
+
+    def _gen_scan(self, planner='nbv', max_stops=40, budget_s=600.0):
+        """Map the home in 3D. planner 'nbv': the next stop is the one with most unseen volume in view; 'tour': the 2D coverage tour the job uses."""
+        a, r, h = self.a, self.r, self.home
+        if h is None: self._event('没有接上 Home，扫描不了'); return
+        if self.at_dock(): yield from dock_lib.pull_out(a)
+        h.mapping = True; t0 = r.t; stops = 0; self.scan_done = False
+        try:
+            if not self._looked:
+                a.state = '扫描'; yield from wait(r, 0.5); yield from a.spin(); self._looked = True
+            self._event(f'开始扫描家里（{planner}）')
+            while stops < max_stops and r.t - t0 < budget_s:
+                if self._soft_stop(): return
+                a.state = '扫描'
+                if planner == 'nbv':
+                    c = h.planner.choose(a, a.costmap())
+                    if c is None: break
+                    cx, cy, g = c
+                    goal = yield from a.goto(lambda D: [(cx, cy, None, 0.10)], timeout=60.0)
+                    if goal is None: h.planner.bad.append((cx, cy)); continue
+                    yield from a.spin(); stops += 1; h.planner.visited.append(a.pose()[:2])
+                else:
+                    more = yield from a.explore_step(stop_on_find=False)
+                    if not more: break
+                    stops += 1; g = 0
+                h.scan_log.append(dict(t=round(r.t - t0, 1), stops=stops, gain=int(g), observed=round(h.map.observed_fraction(0.55), 3), path_m=round(a.stats['dist'], 2)))
+            self.scan_done = True
+        finally:
+            h.mapping = False
+        h.finish_scan(); self._event(f'扫描完成：{stops} 个停靠点，{r.t - t0:.0f} 秒，看到了 {100 * h.map.observed_fraction(0.55):.0f}% 的空间')
+
+    def _gen_fetch(self, k=None):
+        """Go and get one thing the job has in memory (an object record's id), and take it to the basket."""
+        a = self.a
+        if k is None or k not in a.memory: self._event('要拿的东西不在记忆里'); return
+        if self.at_dock(): yield from dock_lib.pull_out(a)
+        a.state = '导航'; a.priority = k; e = a.memory[k]; e['retry_at'] = 0.0
+        self._event(f'去拿 #{k}')
+        ok = yield from a.fetch(k); a.target = None; a.held = False
+        self._event('拿到并送进了收纳筐' if ok else '没拿成')
 
     def _gen_teleop(self):
         a, r, tc, cfg = self.a, self.r, self.tele, self.cfg

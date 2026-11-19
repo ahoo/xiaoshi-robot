@@ -31,6 +31,12 @@
 | `sim/search_righting.py` | 起身动作的搜索工具：在带扰动的场景里（零位、摩擦、重量、落地姿态）用交叉熵法找，按新场景测成功率 |
 | `sim/teleop_server.py` | 遥控的 TCP 接口（一行一个 JSON）：速度、手臂（关节或手端位置）、切模式、去某个点、状态 |
 | `sim/teleop_client.py` | 终端键盘遥控客户端（连 `teleop_server.py`；w/s/a/d/q/e 开，1–4 手臂，t 接管、r 交还、c 去充电） |
+| `sim/mapping3d.py` | 三维家庭地图（第十四轮）：4 cm 体素 + 对数几率，沿相机射线清空，墙 = 体素列上的长直线（RANSAC + 外侧检验），家具 = 三维连通块的盒子，下一个最佳视点规划 `ScanPlanner`，PLY 导出，不用任何库的网页查看器，对仿真真值的评估 |
+| `sim/home.py` | `Home`：把三维地图和物件记录挂到前置相机的每一帧上（`Agent.depth_hook`，不挂的时候旧路径不变） |
+| `sim/inventory.py` | 物件记录：颜色直方图 + 尺寸 → 种类猜测；跨次会话再识别（挪过位置的认得出是同一件）；「不见了」「还没核实」；按名字问「在哪」；命名；存本机 JSON，不存图片 |
+| `sim/people.py` | 人和孩子：仿真里的人（五种身高、走、站、坐、追着机器人跑）；头部深度相机（立杆）；深度图检测、跟踪、身高 → 大人/小孩/不确定；激光雷达上会动的东西（相机看不到的方向）；登记簿（要大人同意、可删、只存特征向量）；安全层 `Guard`（放慢、停下、手臂不动）；**认人那一层是替身，见 `docs/privacy.md`** |
+| `sim/voice.py`、`sim/voice_data.py` | 中文语音：唤醒词和停止词、模拟的语音识别（同音字、声调、平翘舌、前后鼻音、掉字、孩子和远处更差）、拼音模糊匹配的理解、多轮对话、谁能让它做什么、执行器、可选大模型的接口；`voice_data.py` 是带标注的说法 |
+| `sim/test_home.py` | 第十四轮台架：`scan`、`inventory`、`people_static`、`safety`、`identity`、`voice`、`day`、`export` → `results/home_*.json` |
 | `sim/test_modes.py` | 模式、充电座、遥控、导航、摔倒的台架 → `results/modes_*.json` |
 | `sim/test_righting.py` | 起身台架：每种躺姿的动作在新场景里的成功率，以及 28 次推倒 → `results/righting.json` |
 | `sim/episode.py` | 一次完整试验（随机布局 → 自主运行 → 成绩单）；`run_supervised` 是同一个试验放在模式管理层下（带电池、充电座、摔倒、操作员） |
@@ -60,6 +66,14 @@ python test_localization.py bench 5,9   # 两套定位 × 六种雷达误差模�
 python profile_compute.py    # 机器人自己的算法各占多少 CPU
 python test_clear.py all      # 透明瓶台架，几分钟 -> results/clear_bench.json
 python run_clear.py ab 4      # 透明瓶单独在房间里（ab / forced / robust / heldout 四种：两个办法的对照、强制各种朝向、更苛刻的深度图、没参与开发的新种子），4 个进程 -> results/clear_bottle.json
+python test_home.py scan 1      # 三维扫描：下一个最佳视点 / 覆盖巡视各一遍，对仿真真值评估（PROCS=2）-> results/home_scan.json
+python test_home.py export 1    # 一次扫描导出点云（PLY）、能直接打开的三维查看器（HTML）和数字 -> results/home_scan_seed1.*
+python test_home.py inventory 1 2 3 4 5 6   # 物件记录：换了场景（挪了两件、拿走一件、新来一件）以后再识别 -> results/home_inventory.json
+python test_home.py people_static 150       # 人：站在 1–3 m 处能不能检出、身高量得准不准、分成大人还是小孩 -> results/home_people_static.json
+python test_home.py identity    # 登记簿和认人的阈值（替身识别器，只测我们自己的逻辑）-> results/home_people_identity.json
+python test_home.py safety 1 2  # 人和机器人干活同场：成年人走过、孩子冲过来、幼儿在筐边、一家三口；安全层开/关 -> results/home_people_safety.json
+python test_home.py voice       # 中文命令：加噪声扫描、没喊唤醒词的闲聊、停止词、权限表、多轮对话、大模型接口 -> results/home_voice.json
+python test_home.py day 3       # 一整天连起来：语音、扫描、登记孩子、孩子冲过来、停下和继续、忘掉 -> results/home_day.json
 python test_modes.py dock 10  # 充电座：10 个随机起点倒车对接（PROCS=3 用 3 个进程），-> results/modes_dock.json
 python test_modes.py fall 16  # 摔倒：16 次随机位置、方向、力度的推倒，看能不能起来、起来后位置对不对
 python test_modes.py nav 6    # 自主导航：6 个随机布局各 6 个可达目标和 2 个到不了的目标
@@ -93,6 +107,9 @@ python ../web/build_page.py  # 用 results/ 里的数字重新生成页面和 do
 - **充电座和后部充电探针**：设计出来的，没造过。「接上」在仿真里是探针几何上碰到触片并保持 1 秒，没有接触电阻、弹簧力、氧化。充电座位置事先已知（装的时候量好写进 `sim/model.py`），挪了要重新量。
 - **摔倒和起身**：IMU 读数是重力方向加噪声（0.25°）和固定偏差（0.5°），没有加速度干扰；起身的手臂加轮子动作是在仿真里搜出来的，要 30 rad/s² 的关节加速度，**实物没试过**；机身上只有雷达头和立柱是实体，相机支架、线缆、电池位置没建。
 - **遥控和导航**：网络延迟、丢包没有建模；导航只在 4×3 m 单房间里测过，没有会动的障碍物。
+- **三维地图和物件记录**（第十四轮）：地图只记前置相机（离地 12 cm、向下 25°）看得到的面，所以家具只有下面 0.3–0.6 m 是实的，高处和顶面靠盒子估；靠墙那一面的深度看不到；盒子比真的大 4–14 cm（体素和噪声）。只在 4×3 m 单房间里测过，多房间没测。物件种类靠颜色直方图和尺寸，仿真里八种东西颜色各不相同，**这是最好情况**，黑色和反光的东西没有颜色，认不出种类；两个一模一样的东西分不开。
+- **人和孩子**（第十四轮）：仿真里的人是五种身高的刚体人形（躯干、头、两腿、两臂），按脚本走、站、坐、追着机器人跑，走路会绕开机器人（脚本里写的规则）；真的孩子不会这么听话。头部相机和立杆是新加的硬件，**立杆的重量和重心仿真里没算**。大人/小孩只看身高（和坐着时的肩宽）：约 11 岁以下算小孩，12 岁的算大人；坐着的大人会被分成小孩或不确定（保守）。**认出是哪个孩子那一层是替身**（给每个人画一个固定的特征向量、按距离和朝向加噪声），只能测登记簿、阈值、同意和删除这些我们自己写的逻辑，不能说明真的人脸模型认得准不准。
+- **语音**（第十四轮）：仿真里没有声音，语音识别是模拟的（同音字、声调、平翘舌、前后鼻音、掉字，孩子和远处更差），后面的理解、对话、权限、执行是真代码。真麦克风阵列、客厅里的电视声、六岁孩子的口音、TTS 的声音、真大模型怎么回答，都没测。
 
 ## 参考
 
