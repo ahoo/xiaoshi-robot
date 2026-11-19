@@ -148,7 +148,7 @@ def main():
     # localisation bench (offline replay of recorded trajectories)
     LB = json.load(open(R('loc_bench.json'))) if os.path.exists(R('loc_bench.json')) else []
     LBN = dict(gauss10='高斯噪声 1 cm（名义）', gauss30='高斯噪声 3 cm', ld19='LD19 规格书模型（偏差抽样 a）', ld19b='LD19 规格书模型（偏差抽样 b）',
-               ld19c='LD19 规格书模型（偏差抽样 c）', ld19x2='LD19 模型，噪声和野点加倍')
+               ld19c='LD19 规格书模型（偏差抽样 c）', ld19x2='LD19 模型，噪声和野点加倍', ld19cal='LD19 模型，标定后（偏差 ±20 mm）')
     loc_rows = ''
     for mdl, lab in LBN.items():
         r10 = [x for x in LB if x['model'] == mdl and x['localiser'] == 'round10']; r11 = [x for x in LB if x['model'] == mdl and x['localiser'] == 'round11']

@@ -74,7 +74,7 @@
    },
    "sim_time": 493.9,
    "finished": true,
-   "wall_time": 211.0,
+   "wall_time": 212.6,
    "odom_err": 0.338,
    "loc_err_mean": 0.0095,
    "loc_err_max": 0.0171,
@@ -317,7 +317,7 @@
    },
    "sim_time": 474.2,
    "finished": true,
-   "wall_time": 193.4,
+   "wall_time": 199.6,
    "odom_err": 1.452,
    "loc_err_mean": 0.0202,
    "loc_err_max": 0.0376,
@@ -536,7 +536,7 @@
    },
    "sim_time": 474.4,
    "finished": true,
-   "wall_time": 205.4,
+   "wall_time": 207.1,
    "odom_err": 2.523,
    "loc_err_mean": 0.0131,
    "loc_err_max": 0.0252,
@@ -815,7 +815,7 @@
    },
    "sim_time": 495.0,
    "finished": true,
-   "wall_time": 215.6,
+   "wall_time": 220.2,
    "odom_err": 3.93,
    "loc_err_mean": 0.0254,
    "loc_err_max": 0.0482,
@@ -1058,7 +1058,7 @@
    },
    "sim_time": 473.6,
    "finished": true,
-   "wall_time": 193.1,
+   "wall_time": 196.6,
    "odom_err": 0.629,
    "loc_err_mean": 0.0119,
    "loc_err_max": 0.0197,
@@ -1305,7 +1305,7 @@
    },
    "sim_time": 442.7,
    "finished": true,
-   "wall_time": 200.7,
+   "wall_time": 205.0,
    "odom_err": 3.646,
    "loc_err_mean": 0.0123,
    "loc_err_max": 0.0285,
@@ -1532,7 +1532,7 @@
    },
    "sim_time": 470.2,
    "finished": true,
-   "wall_time": 215.6,
+   "wall_time": 224.9,
    "odom_err": 0.573,
    "loc_err_mean": 0.0147,
    "loc_err_max": 0.026,
@@ -1759,7 +1759,7 @@
    },
    "sim_time": 512.1,
    "finished": true,
-   "wall_time": 229.9,
+   "wall_time": 236.4,
    "odom_err": 0.249,
    "loc_err_mean": 0.0345,
    "loc_err_max": 0.0662,
@@ -2092,7 +2092,7 @@
    },
    "sim_time": 483.8,
    "finished": true,
-   "wall_time": 197.4,
+   "wall_time": 203.7,
    "odom_err": 3.715,
    "loc_err_mean": 0.0084,
    "loc_err_max": 0.0207,
@@ -2391,7 +2391,7 @@
    },
    "sim_time": 521.2,
    "finished": true,
-   "wall_time": 209.7,
+   "wall_time": 222.1,
    "odom_err": 3.14,
    "loc_err_mean": 0.0162,
    "loc_err_max": 0.0224,
@@ -2728,16 +2728,16 @@
     "banana": "已送达",
     "ball": "已送达"
    },
-   "sim_time": 461.2,
+   "sim_time": 558.6,
    "finished": true,
-   "wall_time": 204.3,
-   "odom_err": 3.13,
-   "loc_err_mean": 0.0155,
-   "loc_err_max": 0.0275,
-   "loc_head_err_max_deg": 1.61,
-   "scan_matches": 3494,
+   "wall_time": 264.9,
+   "odom_err": 3.427,
+   "loc_err_mean": 0.0166,
+   "loc_err_max": 0.0302,
+   "loc_head_err_max_deg": 1.54,
+   "scan_matches": 4384,
    "scan_skips": 2,
-   "basket_sightings": 317,
+   "basket_sightings": 357,
    "places": [
     [
      51.9,
@@ -2746,82 +2746,82 @@
      false
     ],
     [
-     98.0,
+     111.5,
      "place",
      "ball",
      true
     ],
     [
-     144.6,
+     194.8,
      "place",
      "plush",
      true
     ],
     [
-     197.6,
+     248.0,
      "place",
      "banana",
      true
     ],
     [
-     251.2,
+     359.4,
      "place",
      "car",
      true
     ],
     [
-     299.0,
+     406.8,
      "place",
      "rock",
      true
     ]
    ],
-   "t_last": 299.0,
+   "t_last": 406.8,
    "peak_torque": [
     2.76,
-    2.7,
+    2.71,
     2.94,
-    1.03,
-    2.06,
-    2.18,
-    1.51,
+    1.23,
+    2.51,
+    2.24,
+    1.5,
     1.0,
     1.0
    ],
    "rms_torque": [
     1.34,
-    0.57,
+    0.56,
     1.35,
     0.04,
-    0.33,
     0.32,
-    0.15,
-    0.05,
-    0.51
+    0.32,
+    0.14,
+    0.06,
+    0.52
    ],
    "time_above_80pct": [
-    0.003,
+    0.0038,
     0.0002,
-    0.0054,
+    0.0052,
     0.0,
     0.0,
     0.0,
     0.0,
     0.0,
-    0.2727
+    0.2795
    ],
    "pulls": 0,
-   "grasp_attempts": 6,
-   "grasp_fail": 0,
+   "grasp_attempts": 7,
+   "grasp_fail": 1,
    "dropped": 0,
    "missed_place": 1,
-   "replans": 484,
+   "replans": 645,
    "stuck": 0,
    "collisions": 0,
    "floor_touch": 0,
    "max_tilt": 1.54,
-   "dist": 37.52,
-   "scan_dropped": 11114,
+   "dist": 48.67,
+   "scan_dropped": 13179,
    "condition": "clutter",
    "log": [
     [
@@ -2862,86 +2862,102 @@
     ],
     [
      54.3,
-     "发现物体#4（约 10×5 cm，高 4 cm），距离 0.41 m"
+     "发现物体#4（约 9×5 cm，高 4 cm），距离 0.41 m"
     ],
     [
-     60.3,
-     "发现物体#5（约 9×5 cm，高 4 cm），距离 1.25 m"
+     72.3,
+     "发现物体#5（约 9×6 cm，高 4 cm），距离 0.87 m"
     ],
     [
-     80.4,
+     94.0,
      "夹住 物体#3，送往收纳筐"
     ],
     [
-     98.0,
+     111.5,
      "物体#3 已放进收纳筐"
     ],
     [
-     98.0,
+     111.5,
      "前往 物体#4"
     ],
     [
-     127.2,
+     129.3,
+     "从这边下不了手，换个站位"
+    ],
+    [
+     129.3,
+     "前往 物体#4"
+    ],
+    [
+     162.6,
+     "夹爪合拢到底，没夹到东西"
+    ],
+    [
+     164.6,
+     "前往 物体#4（第 2 次）"
+    ],
+    [
+     178.9,
      "夹住 物体#4，送往收纳筐"
     ],
     [
-     144.6,
+     194.8,
      "物体#4 已放进收纳筐"
     ],
     [
-     144.6,
+     194.8,
      "前往 物体#2"
     ],
     [
-     172.3,
+     222.0,
      "夹住 物体#2，送往收纳筐"
     ],
     [
-     175.2,
+     225.0,
      "物体#5 不在原处了，从记忆里去掉"
     ],
     [
-     176.4,
-     "发现物体#6（约 5×4 cm，高 4 cm），距离 0.87 m"
+     226.2,
+     "发现物体#6（约 6×4 cm，高 4 cm），距离 0.85 m"
     ],
     [
-     197.6,
+     248.0,
      "物体#2 已放进收纳筐"
     ],
     [
-     197.6,
+     248.0,
      "前往 物体#6"
     ],
     [
-     228.8,
+     305.3,
      "夹住 物体#6，送往收纳筐"
     ],
     [
-     251.2,
+     305.4,
+     "发现物体#7（约 6×4 cm，高 2 cm），距离 0.23 m"
+    ],
+    [
+     359.4,
      "物体#6 已放进收纳筐"
     ],
     [
-     261.9,
-     "物体#6 那里的地上还有东西，重新去拿"
+     359.4,
+     "前往 物体#7"
     ],
     [
-     261.9,
-     "前往 物体#6"
+     384.3,
+     "夹住 物体#7，送往收纳筐"
     ],
     [
-     276.4,
-     "夹住 物体#6，送往收纳筐"
+     406.8,
+     "物体#7 已放进收纳筐"
     ],
     [
-     299.0,
-     "物体#6 已放进收纳筐"
-    ],
-    [
-     344.2,
+     412.8,
      "看完一遍了，再走近仔细看一遍"
     ],
     [
-     452.0,
+     533.3,
      "没有待办，回起点"
     ]
    ]
@@ -2983,7 +2999,7 @@
    },
    "sim_time": 464.6,
    "finished": true,
-   "wall_time": 196.6,
+   "wall_time": 207.4,
    "odom_err": 2.873,
    "loc_err_mean": 0.0163,
    "loc_err_max": 0.0303,
@@ -3214,7 +3230,7 @@
    },
    "sim_time": 606.2,
    "finished": true,
-   "wall_time": 267.3,
+   "wall_time": 271.0,
    "odom_err": 3.438,
    "loc_err_mean": 0.0159,
    "loc_err_max": 0.037,
@@ -3473,7 +3489,7 @@
    },
    "sim_time": 560.3,
    "finished": true,
-   "wall_time": 248.5,
+   "wall_time": 241.3,
    "odom_err": 2.137,
    "loc_err_mean": 0.0237,
    "loc_err_max": 0.0483,
@@ -3744,7 +3760,7 @@
    },
    "sim_time": 483.4,
    "finished": true,
-   "wall_time": 204.0,
+   "wall_time": 203.8,
    "odom_err": 1.053,
    "loc_err_mean": 0.009,
    "loc_err_max": 0.0245,
@@ -3971,7 +3987,7 @@
    },
    "sim_time": 521.0,
    "finished": true,
-   "wall_time": 226.6,
+   "wall_time": 229.4,
    "odom_err": 3.317,
    "loc_err_mean": 0.0119,
    "loc_err_max": 0.0225,
@@ -4235,7 +4251,7 @@
    },
    "sim_time": 491.0,
    "finished": true,
-   "wall_time": 208.9,
+   "wall_time": 210.1,
    "odom_err": 2.913,
    "loc_err_mean": 0.0106,
    "loc_err_max": 0.028,
@@ -4520,7 +4536,7 @@
    },
    "sim_time": 462.7,
    "finished": true,
-   "wall_time": 195.1,
+   "wall_time": 212.7,
    "odom_err": 3.506,
    "loc_err_mean": 0.0117,
    "loc_err_max": 0.0307,
@@ -4760,7 +4776,7 @@
    },
    "sim_time": 608.9,
    "finished": true,
-   "wall_time": 257.0,
+   "wall_time": 261.9,
    "odom_err": 0.631,
    "loc_err_mean": 0.0145,
    "loc_err_max": 0.0541,
@@ -5070,16 +5086,16 @@
     "car": "已送达",
     "bottle": "没找到"
    },
-   "sim_time": 525.5,
+   "sim_time": 456.6,
    "finished": true,
-   "wall_time": 253.4,
-   "odom_err": 5.378,
-   "loc_err_mean": 0.0197,
-   "loc_err_max": 0.0418,
-   "loc_head_err_max_deg": 4.05,
-   "scan_matches": 4349,
+   "wall_time": 221.0,
+   "odom_err": 2.197,
+   "loc_err_mean": 0.0193,
+   "loc_err_max": 0.0344,
+   "loc_head_err_max_deg": 3.94,
+   "scan_matches": 3666,
    "scan_skips": 2,
-   "basket_sightings": 283,
+   "basket_sightings": 282,
    "places": [
     [
      50.8,
@@ -5094,71 +5110,70 @@
      true
     ],
     [
-     168.0,
+     161.1,
      "place",
      "banana",
      true
     ],
     [
-     212.7,
+     194.1,
      "place",
      "sock",
      true
     ],
     [
-     305.1,
+     253.2,
      "place",
      "rock",
      true
     ]
    ],
-   "t_last": 305.1,
+   "t_last": 253.2,
    "peak_torque": [
+    2.75,
+    2.77,
     2.94,
-    2.76,
-    2.94,
-    1.45,
-    1.72,
-    1.63,
+    1.55,
+    1.58,
+    1.51,
     1.18,
     0.82,
     1.0
    ],
    "rms_torque": [
-    1.36,
-    0.69,
-    1.42,
-    0.09,
+    1.31,
+    0.66,
+    1.38,
+    0.07,
     0.31,
     0.32,
-    0.13,
+    0.14,
     0.05,
-    0.47
+    0.5
    ],
    "time_above_80pct": [
-    0.0088,
-    0.0003,
-    0.0165,
+    0.0026,
+    0.0002,
+    0.0188,
     0.0,
     0.0,
     0.0,
     0.0,
     0.0,
-    0.2257
+    0.2544
    ],
    "pulls": 0,
    "grasp_attempts": 5,
    "grasp_fail": 0,
    "dropped": 0,
    "missed_place": 0,
-   "replans": 585,
+   "replans": 479,
    "stuck": 0,
-   "collisions": 2,
+   "collisions": 0,
    "floor_touch": 0,
-   "max_tilt": 14.86,
-   "dist": 42.78,
-   "scan_dropped": 17655,
-   "scans_unmapped": 3,
+   "max_tilt": 1.11,
+   "dist": 34.54,
+   "scan_dropped": 13246,
    "condition": "materials",
    "log": [
     [
@@ -5206,75 +5221,51 @@
      "前往 物体#3"
     ],
     [
-     116.6,
-     "碰到 chair"
-    ],
-    [
-     118.8,
-     "发现物体#4（约 5×2 cm，高 3 cm），距离 0.69 m"
-    ],
-    [
-     143.9,
+     137.0,
      "夹住 物体#3，送往收纳筐"
     ],
     [
-     168.0,
+     138.9,
+     "发现物体#4（约 10×4 cm，高 4 cm），距离 0.24 m"
+    ],
+    [
+     161.1,
      "物体#3 已放进收纳筐"
     ],
     [
-     168.0,
+     161.1,
      "前往 物体#4"
     ],
     [
-     195.9,
+     179.2,
      "夹住 物体#4，送往收纳筐"
     ],
     [
-     200.7,
-     "机身倾斜超过 3°（搬运）"
-    ],
-    [
-     212.7,
+     194.1,
      "物体#4 已放进收纳筐"
     ],
     [
-     228.3,
-     "碰到 basket_w0"
+     219.3,
+     "发现物体#5（约 4×2 cm，高 2 cm），距离 0.24 m"
     ],
     [
-     261.3,
-     "发现物体#5（约 3×3 cm，高 2 cm），距离 0.22 m"
-    ],
-    [
-     261.3,
+     219.3,
      "前往 物体#5"
     ],
     [
-     263.4,
-     "物体#5 不在预期位置，重新找"
+     231.1,
+     "夹住 物体#5，送往收纳筐"
     ],
     [
-     263.4,
-     "发现物体#6（约 4×3 cm，高 2 cm），距离 0.14 m"
+     253.2,
+     "物体#5 已放进收纳筐"
     ],
     [
-     270.8,
-     "前往 物体#6"
-    ],
-    [
-     282.5,
-     "夹住 物体#6，送往收纳筐"
-    ],
-    [
-     305.1,
-     "物体#6 已放进收纳筐"
-    ],
-    [
-     384.8,
+     287.4,
      "看完一遍了，再走近仔细看一遍"
     ],
     [
-     515.4,
+     425.6,
      "没有待办，回起点"
     ]
    ]
@@ -5319,16 +5310,16 @@
     "lbrick": "已送达",
     "bottle": "没找到"
    },
-   "sim_time": 401.2,
+   "sim_time": 412.9,
    "finished": true,
-   "wall_time": 179.0,
-   "odom_err": 5.358,
-   "loc_err_mean": 0.0178,
-   "loc_err_max": 0.0332,
-   "loc_head_err_max_deg": 2.52,
-   "scan_matches": 3103,
+   "wall_time": 180.5,
+   "odom_err": 3.376,
+   "loc_err_mean": 0.0177,
+   "loc_err_max": 0.0416,
+   "loc_head_err_max_deg": 3.24,
+   "scan_matches": 3215,
    "scan_skips": 2,
-   "basket_sightings": 144,
+   "basket_sightings": 208,
    "places": [
     [
      64.7,
@@ -5337,76 +5328,76 @@
      true
     ],
     [
-     115.1,
+     122.0,
      "place",
      "banana",
      true
     ],
     [
-     142.2,
+     168.3,
      "place",
      "lbrick",
      true
     ],
     [
-     183.5,
+     209.6,
      "place",
      "ball",
      true
     ],
     [
-     230.6,
+     254.9,
      "place",
      "cube",
      true
     ]
    ],
-   "t_last": 230.6,
+   "t_last": 254.9,
    "peak_torque": [
-    2.77,
+    2.75,
     2.77,
     2.94,
-    1.21,
-    2.58,
-    1.71,
-    1.4,
+    1.2,
+    1.66,
+    1.51,
+    1.18,
     0.89,
     1.0
    ],
    "rms_torque": [
-    1.29,
-    0.65,
-    1.31,
+    1.34,
+    0.62,
+    1.35,
     0.05,
     0.32,
     0.32,
-    0.15,
+    0.14,
     0.05,
-    0.54
+    0.55
    ],
    "time_above_80pct": [
-    0.0027,
+    0.0026,
     0.0002,
-    0.007,
+    0.0055,
     0.0,
     0.0,
     0.0,
     0.0,
     0.0,
-    0.2918
+    0.3037
    ],
    "pulls": 0,
    "grasp_attempts": 5,
    "grasp_fail": 0,
    "dropped": 0,
    "missed_place": 0,
-   "replans": 410,
+   "replans": 447,
    "stuck": 0,
    "collisions": 0,
    "floor_touch": 0,
-   "max_tilt": 0.8,
-   "dist": 28.51,
-   "scan_dropped": 11265,
+   "max_tilt": 0.68,
+   "dist": 32.53,
+   "scan_dropped": 11335,
    "condition": "materials",
    "log": [
     [
@@ -5454,51 +5445,59 @@
      "发现物体#5（约 7×3 cm，高 3 cm），距离 0.43 m"
     ],
     [
-     115.1,
+     98.7,
+     "物体#4 不在原处了，从记忆里去掉"
+    ],
+    [
+     122.0,
      "物体#2 已放进收纳筐"
     ],
     [
-     115.1,
+     122.0,
      "前往 物体#5"
     ],
     [
-     129.4,
+     130.8,
+     "发现物体#6（约 5×3 cm，高 5 cm），距离 0.89 m"
+    ],
+    [
+     154.1,
      "夹住 物体#5，送往收纳筐"
     ],
     [
-     142.2,
+     168.3,
      "物体#5 已放进收纳筐"
     ],
     [
-     142.2,
-     "前往 物体#4"
+     168.3,
+     "前往 物体#6"
     ],
     [
-     163.5,
-     "夹住 物体#4，送往收纳筐"
+     189.6,
+     "夹住 物体#6，送往收纳筐"
     ],
     [
-     183.5,
-     "物体#4 已放进收纳筐"
+     209.6,
+     "物体#6 已放进收纳筐"
     ],
     [
-     183.5,
+     209.6,
      "前往 物体#3"
     ],
     [
-     208.2,
+     233.4,
      "夹住 物体#3，送往收纳筐"
     ],
     [
-     230.6,
+     254.9,
      "物体#3 已放进收纳筐"
     ],
     [
-     279.7,
+     292.7,
      "看完一遍了，再走近仔细看一遍"
     ],
     [
-     389.7,
+     401.5,
      "没有待办，回起点"
     ]
    ]
@@ -5545,7 +5544,7 @@
    },
    "sim_time": 528.4,
    "finished": true,
-   "wall_time": 245.1,
+   "wall_time": 236.4,
    "odom_err": 3.84,
    "loc_err_mean": 0.0133,
    "loc_err_max": 0.0234,
@@ -5797,7 +5796,7 @@
    },
    "sim_time": 467.9,
    "finished": true,
-   "wall_time": 218.2,
+   "wall_time": 206.9,
    "odom_err": 0.787,
    "loc_err_mean": 0.0156,
    "loc_err_max": 0.0264,
@@ -6089,7 +6088,7 @@
    },
    "sim_time": 529.4,
    "finished": true,
-   "wall_time": 252.2,
+   "wall_time": 245.0,
    "odom_err": 3.769,
    "loc_err_mean": 0.0112,
    "loc_err_max": 0.0242,
@@ -6348,7 +6347,7 @@
    },
    "sim_time": 511.4,
    "finished": true,
-   "wall_time": 237.0,
+   "wall_time": 234.1,
    "odom_err": 2.701,
    "loc_err_mean": 0.0186,
    "loc_err_max": 0.0326,
@@ -6589,7 +6588,7 @@
    },
    "sim_time": 602.4,
    "finished": true,
-   "wall_time": 266.0,
+   "wall_time": 258.8,
    "odom_err": 1.331,
    "loc_err_mean": 0.0178,
    "loc_err_max": 0.0416,
@@ -6850,7 +6849,7 @@
    },
    "sim_time": 418.5,
    "finished": true,
-   "wall_time": 193.2,
+   "wall_time": 192.1,
    "odom_err": 1.03,
    "loc_err_mean": 0.0087,
    "loc_err_max": 0.021,
@@ -7069,7 +7068,7 @@
    },
    "sim_time": 533.4,
    "finished": true,
-   "wall_time": 246.2,
+   "wall_time": 243.1,
    "odom_err": 2.785,
    "loc_err_mean": 0.0102,
    "loc_err_max": 0.0239,
@@ -7296,7 +7295,7 @@
    },
    "sim_time": 538.1,
    "finished": true,
-   "wall_time": 236.7,
+   "wall_time": 237.3,
    "odom_err": 3.999,
    "loc_err_mean": 0.024,
    "loc_err_max": 0.0496,
@@ -7515,7 +7514,7 @@
    },
    "sim_time": 508.7,
    "finished": true,
-   "wall_time": 209.3,
+   "wall_time": 205.5,
    "odom_err": 0.316,
    "loc_err_mean": 0.0112,
    "loc_err_max": 0.0219,
@@ -7734,7 +7733,7 @@
    },
    "sim_time": 461.4,
    "finished": true,
-   "wall_time": 202.6,
+   "wall_time": 199.6,
    "odom_err": 1.096,
    "loc_err_mean": 0.0099,
    "loc_err_max": 0.0206,
@@ -7953,7 +7952,7 @@
    },
    "sim_time": 418.8,
    "finished": true,
-   "wall_time": 175.0,
+   "wall_time": 169.0,
    "odom_err": 0.882,
    "loc_err_mean": 0.0217,
    "loc_err_max": 0.0492,
@@ -8172,7 +8171,7 @@
    },
    "sim_time": 447.0,
    "finished": true,
-   "wall_time": 187.6,
+   "wall_time": 185.3,
    "odom_err": 0.936,
    "loc_err_mean": 0.0165,
    "loc_err_max": 0.0285,
@@ -8391,7 +8390,7 @@
    },
    "sim_time": 440.4,
    "finished": true,
-   "wall_time": 189.0,
+   "wall_time": 190.0,
    "odom_err": 2.373,
    "loc_err_mean": 0.0095,
    "loc_err_max": 0.0202,
@@ -8618,7 +8617,7 @@
    },
    "sim_time": 457.2,
    "finished": true,
-   "wall_time": 201.4,
+   "wall_time": 204.1,
    "odom_err": 0.467,
    "loc_err_mean": 0.0291,
    "loc_err_max": 0.0561,
@@ -8845,7 +8844,7 @@
    },
    "sim_time": 413.7,
    "finished": true,
-   "wall_time": 184.2,
+   "wall_time": 182.5,
    "odom_err": 1.265,
    "loc_err_mean": 0.0151,
    "loc_err_max": 0.0288,
@@ -9068,7 +9067,7 @@
    },
    "sim_time": 474.4,
    "finished": true,
-   "wall_time": 203.4,
+   "wall_time": 211.3,
    "odom_err": 0.206,
    "loc_err_mean": 0.0083,
    "loc_err_max": 0.0205,
@@ -9303,7 +9302,7 @@
    },
    "sim_time": 474.8,
    "finished": true,
-   "wall_time": 203.8,
+   "wall_time": 208.0,
    "odom_err": 1.444,
    "loc_err_mean": 0.0127,
    "loc_err_max": 0.0194,
@@ -9522,7 +9521,7 @@
    },
    "sim_time": 455.9,
    "finished": true,
-   "wall_time": 198.1,
+   "wall_time": 197.8,
    "odom_err": 3.252,
    "loc_err_mean": 0.0102,
    "loc_err_max": 0.0262,
@@ -9741,7 +9740,7 @@
    },
    "sim_time": 535.7,
    "finished": true,
-   "wall_time": 241.0,
+   "wall_time": 245.9,
    "odom_err": 4.331,
    "loc_err_mean": 0.0256,
    "loc_err_max": 0.0552,
@@ -10000,7 +9999,7 @@
    },
    "sim_time": 420.4,
    "finished": true,
-   "wall_time": 177.4,
+   "wall_time": 180.3,
    "odom_err": 0.082,
    "loc_err_mean": 0.0097,
    "loc_err_max": 0.0183,
@@ -10219,7 +10218,7 @@
    },
    "sim_time": 411.8,
    "finished": true,
-   "wall_time": 196.6,
+   "wall_time": 198.8,
    "odom_err": 3.579,
    "loc_err_mean": 0.0114,
    "loc_err_max": 0.0216,
@@ -10438,7 +10437,7 @@
    },
    "sim_time": 456.7,
    "finished": true,
-   "wall_time": 208.0,
+   "wall_time": 209.2,
    "odom_err": 0.843,
    "loc_err_mean": 0.0137,
    "loc_err_max": 0.0213,
@@ -10665,7 +10664,7 @@
    },
    "sim_time": 425.4,
    "finished": true,
-   "wall_time": 204.2,
+   "wall_time": 196.3,
    "odom_err": 0.991,
    "loc_err_mean": 0.0398,
    "loc_err_max": 0.081,
@@ -10884,7 +10883,7 @@
    },
    "sim_time": 423.5,
    "finished": true,
-   "wall_time": 173.0,
+   "wall_time": 162.8,
    "odom_err": 2.629,
    "loc_err_mean": 0.0123,
    "loc_err_max": 0.027,
@@ -11103,7 +11102,7 @@
    },
    "sim_time": 460.6,
    "finished": true,
-   "wall_time": 209.5,
+   "wall_time": 197.6,
    "odom_err": 0.39,
    "loc_err_mean": 0.0159,
    "loc_err_max": 0.0254,
@@ -11338,7 +11337,7 @@
    },
    "sim_time": 454.7,
    "finished": true,
-   "wall_time": 202.6,
+   "wall_time": 200.6,
    "odom_err": 3.409,
    "loc_err_mean": 0.0173,
    "loc_err_max": 0.0294,
@@ -11565,7 +11564,7 @@
    },
    "sim_time": 418.7,
    "finished": true,
-   "wall_time": 185.5,
+   "wall_time": 181.1,
    "odom_err": 1.582,
    "loc_err_mean": 0.0116,
    "loc_err_max": 0.0219,
@@ -11788,7 +11787,7 @@
    },
    "sim_time": 420.5,
    "finished": true,
-   "wall_time": 184.5,
+   "wall_time": 179.5,
    "odom_err": 1.886,
    "loc_err_mean": 0.0116,
    "loc_err_max": 0.0217,
@@ -12007,7 +12006,7 @@
    },
    "sim_time": 450.0,
    "finished": true,
-   "wall_time": 215.7,
+   "wall_time": 204.7,
    "odom_err": 3.501,
    "loc_err_mean": 0.0134,
    "loc_err_max": 0.0273,
@@ -12234,7 +12233,7 @@
    },
    "sim_time": 443.6,
    "finished": true,
-   "wall_time": 195.9,
+   "wall_time": 187.0,
    "odom_err": 3.35,
    "loc_err_mean": 0.0369,
    "loc_err_max": 0.0643,
@@ -12453,7 +12452,7 @@
    },
    "sim_time": 512.6,
    "finished": true,
-   "wall_time": 226.9,
+   "wall_time": 222.2,
    "odom_err": 3.658,
    "loc_err_mean": 0.0386,
    "loc_err_max": 0.0805,
@@ -12672,7 +12671,7 @@
    },
    "sim_time": 468.2,
    "finished": true,
-   "wall_time": 200.7,
+   "wall_time": 202.3,
    "odom_err": 3.427,
    "loc_err_mean": 0.014,
    "loc_err_max": 0.0247,
@@ -12891,7 +12890,7 @@
    },
    "sim_time": 441.6,
    "finished": true,
-   "wall_time": 199.4,
+   "wall_time": 201.1,
    "odom_err": 1.915,
    "loc_err_mean": 0.0257,
    "loc_err_max": 0.0422,
@@ -13126,7 +13125,7 @@
    },
    "sim_time": 476.9,
    "finished": true,
-   "wall_time": 212.3,
+   "wall_time": 209.7,
    "odom_err": 2.05,
    "loc_err_mean": 0.0145,
    "loc_err_max": 0.0225,
@@ -13369,7 +13368,7 @@
    },
    "sim_time": 489.1,
    "finished": true,
-   "wall_time": 222.1,
+   "wall_time": 218.9,
    "odom_err": 3.099,
    "loc_err_mean": 0.0194,
    "loc_err_max": 0.0429,
