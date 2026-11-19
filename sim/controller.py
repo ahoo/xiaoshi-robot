@@ -289,7 +289,11 @@ class Agent:
                     self.log(f'{self._name(e)} 那里的地上还有东西，重新去拿'); e.update(status='pending', retry_at=0.0)
                 if sig <= e['sigma'] * 1.1:
                     e.update(sigma=sig, **o)
-                    if e.pop('blind', None): self.log(f'{self._name(e)} 走近后看清了，按普通物体处理'); e.pop('ambiguous', None)
+                    if e.pop('blind', None):
+                        self.log(f'{self._name(e)} 走近后看清了，按普通物体处理')
+                        # everything that belonged to the no-reading estimate goes with it: the core outline (outline_core is what
+                        # standoffs, the safety layer and the cost map read for the thing being fetched) and the side-look state
+                        for k_ in ('ambiguous', 'outline_core', 'bad_span', 'side_gave_up', 'look_fail', 'looks', 'seen_t'): e.pop(k_, None)
             self.visible[k] = dt['dist']
         for k in seen:
             if k in self.memory: self.memory[k]['miss'] = 0
