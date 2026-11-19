@@ -30,6 +30,7 @@
 | `sim/render_video.py` | 把一次试验渲染成录像 |
 | `third_party/so101/` | SO-101 官方 MuJoCo 模型（Apache-2.0，来自 TheRobotStudio/SO-ARM100） |
 | `web/` | 结果页面的模板和生成脚本；`web/concept-v0.1/` 是第一版概念演示，不是物理仿真 |
+| `web/dist/` | 页面的构建产物（`index.html` + 录像 + 封面图），与线上发布的 v0.7 逐字节一致；由 `web/build_page.py` 生成，录像和封面图与 `results/` 里的是同一份文件 |
 
 ## 运行
 
