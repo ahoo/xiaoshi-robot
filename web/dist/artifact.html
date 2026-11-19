@@ -1,0 +1,434 @@
+<title>小拾取物机器人</title>
+<script>document.documentElement.lang = "zh-CN";</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 布局：切割垫工作台。上方是物理仿真录像和四个关键数字，下方是贴在垫子上的试验报告纸。 */
+  --mat-deep:#0f2a25; --mat-line:#3f7d6c; --grid:rgba(255,255,255,.035);
+  --ink:#eef0e4; --ink-dim:#a4bdb1;
+  --orange:#ff6b2c; --orange-ink:#1c0c03;
+  --paper:#f1eee2; --paper-ink:#1b2b27; --paper-dim:#586a63; --paper-line:#d2ccb8; --kraft:#c9a374;
+  --good:#1f7a4d; --bad:#b3400f;
+  --f-display:"ZCOOL QingKe HuangYou","Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --f-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background-color:var(--mat-deep);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:40px 40px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:24px 16px 64px;display:flex;flex-direction:column;gap:20px}
+:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+a{color:inherit;text-decoration-color:var(--orange);text-decoration-thickness:2px;text-underline-offset:3px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(52px,8vw,84px);line-height:.9;margin:0;letter-spacing:.06em;color:var(--paper)}
+h1 span{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;color:var(--orange);vertical-align:top;margin-left:10px}
+.tag{margin:16px 0 0;color:var(--ink-dim);max-width:52em}
+
+.bench{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.stage{border:1px solid var(--mat-line);border-radius:6px;overflow:hidden;background:#0c221e}
+.stage video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#0c221e}
+.stage p{margin:0;padding:10px 14px;font-size:13px;color:var(--ink-dim);border-top:1px solid var(--mat-line)}
+.nums{display:grid;gap:12px}
+.num{border:1px solid var(--mat-line);border-radius:6px;background:rgba(12,34,30,.72);padding:12px 14px}
+.num b{display:block;font-family:var(--f-mono);font-weight:500;font-size:30px;line-height:1.15;color:var(--paper);font-variant-numeric:tabular-nums}
+.num b small{font-size:15px;color:var(--ink-dim);margin-left:6px}
+.num span{font-size:13px;color:var(--ink-dim)}
+
+.sheets{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:20px;margin-top:12px}
+.sheet{grid-column:span 12;background:var(--paper);color:var(--paper-ink);border-radius:2px;padding:26px 26px 24px;position:relative;box-shadow:0 1px 0 rgba(0,0,0,.3),0 18px 30px -20px rgba(0,0,0,.7)}
+.sheet::before{content:"";position:absolute;top:-9px;left:28px;width:74px;height:20px;background:var(--kraft);opacity:.82;transform:rotate(-2deg)}
+.sheet.half{grid-column:span 6}
+.sheet h2{font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1.1;letter-spacing:.06em;margin:0 0 14px;text-wrap:balance}
+.sheet h3{font-size:15px;font-weight:700;margin:0 0 4px}
+.sheet p{margin:0 0 10px;max-width:46em}
+.sheet .note{font-size:13px;color:var(--paper-dim);max-width:none;margin:12px 0 0}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.three p{font-size:14px;color:var(--paper-dim);margin:0}
+.three h3{padding-top:10px;border-top:3px solid var(--orange)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:6px}
+.two p{font-size:14px;color:var(--paper-dim)}
+.two h3{padding-top:10px;border-top:3px solid var(--orange)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+table.wide{min-width:680px}
+th,td{text-align:left;padding:8px 12px 8px 0;border-bottom:1px solid var(--paper-line);vertical-align:top}
+thead th{font-weight:700;border-bottom:2px solid var(--paper-ink);white-space:nowrap}
+td.n,th.n{text-align:right;font-family:var(--f-mono);font-size:13px;white-space:nowrap}
+td.good{color:var(--good);font-weight:500} td.bad{color:var(--bad);font-weight:500}
+ul.plain{margin:0;padding-left:1.1em;font-size:14px;display:grid;gap:7px}
+ol.find{margin:0;padding:0;list-style:none;counter-reset:s;display:grid;gap:12px}
+ol.find li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px;font-size:14px}
+ol.find li::before{content:counter(s);font-family:var(--f-mono);font-size:13px;width:24px;height:24px;border:1.5px solid var(--paper-ink);border-radius:50%;display:grid;place-items:center;margin-top:1px}
+ol.find b{display:block}
+ol.find span{color:var(--paper-dim)}
+pre{margin:0;padding:14px;background:#1b2b27;color:#eef0e4;border-radius:3px;overflow-x:auto;font-family:var(--f-mono);font-size:13px;line-height:1.6}
+code{font-family:var(--f-mono);font-size:.92em}
+@media(max-width:940px){.bench{grid-template-columns:minmax(0,1fr)}.nums{grid-template-columns:repeat(2,minmax(0,1fr))}.three{grid-template-columns:minmax(0,1fr)}.two{grid-template-columns:minmax(0,1fr)}.sheet.half{grid-column:span 12}}
+.two>div,.three>div,.bench>*{min-width:0}
+@media(max-width:560px){.sheet{padding:22px 18px}.num b{font-size:24px}}
+</style>
+<div class="wrap">
+  <header>
+    <h1>小拾<span>v0.8 透明瓶</span></h1>
+    <p class="tag">LeKiwi 三全向轮底盘 + SO-101 机械臂（5 轴 + 夹爪）+ 激光雷达。下面每个数字都来自 MuJoCo 物理引擎里的随机试验。机器人事先不知道地上是什么：物体有硬的、软的、形状不规则的，大小每次随机。「哪些像素是同一件东西」也不由仿真告诉它，全靠深度图自己分；夹爪里有没有东西，靠腕部深度相机看。东西贴着墙、家具或别的东西、站不到能夹的位置时，会先用合拢的夹爪把它扒出来。这一版给仿真加了难度：深度图里加上了真实相机的毛病（黑色、反光、透明表面的空洞和边缘飞点），雷达按 LD19 规格书加上了误差，并逐项测了哪种误差最伤成功率。上一版整机 0/8 的透明瓶，这一版靠深度图上「一片没有读数的地方」找到并抓起来，不用识别模型。定位靠雷达扫描匹配，都不读仿真真值。代码、模型和原始结果都在 <a href="https://github.com/ahoo/xiaoshi-robot">ahoo/xiaoshi-robot</a>。</p>
+  </header>
+
+  <section class="bench">
+    <div class="stage">
+      <video controls muted playsinline preload="metadata" poster="episode.jpg" src="episode.mp4" aria-label="一次完整取物试验的仿真录像，5 倍速"></video>
+      <p>一次完整试验的录像，5 倍速（第 4 号随机布局，仿真时间 8.9 分钟，送达 5/5）。左：俯视；右上：跟拍；右下：机器人自己用雷达建的地图。</p>
+    </div>
+    <div class="nums">
+      <div class="num"><b>100/100<small>100%</small></b><span>标准条件下送进收纳筐的物体，20 次随机试验</span></div>
+      <div class="num"><b>72/80<small>90%</small></b><span>台架单次抓取成功，夹爪贴防滑胶带</span></div>
+      <div class="num"><b>67/80<small>84%</small></b><span>同样的抓取，不贴胶带</span></div>
+      <div class="num"><b>51<small>秒/件</small></b><span>标准条件下平均每送达一件的用时</span></div>
+    </div>
+  </section>
+
+  <section class="sheets">
+    <article class="sheet">
+      <h2>你问的三件事</h2>
+      <div class="three">
+        <div><h3>为什么只有两个轮子</h3><p>改成了三个全向轮。底盘现在能横着走，站位偏了可以平移修正，也能绕到物体的任意一侧去夹。仿真里的轮子带 48 个真实的小滚子，靠摩擦驱动，不是画出来的。</p></div>
+        <div><h3>自由度不够</h3><p>换成 SO-101：肩部水平旋转、肩抬、肘、腕俯仰、腕旋转，再加夹爪。仿真也查出它仍然缺一个腕部偏航，所以长条形物体要靠底盘绕到窄边一侧，这一点已经写进控制器。</p></div>
+        <div><h3>怎么保证落地</h3><p>保证不了，但可以把风险量出来。硬件全部是能买到的套件；仿真用官方物理模型和真实舵机力矩上限；每个仿真数字在下面的验收表里都对应一项你能在桌上做的实测。</p></div>
+      </div>
+    </article>
+
+    <article class="sheet">
+      <h2>这一版：软的、硬的、不规则的，都不提前告诉它</h2>
+      <p>上一版只有五种规整物体，机器人知道每一种的尺寸，按类别套用固定的夹法。这一版换成八种，每次出场尺寸、形状、重量都随机；机器人拿到的只有「这一团像素是同一件东西」，不知道它是什么、多大、软不软。</p>
+      <div class="tablewrap"><table class="wide">
+        <thead><tr><th>物体</th><th>仿真里怎么做的</th><th class="n">尺寸</th><th class="n">重量</th><th class="n">台架抓取（贴胶带）</th><th class="n">整机试验送达</th></tr></thead>
+        <tbody><tr><td>方块</td><td>硬，立方体</td><td class="n">边长 3–5 cm</td><td class="n">15–72 g</td><td class="n good">8/10</td><td class="n good">29/29</td></tr><tr><td>小球</td><td>硬，圆球，会滚</td><td class="n">直径 5.2–6.8 cm</td><td class="n">19–70 g</td><td class="n good">10/10</td><td class="n good">35/37</td></tr><tr><td>玩具车</td><td>硬，车身加四个轮子</td><td class="n">长 8–10 cm，宽 4–5 cm</td><td class="n">19–38 g</td><td class="n good">10/10</td><td class="n good">35/35</td></tr><tr><td>香蕉玩具</td><td>硬，弯的长条</td><td class="n">长 12–16 cm，粗 2.8–3.6 cm</td><td class="n">27–67 g</td><td class="n good">10/10</td><td class="n good">41/41</td></tr><tr><td>L 形积木</td><td>硬，L 形，两条臂不一样长</td><td class="n">两臂 4–7 cm，厚 2–2.8 cm，高 1.8–3 cm</td><td class="n">18–46 g</td><td class="n bad">6/10</td><td class="n good">36/36</td></tr><tr><td>石头</td><td>硬，随机凸多面体，每次形状不同</td><td class="n">直径约 3–6 cm，偏扁</td><td class="n">14–44 g</td><td class="n good">9/10</td><td class="n good">37/37</td></tr><tr><td>袜子（软）</td><td>软，3 段用弹性铰链连起来，会垂、会弯</td><td class="n">长 11–15 cm，粗 3.6–4.6 cm</td><td class="n">29–60 g</td><td class="n good">10/10</td><td class="n good">35/35</td></tr><tr><td>毛绒玩具（软）</td><td>软，身体加头和四肢共 6 段，一捏就扁</td><td class="n">身体直径 4.4–5.6 cm，四肢 2–3 cm</td><td class="n">8–22 g</td><td class="n good">9/10</td><td class="n good">30/30</td></tr><tr><td>透明塑料瓶</td><td>硬，躺着的圆柱，透明（只在难材质条件里出现）</td><td class="n">长 10–15 cm，直径 4–5 cm</td><td class="n">11–23 g</td><td class="n">-</td><td class="n good">8/8</td></tr></tbody>
+      </table></div>
+      <div class="three" style="margin-top:18px">
+        <div><h3>从哪里下手</h3><p>夹爪只能沿机器人到物体的连线开合。控制器把相机看到的表面点按手指宽度切成一条一条，逐个方向量每一条有多长，挑夹爪张得开、又靠近中间的那一条：香蕉横着夹，L 形积木夹窄的那条臂，毛绒玩具夹身体而不是整个轮廓。站位由这条线反推，够不着就后退一点或换一侧。</p></div>
+        <div><h3>夹住了没有</h3><p>硬的东西看夹爪角度：被撑着合不拢就是夹住了。软的东西会被压扁，夹爪合到底，和空夹读数一样。这时抬起一点，用装在夹爪侧面的腕部深度相机看两片夹爪之间有没有东西。这一轮全部试验里，靠这一眼确认的夹持有 4 次。</p></div>
+        <div><h3>松手了没有</h3><p>软东西松手后可能粘在指垫上。松手后把张开的夹爪抬高 3 cm，腕部相机再看一眼两片夹爪之间，还有东西就开大夹爪、转手腕抖掉。这一轮 288 次放筐里触发了 2 次，其中 2 次是软东西。上一版用前置相机看「有没有东西跟着夹爪升上去」，193 次里误报了 16 次（夹爪挡住了筐里已有的东西）；改成腕部相机直接看两片夹爪之间以后，不再受筐里东西的干扰。</p></div>
+      </div>
+      <p class="note">软物体是近似：袜子是 3 段、毛绒玩具是 6 段刚体，用很软的弹性铰链连起来，表面接触是「浅层柔软、越压越实」。它能复现压扁、垂挂、粘手，但不是布料仿真，褶皱和缠绕没有建模。</p>
+    </article>
+
+    <article class="sheet">
+      <h2>整机任务：随机摆 5 件东西，全程自主</h2>
+      <p>每次试验从上面八种里随机抽五种各一件，随机摆放，再随机加 0–2 个纸箱。机器人从没有地图开始，自己建图、找物体、夹起来、送进收纳筐，限时 10 分钟。</p>
+      <div class="tablewrap"><table class="wide">
+        <thead><tr><th>条件</th><th class="n">试验次数</th><th class="n">送达</th><th class="n">五件全送达</th><th class="n">每件用时</th><th class="n">抓取失败/尝试</th><th class="n">途中掉落</th><th class="n">碰撞</th></tr></thead>
+        <tbody><tr><td>标准：物体离墙和家具 ≥30 cm，贴胶带</td><td class="n">20</td><td class="n">100/100（100%）</td><td class="n">20/20</td><td class="n">51 秒</td><td class="n">5/106</td><td class="n">0</td><td class="n">0</td></tr><tr><td>贴边：物体离墙和家具 12 cm 起，贴胶带</td><td class="n">12</td><td class="n">59/60（98%）</td><td class="n">11/12</td><td class="n">57 秒</td><td class="n">0/60</td><td class="n">0</td><td class="n">0</td></tr><tr><td>裸夹爪：不贴胶带，其余同标准</td><td class="n">8</td><td class="n">39/40（98%）</td><td class="n">7/8</td><td class="n">53 秒</td><td class="n">15/55</td><td class="n">0</td><td class="n">0</td></tr><tr><td>扎堆：有两对物体边缘只隔 0.5–5 cm，其余同标准</td><td class="n">8</td><td class="n">40/40（100%）</td><td class="n">8/8</td><td class="n">59 秒</td><td class="n">11/52</td><td class="n">0</td><td class="n">0</td></tr><tr><td>难材质：五件都是黑色或反光的，另加一个透明塑料瓶</td><td class="n">8</td><td class="n">48/48（100%）</td><td class="n">8/8</td><td class="n">60 秒</td><td class="n">4/55</td><td class="n">0</td><td class="n">0</td></tr></tbody>
+      </table></div>
+      <h3 style="margin-top:18px">没送达的那些是怎么回事</h3>
+      <ul class="plain"><li><b>标准</b>：全部送达。</li><li><b>贴边</b>：1 件没送达。1 件「导航超时」（小球 1）。</li><li><b>裸夹爪</b>：1 件没送达。1 件「连续 3 次没夹住」（小球 1）。</li><li><b>扎堆</b>：全部送达。</li><li><b>难材质</b>：全部送达。</li></ul>
+      <p class="note">碰撞 = 机器人任何部位碰到墙或家具的次数。原始记录和每次试验的事件日志在仓库的 <code>results/trials.json</code>。</p>
+    </article>
+
+    <article class="sheet">
+      <h2>给仿真加难度</h2>
+      <p>前几版的成功率已经很高，再往上调意义不大。这一版反过来，找仿真可能过于乐观的地方。</p>
+      <h3>深度相机的毛病</h3>
+      <p>真实的双目深度相机在黑色表面上成片没有读数，在反光表面上有空洞，透明塑料基本看不见、或者直接读到后面的地板，物体边缘还有落在前后景之间的「飞点」。仿真现在按这些规律破坏渲染出来的深度图，算法只能看到破坏后的图；对付飞点，加了深度相机常用的边缘滤波（代价是每个轮廓修掉一个像素）。</p>
+      <div class="two">
+        <div>
+          <div class="tablewrap"><table>
+            <thead><tr><th>物体</th><th class="n">0.235 m</th><th class="n">0.6 m</th><th class="n">1 m</th><th class="n">近处边缘误差 mm</th></tr></thead>
+            <tbody><tr><td>黑色袜子</td><td class="n">4/6</td><td class="n">5/6</td><td class="n">0/6</td><td class="n">2.2</td></tr><tr><td>黑色方块</td><td class="n">6/6</td><td class="n">4/6</td><td class="n">0/6</td><td class="n">2.2</td></tr><tr><td>黑色毛绒玩具</td><td class="n">6/6</td><td class="n">3/6</td><td class="n">0/6</td><td class="n">2.7</td></tr><tr><td>反光小球</td><td class="n">6/6</td><td class="n">6/6</td><td class="n">3/6</td><td class="n">3.8</td></tr><tr><td>反光玩具车</td><td class="n">6/6</td><td class="n">6/6</td><td class="n">2/6</td><td class="n">2.3</td></tr><tr><td>透明透明塑料瓶</td><td class="n">0/6</td><td class="n">0/6</td><td class="n">0/6</td><td class="n">-</td></tr></tbody>
+          </table></div>
+          <p class="note">相机台架上的检出次数。</p>
+        </div>
+        <div>
+          <p>黑色和反光的东西近处照样看得见、量得准，远了检出率下降，要走近才发现；台架上夹黑袜子、黑方块、亮面小球各 4 次都夹起来了。透明的小瓶在深度图上不是「看不见」，而是「一片没有读数」，见下面「透明瓶」一节。</p>
+          <p>整机加了「难材质」条件：五件都是黑色或反光的，另加一个透明小瓶。这一轮五件常规物体送达 40/40，透明瓶 8/8（第十一轮是 40/40 和 0/8：机器人看不见它，雷达扫描面又比它高，开过去时会撞上、推着走，甚至卡在轮子上）。</p>
+        </div>
+      </div>
+      <h3>加上相机毛病以后的整机结果</h3>
+      <p>第十轮刚加上相机毛病时，贴边和扎堆各掉了几件，还出了一次碰撞。逐局查下来是三个问题：反光的香蕉被深度空洞切成两块，机器人记成了两件互相挡路的东西；又小又黑的石头 1 m 外常看不见，第一遍「看过」的范围（1.6 m）太乐观；扒一件挨着收纳筐的东西时铲子刮到了筐壁。第十一轮修了：分割时补上一格宽的缺口、轮廓相距 2 cm 以内的记忆合并成一件；第一遍按 1.2 m 算看过，看完还有时间就走近（0.6 m）再看一遍；铲子离筐边至少 6 cm。</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>条件</th><th class="n">第十轮（加上相机毛病）</th><th class="n">第十一轮（修好以后）</th><th class="n">第十二轮（加了透明瓶的办法）</th></tr></thead>
+        <tbody><tr><td>标准</td><td class="n">100/100（100%）</td><td class="n">100/100（100%）</td><td class="n">100/100（100%）</td></tr><tr><td>贴边</td><td class="n">54/60（90%）</td><td class="n">59/60（98%）</td><td class="n">59/60（98%）</td></tr><tr><td>裸夹爪</td><td class="n">39/40（98%）</td><td class="n">39/40（98%）</td><td class="n">39/40（98%）</td></tr><tr><td>扎堆</td><td class="n">39/40（98%）</td><td class="n">40/40（100%）</td><td class="n">40/40（100%）</td></tr><tr><td>难材质</td><td class="n">36/48（75%）</td><td class="n">40/48（83%）</td><td class="n">48/48（100%）</td></tr></tbody>
+      </table></div>
+      <p class="note">从第十一轮起，机器人送完以后还会再巡视一遍（它并不知道房间里一共有几件），所以「每件用时」按送进最后一件的时刻算。</p>
+      <h3>哪种误差最伤成功率</h3>
+      <p>标准条件的前 10 局，每次只让一项变差，看送达率掉多少。掉得最多的几项，就是上真机时要最先、最仔细量的。第十轮的代码跑了全部各项；第十一轮针对掉得多的几项改了代码，重跑了这几项，另加两项按 LD19 规格书的雷达误差。</p>
+      <div class="tablewrap"><table class="wide">
+        <thead><tr><th>变差的那一项</th><th class="n">第十轮 送达</th><th class="n">碰撞</th><th class="n">第十一轮 送达</th><th class="n">碰撞</th><th class="n">抓取失败/尝试（最新）</th><th class="n">定位最大误差（最新）</th></tr></thead>
+        <tbody><tr><td>名义模型</td><td class="n good">50/50</td><td class="n">0</td><td class="n good">50/50</td><td class="n">0</td><td class="n">2/53</td><td class="n">8 cm</td></tr><tr><td>指垫摩擦减半（1.0 → 0.5）</td><td class="n good">50/50</td><td class="n">0</td><td class="n">-</td><td class="n">-</td><td class="n">4/54</td><td class="n">8 cm</td></tr><tr><td>物体重一倍</td><td class="n good">50/50</td><td class="n">0</td><td class="n">-</td><td class="n">-</td><td class="n">2/52</td><td class="n">14 cm</td></tr><tr><td>每个舵机零位偏 2°（1σ）</td><td class="n bad">43/50</td><td class="n">0</td><td class="n">-</td><td class="n">-</td><td class="n">58/101</td><td class="n">14 cm</td></tr><tr><td>前置相机安装位置偏 1 cm、角度偏 1°（1σ）</td><td class="n bad">47/50</td><td class="n">0</td><td class="n">-</td><td class="n">-</td><td class="n">34/81</td><td class="n">12 cm</td></tr><tr><td>底盘轻 20%</td><td class="n good">50/50</td><td class="n">0</td><td class="n">-</td><td class="n">-</td><td class="n">2/54</td><td class="n">15 cm</td></tr><tr><td>里程计误差 ×3</td><td class="n good">50/50</td><td class="n">0</td><td class="n">-</td><td class="n">-</td><td class="n">4/54</td><td class="n">9 cm</td></tr><tr><td>雷达噪声 ×3（3 cm）</td><td class="n bad">38/50</td><td class="n">395</td><td class="n bad">47/50</td><td class="n">0</td><td class="n">2/49</td><td class="n">11 cm</td></tr><tr><td>深度噪声 ×2</td><td class="n bad">32/50</td><td class="n">0</td><td class="n bad">46/50</td><td class="n">0</td><td class="n">1/47</td><td class="n">8 cm</td></tr><tr><td>以上各项都差一点（摩擦 0.7、重 1.5 倍、零位 1°、相机 0.5 cm/0.5°、底盘轻 10%、里程计 ×2、雷达 ×2、深度 ×1.5）</td><td class="n good">48/50</td><td class="n">23</td><td class="n bad">47/50</td><td class="n">0</td><td class="n">38/89</td><td class="n">8 cm</td></tr><tr><td>雷达按 LD19 规格书（每个表面偏差 ±45 mm、1.5 cm 量化、边缘混合点、1% 野点），未标定</td><td class="n">-</td><td class="n">-</td><td class="n good">50/50</td><td class="n">0</td><td class="n">0/50</td><td class="n">7 cm</td></tr><tr><td>同上，标定后剩余偏差 ±20 mm</td><td class="n">-</td><td class="n">-</td><td class="n good">50/50</td><td class="n">0</td><td class="n">1/51</td><td class="n">7 cm</td></tr></tbody>
+      </table></div>
+      <p class="note">深度噪声 ×2 的修法是近看时连拍 8 帧取平均（噪声降到约三分之一），代价是每次近看多 0.2 秒。舵机零位那一项软件补不了（见下面第 13 条），靠校准。第十二轮加了「雷达和里程计对不上就停下后退」，它靠雷达匹配的修正量，雷达噪声大时最容易误触发，所以把噪声最大的两项用最终代码重跑：雷达噪声 ×3 是 47/50，LD19 规格书模型是 50/50，和第十一轮逐局一致，一共触发 0 次。其余各项没有重跑，预计不受影响（那些条件里没有空洞，噪声最大的这两项又都没触发），但这是推断。</p>
+      <h3>雷达按规格书加误差</h3>
+      <p>第十轮的扫描里，「雷达噪声 ×3」有一局定位漂了 29 cm，在看不见的收纳筐上撞了 395 次（雷达扫描面比筐高）。再去查 LD19 的规格书：0.3–12 m 的平均误差是 ±45 mm（100 次测量的平均，也就是固定偏差），标准差 10 mm，分辨率 15 mm；0.3 m 以内只保证「读数随距离同向变化」，不保证准；角度误差 ±2°。原来仿真里只有 1 cm 的随机噪声，乐观了。现在加了一个按规格书的误差模型：每个表面一个固定偏差（±45 mm 内随机），读数按 1.5 cm 取整，深度跳变处一半的点落在前后景之间（混合点），另有 1% 的随机野点。</p>
+      <p>为了快速比较，录下两局的真实轨迹、里程计和无噪声的雷达读数，离线换不同的误差模型重放定位（<code>test_localization.py</code>，一次 20 秒，不用跑 10 分钟的整局）。表里是两局的平均误差 / 最大误差，单位 cm：</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>雷达误差模型</th><th class="n">第十轮的定位</th><th class="n">第十一轮的定位</th></tr></thead>
+        <tbody><tr><td>高斯噪声 1 cm（名义）</td><td class="n ">1.6 / 4.5</td><td class="n good">1.3 / 2.7</td></tr><tr><td>高斯噪声 3 cm</td><td class="n bad">22.3 / 54.5</td><td class="n good">2.7 / 4.4</td></tr><tr><td>LD19 规格书模型（偏差抽样 a）</td><td class="n bad">4.1 / 16.6</td><td class="n good">1.9 / 5.6</td></tr><tr><td>LD19 规格书模型（偏差抽样 b）</td><td class="n ">3.5 / 9.8</td><td class="n good">3.1 / 9.2</td></tr><tr><td>LD19 规格书模型（偏差抽样 c）</td><td class="n bad">4.3 / 10.8</td><td class="n good">2.1 / 3.5</td></tr><tr><td>LD19 模型，噪声和野点加倍</td><td class="n bad">10.9 / 43.9</td><td class="n good">1.5 / 3.5</td></tr><tr><td>LD19 模型，标定后（偏差 ±20 mm）</td><td class="n ">2.9 / 8.4</td><td class="n good">1.3 / 4.2</td></tr></tbody>
+      </table></div>
+      <div class="three" style="margin-top:18px">
+        <div><h3>墙越描越厚</h3><p>旧定位把「被击中过两次以上」的格子都当成墙。几千圈扫描下来，噪声碰到过的格子全成了墙，墙厚到 15–20 cm，匹配分数在墙里处处一样，位置就在里面漂，漂了又把墙描得更厚。现在一个格子要有附近最忙格子一半以上的击中才算墙；匹配分数改成对每个点求稳健的对数似然再加上里程计先验，挪动位置要有扫描的证据撑着。两样单独用都不行，合起来 3 cm 噪声下的误差从 20–25 cm 降到 3 cm 以内。</p></div>
+        <div><h3>一个野点能封住一条路</h3><p>按规格书的模型跑整局时定位没问题，五件却只送到一件：地图上散着一个个孤立的障碍格（野点和混合点）。现在每个点要么在本圈里有邻点，要么上一圈同一位置也有（细椅子腿每圈都在，野点不会）。这样还剩一件：带着它时机身外形更大，收纳筐四周 24 个站位被几个只击中过一次的格子全判成站不下。所以障碍格改成要被击中两次才算数；离真实物体 15 cm 以外的假障碍格，过滤后平均 23 个，再加这一条降到 1.4 个。</p></div>
+        <div><h3>碰一下就歪了</h3><p>按规格书的误差跑的一局里，机器人蹭到了椅子，车身被扭了 10°，轮子不知道。里程计先验把航向按在错的地方，之后又撞了 19 次。现在匹配分数比最近的平均低一大截时，就不带先验在 ±15 cm、±12° 内重找一遍，这时的扫描也不写进地图。重找要等地图成形（开机后约 5 秒）：刚开机地图几乎是空的，分数本来就低，3 cm 噪声下一次重找把位置挪错了 22 cm，整张地图都建歪了，那一局一件都没送到。防撞层对当前一圈的雷达点多留 2 cm 余量（假设真机做了距离标定），前置相机看到的近处障碍也直接进防撞层，不依赖定位。这 2 cm 起初也加在了地图格上，结果规划出的路线贴着家具时没有转身的余地，8 局里原地卡住 15 次（上一轮 1 次）；现在地图格不加，所有动作都被拦下时先慢慢往远离障碍的方向让一让。</p></div>
+      </div>
+      <h3>树莓派跑不跑得动</h3>
+      <div class="two">
+        <div>
+          <div class="tablewrap"><table>
+            <thead><tr><th>模块</th><th class="n">每次</th><th class="n">占一个核</th></tr></thead>
+            <tbody><tr><td>camera: segment and measure</td><td class="n">38.0 ms</td><td class="n">12.8%</td></tr><tr><td>lidar scan matching</td><td class="n">3.7 ms</td><td class="n">2.9%</td></tr><tr><td>safety layer</td><td class="n">0.1 ms</td><td class="n">0.5%</td></tr><tr><td>path search (A*)</td><td class="n">5.0 ms</td><td class="n">0.5%</td></tr><tr><td>cost map</td><td class="n">1.3 ms</td><td class="n">0.1%</td></tr></tbody>
+          </table></div>
+        </div>
+        <div>
+          <p>一整局里，机器人自己的算法（不算物理仿真和渲染，真机上渲染就是相机自己的事）在这台 Intel Xeon Processor 上合计约占一个核的 17%。最重的是前置相机的分割和测量。树莓派 5 单核大约慢 2–3 倍，估计要用掉四个核里的半个左右，有余量；这要在树莓派上实测确认。</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="sheet">
+      <h2>透明瓶：地板上一片没有读数的地方</h2>
+      <p>上一版留下的最大缺口：透明塑料瓶整机 0/8，台架检出 0 次。仿真里透明瓶在深度图上留下三样东西：约 60% 的像素没有读数，30% 读到它后面的地板，10% 读到瓶身。台架上量到 0.4 m 处瓶子的轮廓有 1578 个像素，其中 929 个没有读数；读到瓶身的有 136 个，但被深度相机常用的边缘滤波当成「飞点」删得只剩 0.8 个。所以不是「什么都没留下」：读到瓶身的那一点点会被滤掉，但<b>地板上连成一片没有读数的地方</b>，本身就是线索。这个办法不用识别模型，只用深度图。</p>
+      <div class="stage" style="margin:16px 0 18px"><video controls muted playsinline preload="metadata" poster="clear.jpg" src="clear.mp4" aria-label="机器人在房间里只凭深度图上的空洞找到透明瓶、抓起来、送进收纳筐的仿真录像，5 倍速"></video>
+        <p>瓶子单独在房间里的一局，5 倍速（第 301 号布局）。右上：前置深度相机，红色是没有读数的像素，瓶子就是那块红斑；右下：机器人自己的地图，橙圈是它要去拿的东西。</p></div>
+      <div class="three">
+        <div><h3>找到它</h3><p>地板上连成片的没有读数的像素（5×5 窗口里占 30% 以上，宽不超过 22 cm），连续两帧看到才记下来，当成一件「看不清的东西」：画进防撞层，规划路线绕开它。0.4–1.2 m 内瓶子 90/90 次都检出；空房间里转 48 帧，误报 0 个；整机试验里除了难材质条件，一共记了 0 个。</p></div>
+        <div><h3>估出位置和粗细</h3><p>最低一排没读数的像素落到地面，就是它贴地的近侧边缘（最低那条射线和圆柱相切，落点比触地线远约 0.7 倍半径，要扣掉）；横向宽度直接量。粗细和高度靠一个假设：瓶子截面是圆的，高等于宽，越过瓶顶的那条射线刚好擦过顶部。台架上，横放的瓶子近侧边缘的误差：0.4 m 处 7 mm；0.6 m 处 14 mm；1.0 m 处 27 mm；1.2 m 处 14 mm。越远越粗：1 m 处一个像素就是 5 cm，所以远处只用来「走过去」，下手前要走近再量。</p></div>
+        <div><h3>朝向和长度</h3><p>躺着的瓶子，长边在图上是空洞簇的下边缘线，这条线的方向就是瓶子的方向，长度也有了。但<b>正对着看（端面）</b>时空洞簇只有瓶子那么粗，看不出多长，估出的方向还会乱跳。所以视线和估出的方向夹角小于 40° 的一律当「看不出」，机器人换到至少转了 60° 的侧面再看一次；两面看都短，就当它是个短东西。</p></div>
+      </div>
+      <p>估出来的轮廓交给原来的抓取流程：从窄边下手，用夹爪张角判断夹没夹住（瓶子是硬的，不需要腕部相机）。台架上瓶子横在夹爪线上（控制器就是这样站位的），只凭空洞抓一次：30/30。</p>
+      <h3 style="margin-top:18px">瓶子单独在房间里：12 个随机位置和朝向</h3>
+      <div class="tablewrap"><table class="wide">
+        <thead><tr><th>两个办法的开关</th><th class="n">送达</th><th class="n">轮子碰到瓶子的局数</th><th class="n">没捡起来时瓶子被推走</th><th class="n">打滑检测触发</th><th class="n">抓取失败/尝试</th></tr></thead>
+        <tbody><tr><td>两个办法都开（当前版本）</td><td class="n good">12/12</td><td class="n">0/12（0 次）</td><td class="n">-</td><td class="n">0</td><td class="n">0/12</td></tr><tr><td>只开打滑检测（不认空洞）</td><td class="n bad">0/12</td><td class="n">10/12（46 次）</td><td class="n">12 cm</td><td class="n">2</td><td class="n">0/0</td></tr><tr><td>都关（第十一轮的行为）</td><td class="n bad">0/12</td><td class="n">10/12（49 次）</td><td class="n">14 cm</td><td class="n">0</td><td class="n">0/0</td></tr></tbody>
+      </table></div>
+      <p class="note">办法 1 是上面的「空洞当线索」；办法 2 是「雷达和里程计对不上」：轮子转了、车没跟上时，机器人停下后退，在前方记一个 4 cm 的看不见的障碍（60 秒），之后的路线尽量绕开它；绕不开就忽略它，已知有东西的地方也不另记。办法 2 本身不会去捡瓶子，它只在撞上了看不见的东西以后想挡住第二次。碰撞数是仿真自己的接触记录，机器人不知道。</p>
+      <h3 style="margin-top:18px">没参与过开发的新种子</h3>
+      <p>上面这些种子，办法是看着失败日志一点点改出来的（比如侧面站不进去时的退路，就是看了 306 号的失败才加的），所以成绩偏乐观。办法定型以后，换了从没用过的种子再跑一遍：</p>
+      <div class="tablewrap"><table class="wide">
+        <thead><tr><th>布局</th><th class="n">送达</th><th class="n">抓取失败/尝试</th><th class="n">轮子碰到瓶子的局数</th><th class="n">碰到家具</th></tr></thead>
+        <tbody><tr><td>瓶子单独在房间里（种子 401–412）</td><td class="n good">12/12</td><td class="n">2/14</td><td class="n">1/12</td><td class="n">0</td></tr><tr><td>整机难材质：五件黑色或反光的加瓶子（种子 401–408）</td><td class="n good">48/48（瓶子 8/8）</td><td class="n">5/54</td><td class="n">-</td><td class="n">0</td></tr></tbody>
+      </table></div>
+      <h3 style="margin-top:18px">瓶子朝向的各种情况</h3>
+      <p>瓶子放在机器人正前方 0.8 m，瓶身和视线夹角从 0°（端面）到 90°（横着）。开机时不原地转一圈，让机器人带着第一眼的视角走过去，这样端面的情形不会被「转圈时瓶子碰巧被转到图像边缘」提前化解。</p>
+      <div class="two">
+        <div><div class="tablewrap"><table>
+          <thead><tr><th>瓶身与视线夹角</th><th class="n">结果</th><th class="n">抓取次数</th><th class="n">侧面再看/换边</th><th class="n">用时</th></tr></thead>
+          <tbody><tr><td>+0°</td><td class="n good">送达</td><td class="n">1</td><td class="n">2</td><td class="n">50 秒</td></tr><tr><td>+10°</td><td class="n good">送达</td><td class="n">1</td><td class="n">2</td><td class="n">44 秒</td></tr><tr><td>+30°</td><td class="n good">送达</td><td class="n">1</td><td class="n">3</td><td class="n">44 秒</td></tr><tr><td>+60°</td><td class="n good">送达</td><td class="n">1</td><td class="n">0</td><td class="n">31 秒</td></tr><tr><td>+90°</td><td class="n good">送达</td><td class="n">1</td><td class="n">0</td><td class="n">32 秒</td></tr><tr><td>-30°</td><td class="n good">送达</td><td class="n">1</td><td class="n">1</td><td class="n">43 秒</td></tr><tr><td>-60°</td><td class="n good">送达</td><td class="n">1</td><td class="n">0</td><td class="n">31 秒</td></tr></tbody>
+        </table></div></div>
+        <div><div class="tablewrap"><table>
+          <thead><tr><th>深度图里透明瓶的样子</th><th class="n">送达（7 个朝向）</th><th class="n">抓取失败/尝试</th></tr></thead>
+          <tbody><tr><td>当前的仿真设定（60% 没读数、30% 读到地板，逐像素）</td><td class="n good">7/7</td><td class="n">0/7</td></tr><tr><td>空洞成片（4×4 像素一块，比例不变）</td><td class="n good">7/7</td><td class="n">0/7</td></tr><tr><td>空洞更少（40% 没读数、50% 读到地板，其余是瓶身）</td><td class="n good">7/7</td><td class="n">0/7</td></tr><tr><td>两者叠加（35% 没读数、45% 读到地板，成片）</td><td class="n bad">6/7</td><td class="n">8/15</td></tr></tbody>
+        </table></div>
+        <p class="note">右表：同样 7 个朝向，把透明瓶的深度图弄得更苛刻。比例都是估的，真瓶子要在验收表第 24 项量。</p></div>
+      </div>
+      <h3 style="margin-top:18px">方向估得准不准</h3>
+      <div class="tablewrap"><table class="wide">
+        <thead><tr><th>看的位置</th><th class="n">看到</th><th class="n">自认为有把握的</th><th class="n">朝向误差 中位/90 分位/最差</th><th class="n">错超过 25° 的</th><th class="n">10° 内的端面认出「看不出」</th></tr></thead>
+        <tbody><tr><td>远处 0.4–1.0 m，机身转 ±35°</td><td class="n">28/30</td><td class="n">7</td><td class="n">3.3° / 6.1° / 6.2°</td><td class="n good">0/7</td><td class="n">3/3</td></tr><tr><td>近处 0.28–0.45 m，机身转 ±35°</td><td class="n">30/30</td><td class="n">12</td><td class="n">4.7° / 9.8° / 11.1°</td><td class="n good">0/12</td><td class="n">3/3</td></tr><tr><td>下手站位 0.21–0.29 m（相机离瓶 13–18 cm）</td><td class="n">30/30</td><td class="n">18</td><td class="n">6.7° / 15.1° / 20.3°</td><td class="n good">0/18</td><td class="n">7/7</td></tr><tr><td>同上，深度图更苛刻（35% 没读数，成片）</td><td class="n">30/30</td><td class="n">10</td><td class="n">8.6° / 39.1° / 46.6°</td><td class="n bad">2/10</td><td class="n">7/7</td></tr></tbody>
+      </table></div>
+      <p class="note">每行 30 个随机瓶子，朝向随机，机身转着看（下手站位那行机身只转 ±7°，因为机器人是正对着站的）。方向误差是和仿真里瓶子的真实朝向比的，只在台架里用。</p>
+      <p>这一节最重要的限制：<b>整个办法建立在「瓶子在深度图上留下一片连成片的没有读数的像素」这个假设上</b>。比例是估的，真瓶子带不带瓶盖和标签、在日光灯下还是背光，读数都不一样。上表右列把它弄得更苛刻：成片、更少读数都能全部送达；再苛刻一档（35% 没读数加成片）是 6/7，抓取失败 8/15 次。失败的那一局里，瓶身读到的小块变多了，我用来分开透明瓶和黑色物体自己空洞的特征（空洞旁边有多少真实表面读数，阈值 0.35）两边重叠：空洞簇被当成黑色物体的空洞放过，小块被当成一连串小物体，这一局只有一个瓶子，却一共记了 37 个物体条目，原地卡住 8 次，等于退回第十一轮的行为。下手站位上能「有把握」估出朝向的也只剩 10/30（上表最后一行）。瓶盖和标签读得到的部分会被分割成小东西，控制器把「旁边没读数的像素比它自己多 1.5 倍以上」的检测当成瓶子的残片丢掉。验收表第 24、25 项就是量这些。</p>
+    </article>
+
+    <article class="sheet">
+      <h2>站不进去的时候：先扒出来</h2>
+      <p>上一版剩下的失败几乎都是「够不到」：东西离墙或家具太近，或者两件挨在一起，机器人要和每件东西的轮廓留出 19 cm、夹爪张开还要有空间，哪一侧都站不进去。真人会先把它拨出来再拿，这一版也这么做：</p>
+      <div class="three">
+        <div><h3>站在哪</h3><p>站在能伸手够到它远侧的位置：夹爪竖直朝下时手臂最远到机身中心前 33 cm，往前倾 0.5 rad 能到 40 cm。远侧要留得下夹爪，身后要有后退的空间，而且只挑能把它拖到更空的地方的方向。</p></div>
+        <div><h3>怎么扒</h3><p>夹爪朝下（够不着时往前倾），两片合拢、横过来，当成一块约 2.5 cm 宽的铲子，落在相机量出的远侧边缘外 3.5 cm、离地 7 mm 处。然后手臂不动，底盘慢慢后退 15 cm，把东西一起拖出来。</p></div>
+        <div><h3>什么时候扒</h3><p>只在所有能夹的站位都走不到、或者近看后下不了手时才扒，每件最多两次。扒完重新找站位去夹。第九轮 48 局整机试验里，机器人决定扒 21 次，扒出来 7 次。其余几次找不到能站着扒的位置：东西在窄道深处，或者远侧紧贴着墙，没有落铲子的地方。</p></div>
+      </div>
+      <div class="two">
+        <div>
+          <h3>台架：离书架不同距离</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>离书架</th><th class="n">试验</th><th class="n">拖出 8 cm 以上</th><th class="n">原地接着夹起</th></tr></thead>
+            <tbody><tr><td>2 cm</td><td class="n">16</td><td class="n">7</td><td class="n">5</td></tr><tr><td>4 cm</td><td class="n">16</td><td class="n">13</td><td class="n">12</td></tr><tr><td>6 cm</td><td class="n">16</td><td class="n">14</td><td class="n">13</td></tr></tbody>
+          </table></div>
+          <p class="note">八种物体各两次。2 cm 时铲子插不进去，常常落在东西上；「原地接着夹起」不换站位，长条物体从扒的方向往往下不了手，整机里会换个站位再夹。</p>
+        </div>
+        <div>
+          <h3>整机：加上这一步前后</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>条件</th><th class="n">第八轮</th><th class="n">第九轮（加了扒出来）</th><th class="n">每件用时</th></tr></thead>
+            <tbody><tr><td>标准</td><td class="n">100/100（100%）</td><td class="n">100/100（100%）</td><td class="n">67 → 64 秒</td></tr><tr><td>贴边</td><td class="n">57/60（95%）</td><td class="n">57/60（95%）</td><td class="n">82 → 77 秒</td></tr><tr><td>裸夹爪</td><td class="n">39/40（98%）</td><td class="n">39/40（98%）</td><td class="n">77 → 73 秒</td></tr><tr><td>扎堆</td><td class="n">38/40（95%）</td><td class="n">40/40（100%）</td><td class="n">78 → 67 秒</td></tr><tr><td>难材质</td><td class="n">（新加）</td><td class="n">0/0（-）</td><td class="n">0 秒</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="sheet">
+      <h2>分出一件件东西：不再由仿真告诉它</h2>
+      <p>上一版里，「这一团像素是同一件东西」由仿真的分割图直接给出，从不漏、从不把两件粘成一件。这一版换成真机上可以照搬的做法，不用训练任何模型：每帧拟合地面，去掉地面；高过 13 cm 的都算家具、墙或纸箱，连同它正下方的点一起去掉；剩下的低矮的点从上往下看，按 1.5 cm 的格子连成一团一团。机器人自己的手臂按运动学屏蔽掉；收纳筐按已知的 30×22×9 cm 认出来。</p>
+      <p>这种做法会犯的错，在台架上一项项量了：</p>
+      <div class="two">
+        <div>
+          <h3>挨着放的两件</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>边缘间隙</th><th class="n">试验</th><th class="n">分得开</th><th class="n">粘成一件</th></tr></thead>
+            <tbody><tr><td>小于 5 mm</td><td class="n">4</td><td class="n">2</td><td class="n">2</td></tr><tr><td>5-15 mm</td><td class="n">14</td><td class="n">5</td><td class="n">9</td></tr><tr><td>15-30 mm</td><td class="n">6</td><td class="n">6</td><td class="n">0</td></tr><tr><td>大于 30 mm</td><td class="n">16</td><td class="n">16</td><td class="n">0</td></tr></tbody>
+          </table></div>
+        </div>
+        <div>
+          <h3>其他几项</h3>
+          <p>贴着书架放的东西：2 cm 处 8/8，5 cm 处 8/8，10 cm 处 8/8 找到了。在没放任何东西的房间里随机看了 24 次，误报 0 个。扁平的小东西远了看不见：方块在 1.5 m 处只检出 1/6；小球在 1.5 m 处只检出 2/6；玩具车在 1.5 m 处只检出 0/6；香蕉玩具在 1.5 m 处只检出 1/6；L 形积木在 1.5 m 处只检出 0/6；石头在 1.0 m 处只检出 0/6；石头在 1.5 m 处只检出 0/6；袜子（软）在 1.5 m 处只检出 2/6；毛绒玩具（软）在 1.5 m 处只检出 0/6，要走近了才发现。</p>
+          <p>收纳筐的位置事先只知道个大概，相机看到筐壁后，用已知的长方形去套，只看到一面墙也套得准。筐边 5 cm 以内的点都算筐的，所以掉在筐边上的东西会被漏看。</p>
+          <p>整机试验里加了「扎堆」条件：五件里有两对边缘只隔 0.5–5 cm，送达 40/40（100%）。粘成一团的两件，机器人会当成一件形状奇怪的东西，照样按测量去找最窄、最居中的一条下手。两件挨着又夹在家具之间、哪一侧都站不进去的，现在会先把其中一件扒出来。</p>
+        </div>
+      </div>
+      <p class="note">调这套分割时出过一个错：机器人搬着东西走时，一下子「发现」了十几件 9–11 cm 高的细长东西。那是家具的下半截，上半截被它自己手里的东西挡住了，看不到高过 13 cm 的部分。现在一团点如果在画面中正上方紧挨着更近的东西，就当作没看全，不拿它新建物体。</p>
+    </article>
+
+    <article class="sheet">
+      <h2>分割从仿真给的换成自己算的</h2>
+      <p>同样的条件、同样的随机种子、同样的物体，第七轮分割由仿真给出，第八轮只用深度图：</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>条件</th><th class="n">分割由仿真给出（第七轮）</th><th class="n">只用深度图（第八轮）</th><th class="n">每件用时</th></tr></thead>
+        <tbody><tr><td>标准</td><td class="n">100/100（100%）</td><td class="n">100/100（100%）</td><td class="n">68 → 67 秒</td></tr><tr><td>贴边</td><td class="n">53/60（88%）</td><td class="n">57/60（95%）</td><td class="n">106 → 82 秒</td></tr><tr><td>裸夹爪</td><td class="n">39/40（98%）</td><td class="n">39/40（98%）</td><td class="n">76 → 77 秒</td></tr><tr><td>扎堆</td><td class="n">（新加）</td><td class="n">38/40（95%）</td><td class="n">78 秒</td></tr><tr><td>难材质</td><td class="n">（新加）</td><td class="n">0/0（-）</td><td class="n">0 秒</td></tr></tbody>
+      </table></div>
+      <div class="three" style="margin-top:18px">
+        <div><h3>定位：雷达扫描匹配</h3><p>轮子里程计带 1.5% 的轮径误差和打滑噪声，单靠它平均每局漂 2.1 m。每 0.1 秒用雷达扫描去对自己建的地图，定位误差平均 1.6 cm，最大 8.1 cm，航向最大偏 2.6°。</p></div>
+        <div><h3>测量：深度图像</h3><p>前置相机 320×240，深度噪声随距离平方增长。每件东西量出俯视轮廓、表面点和高度，不用任何已知尺寸。近看（0.235 m）时，决定夹爪落点的近侧边缘误差平均 4.0 mm；1.5 m 处轮廓中心误差 26 mm（只看得见朝自己的一面）。</p></div>
+        <div><h3>还剩哪些理想化</h3><p>深度图的毛病是按规律近似的：黑色、反光、透明的空洞比例和飞点都是估的，强光、地毯纹理没有建模。机器人认得出自己手臂的像素（真机按运动学和标定算，仿真里直接给）。这几项要在实物上量。</p></div>
+      </div>
+    </article>
+
+    <article class="sheet half">
+      <h2>台架：抓取</h2>
+      <p>机器人停好，一件随机尺寸的物体放在前方 20–26 cm。长条的（玩具车、香蕉、袜子）大致横在面前，偏差按 8.6° 的标准差随机；其余任意朝向。相机近看一眼，规划得出下手位置就夹，每次只试一下，夹起后举 2 秒算成功。每格摆 10 次，共有 0 次连换 8 个站位都没找到能下手的位置，不计入。</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>物体</th><th class="n">贴胶带</th><th class="n">不贴</th><th class="n">自检判断错</th></tr></thead>
+        <tbody><tr><td>方块</td><td class="n good">8/10</td><td class="n good">8/10</td><td class="n">0</td></tr><tr><td>小球</td><td class="n good">10/10</td><td class="n bad">7/10</td><td class="n">0</td></tr><tr><td>玩具车</td><td class="n good">10/10</td><td class="n good">10/10</td><td class="n">0</td></tr><tr><td>香蕉玩具</td><td class="n good">10/10</td><td class="n good">10/10</td><td class="n">0</td></tr><tr><td>L 形积木</td><td class="n bad">6/10</td><td class="n bad">6/10</td><td class="n">0</td></tr><tr><td>石头</td><td class="n good">9/10</td><td class="n bad">7/10</td><td class="n">0</td></tr><tr><td>袜子（软）</td><td class="n good">10/10</td><td class="n good">10/10</td><td class="n">0</td></tr><tr><td>毛绒玩具（软）</td><td class="n good">9/10</td><td class="n good">9/10</td><td class="n">0</td></tr></tbody>
+      </table></div>
+      <p class="note">夹爪是一片绕轴摆动的，张开后两片成 V 形、口朝下，夹东西全靠摩擦。圆的、大的物体对摩擦最敏感。「自检判断错」= 机器人以为夹住了其实没有，或者反过来（两种胶带条件合计）。整机试验里一次没夹住会换一侧再试，最多 3 次。</p>
+    </article>
+
+    <article class="sheet half">
+      <h2>台架：底盘</h2>
+      <p>收臂状态下给定速度跑 4 秒（含 0.4 秒加速段），看实际速度。</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>指令</th><th class="n">实际</th><th class="n">机身最大倾斜</th></tr></thead>
+        <tbody><tr><td>前进 0.15 m/s</td><td class="n">0.143 m/s</td><td class="n">0.01°</td></tr><tr><td>横移 0.15 m/s</td><td class="n">0.143 m/s</td><td class="n">0.01°</td></tr><tr><td>斜向 0.10 + 0.10 m/s</td><td class="n">0.098 + 0.094 m/s</td><td class="n">0.01°</td></tr><tr><td>原地转 0.8 rad/s</td><td class="n">0.77 rad/s</td><td class="n">0.01°</td></tr><tr><td>前进 0.40 m/s（超速）</td><td class="n">0.194 m/s</td><td class="n">0.01°</td></tr></tbody>
+      </table></div>
+      <p class="note">最后一行故意超速：舵机到了转速上限，底盘最高就是这个速度。仿真里滚子是理想的，里程计几乎不漂；实物会漂，这是验收表里要量的一项。</p>
+    </article>
+
+    <article class="sheet">
+      <h2>物理仿真查出来的二十九件事</h2>
+      <p>这些都不是事先想到的，是跑出来才看见的，其中几条在真机上会原样出现。控制器前后改了十二轮，每轮都用同一批随机种子重跑（第七轮换成了不认识的物体，第八轮分割改成只用深度图，第九轮加了扒出来，第十轮给深度图加上相机毛病，第十一轮修好它带来的问题并给雷达加上规格书的误差，第十二轮找到透明瓶）：</p>
+      <div class="tablewrap" style="margin-bottom:18px"><table>
+        <thead><tr><th>每轮的全部试验</th><th class="n">标准条件送达</th><th class="n">碰到家具</th><th class="n">翻车</th><th class="n">机身倾斜超过 3° 的试验</th><th class="n">原地卡住后退</th></tr></thead>
+        <tbody><tr><td>第一轮：初版控制器</td><td class="n">96/100</td><td class="n">9 次试验</td><td class="n">1</td><td class="n">21/42</td><td class="n">2</td></tr><tr><td>第二轮：轻合夹爪、近看再对位、远侧净空检查</td><td class="n">94/100</td><td class="n">2 次试验</td><td class="n">1</td><td class="n">8/40</td><td class="n">1</td></tr><tr><td>第三轮：加了只看雷达、只管平移的防撞层</td><td class="n">95/100</td><td class="n">1 次试验</td><td class="n">1</td><td class="n">6/40</td><td class="n">0</td></tr><tr><td>第四轮：防撞层按真实外形算，也管转身</td><td class="n">96/100</td><td class="n">0 次试验</td><td class="n">0</td><td class="n">3/40</td><td class="n">8</td></tr><tr><td>第五轮：定位和识别换成真算法</td><td class="n">99/100</td><td class="n">0 次试验</td><td class="n">0</td><td class="n">0/40</td><td class="n">37</td></tr><tr><td>第六轮：防撞层加上贴着障碍滑行</td><td class="n">96/100</td><td class="n">2 次试验</td><td class="n">0</td><td class="n">0/40</td><td class="n">15</td></tr><tr><td>第七轮：八种不认识的物体，含软的和不规则的</td><td class="n">100/100</td><td class="n">0 次试验</td><td class="n">0</td><td class="n">1/40</td><td class="n">14</td></tr><tr><td>第八轮：分割只用深度图，腕部深度相机确认夹持</td><td class="n">100/100</td><td class="n">0 次试验</td><td class="n">0</td><td class="n">1/48</td><td class="n">16</td></tr><tr><td>第九轮：贴得太近、站不进去时先把东西扒出来</td><td class="n">100/100</td><td class="n">0 次试验</td><td class="n">0</td><td class="n">2/48</td><td class="n">7</td></tr><tr><td>第十轮：深度图加上真实相机的毛病</td><td class="n">100/100</td><td class="n">1 次试验</td><td class="n">0</td><td class="n">3/56</td><td class="n">16</td></tr><tr><td>第十一轮：修好相机毛病带来的问题，雷达按规格书加误差</td><td class="n">100/100</td><td class="n">1 次试验</td><td class="n">0</td><td class="n">2/56</td><td class="n">9</td></tr><tr><td>第十二轮：透明瓶（当前版本）</td><td class="n">100/100</td><td class="n">0 次试验</td><td class="n">0</td><td class="n">1/56</td><td class="n">3</td></tr></tbody>
+      </table></div>
+      <ol class="find">
+        <li><div><b>防滑胶带有用，但已经不是生死线</b><span>台架上不贴胶带，小球 7/10 成功，贴了是 10/10；八种物体合计 67/80 对 72/80。整机试验里不贴胶带的送达率 98%，贴了 100%。早几轮不贴胶带时网球几乎夹不住；这一版夹法会挑更窄、更居中的一条下手，失败了还会换一侧再试，摩擦小的影响被吃掉了大半。胶带便宜，仍然建议贴。</span></div></li>
+        <li><div><b>夹爪要歪着下去</b><span>摆动式夹爪张开时两个指尖不一样高，垂直往下夹扁的东西会一边压住一边够不着。把夹爪倾斜半个张角，两个指尖才齐平。第一版仿真里扁平的遥控器 0/4，改后 10/10。</span></div></li>
+        <li><div><b>5 轴臂要靠底盘补一个自由度</b><span>没有腕部偏航，夹爪只能沿肩到物体的连线开合。控制器让底盘先绕到长条物体的窄边一侧再伸手。</span></div></li>
+        <li><div><b>雷达会把自己夹着的东西当成墙</b><span>搬运时物体正好在雷达扫描面上，机器人以为前方 20 cm 有障碍，原地打转了 50 秒。加了机身范围滤波后消失。真机一定会遇到同样的问题。</span></div></li>
+        <li><div><b>手臂有力气把整台车撬起来</b><span>整机只有 2.33 kg。第一轮 20 次标准试验里有 10 次机身被顶起超过 3°：夹爪落在没摆正的物体上往下压，或者绕去物体另一侧时从它身上碾过去。现在夹爪按物体实际横宽张开，下探时一旦机身抬起就收手，着地时先用 0.4 N·m 轻合，路径也会绕开目标本身。这一轮是 0/20 次。</span></div></li>
+        <li><div><b>雷达正前方有一块盲区</b><span>折叠的手臂正好挡在雷达扫描面上，机身正前方二十几厘米内雷达看不见东西，真机也一样。前三轮各翻过一次车。后两次我逐帧复盘过，都出在这里：一次是径直开进盲区里的桌角，一次是原地转身时伸出的手臂扫到桌角。第一轮那次发生在裸夹爪条件，没有单独复盘。现在的防撞层按「机身圆 + 手臂矩形」的真实外形，同时看当前这一圈雷达和地图里记下的障碍（补上盲区），平移和转身都先往前预测 0.3 秒再执行；停下来要转身的站位，也要先确认手臂转得开。一开始这层防撞只会刹车，贴着桌边走时会原地僵住，有一局在同一处反复卡了 10 次；加上「去掉朝向障碍的那部分速度、贴着它滑过去」以后，40 次试验里的卡住次数从 37 降到 3。</span></div></li>
+        <li><div><b>地上没捡的东西会把路堵死</b><span>还没捡的物体对机器人来说也是障碍。有几次剩下的两三件正好把它围在房间一角，或者挡住去收纳筐的路。现在路被堵时它会先放下手里的东西，去处理最靠近收纳筐的那件；能从哪几侧下手现在由量到的形状决定，最好的一侧站不进去就退到次好的一侧。</span></div></li>
+        <li><div><b>深度相机只看得见朝自己的一面</b><span>直接取物体像素的中心，位置会被拉向机器人 1.5–5 cm，夹爪就落偏了。固定夹指对准看得见的近侧边缘；看不见的远侧不靠已知尺寸，而是用「最高的地方大致在正中」反推（圆的东西顶点在中心，平顶的东西整个顶面都看得见）。近侧边缘误差 4.0 mm。</span></div></li>
+        <li><div><b>「最窄的地方」不等于「好夹的地方」</b><span>第一版只挑最短的那一条下手，结果玩具车被选中了车角斜切出来的 2.5 cm，而不是横跨车身的 6.5 cm。现在偏离中心要扣分；同一条夹取线从两头站位都算同一个分数，因为物体靠着家具时往往只有另一头站得进去。</span></div></li>
+        <li><div><b>软东西会让夹爪「读数为空」</b><span>毛绒玩具的一条腿被压到 8 mm 以下，夹爪合到了关节下限，角度和空夹一模一样，于是机器人把已经提起来的东西又放下了。真机的舵机也只有位置反馈，会遇到同样的问题，所以加了相机确认。</span></div></li>
+        <li><div><b>腕部相机要能看清 5 cm 以内</b><span>模型里原来的腕部相机朝后装，看到的全是手臂自己；改成侧装、朝向两片夹爪之间以后，又发现渲染器默认的近裁剪面是 7 cm，夹爪里的东西被整个裁掉了。真机上对应的是深度相机的最近测距：常见的中距深度相机在 10–28 cm 以内就没有读数，腕部要用近距型号；前置相机近看时物体离镜头只有 15 cm 左右，也要跑在最近测距够短的模式。</span></div></li>
+        <li><div><b>铲子不能有缝，也不能贴着边落</b><span>第一版把两片夹爪张开 2 cm 当耙子用，扁石头和 L 形积木的窄臂正好从缝里漏过去；合拢以后又发现铲子沿拖动方向前后各有 1 cm 厚，只往远侧多留 2 cm 就会压在东西边上。现在落在远侧外 3.5 cm，代价是离墙不到 2.5 cm 的东西插不进去。</span></div></li>
+        <li><div><b>舵机零位误差最伤，而且软件很难补</b><span>敏感度扫描里，让每个舵机的零位随机偏 2°，夹爪末端就会偏出 1 cm 左右，送达率掉得最多；失败几乎都是「手臂压到东西了」。我试过用腕部相机在下探前量出物体相对夹爪的真实位置再修正（相机跟着夹爪走，不受零位误差影响），测量本身准到 1–3 mm，但和规划时用的参照有几毫米的系统差，零位准确时反而帮倒忙，没有净收益，已撤回。结论：上真机时舵机零位要认真校准，这一项放在验收表前面。</span></div></li>
+        <li><div><b>看不清不等于不在</b><span>机器人记得某处有件东西，走近时看见那块地面是空的，就把它从记忆里删掉（它可能被轮子碰走了）。但 2 cm 高的石头在 1 m 外六次只能看见一次，它其实还在原地，只是没看清。有一局因此删掉了石头，把房间看完一遍就收工了。现在又小又扁的东西只在 0.7 m 以内才这样判断，删掉后那块地面标回「没看过」；回起点的路上再看见东西，也会回头去拿。</span></div></li>
+        <li><div><b>腕部相机只能看两片指垫之间</b><span>紧贴书架夹东西时，腕部相机把旁边的书架当成了「夹爪里有东西」，机器人以为夹住了一块其实没夹到的石头。现在只数两片指垫之间那条缝里的点（宽度按当前夹爪角度算）：空夹是 0，压扁的毛绒玩具约 30。</span></div></li>
+        <li><div><b>挨着的两件会被看成一件</b><span>只用深度图分割，边缘间隙小于 1.5 cm 左右的两件大多会粘成一团。整机里这不一定是坏事：最窄的下手位置通常只横跨其中一件，夹走以后另一件就单独露出来了。</span></div></li>
+        <li><div><b>软东西会粘在夹爪上，带着它什么都干不了</b><span>有一局毛绒玩具松手后一直卡在指垫上，之后每一次抓取都因此失败，五件只送到一件。原因一半是仿真的软接触太软（10 g 的玩具陷进指垫 16 mm，已改成越压越实），一半是真问题：松手后必须确认东西真的掉了。</span></div></li>
+        <li><div><b>雷达的地图会自己越描越厚</b><span>噪声大的雷达把墙描厚，墙厚了定位就在里面漂，漂了墙更厚。正反馈，3 cm 噪声下一局漂到 50 cm 以上。墙要按附近最密的地方「描细」，匹配也要有里程计兜底（见上面「雷达按规格书加误差」）。</span></div></li>
+        <li><div><b>规格书的精度不管 0.3 m 以内</b><span>LD19 的 ±45 mm 只对 0.3–12 m 成立，更近的不保证准，而机身边缘离雷达只有 0.2 m 出头，防撞恰恰发生在这个范围。仿真里按规格书的偏差跑，一局蹭到了椅子。真机上要先做一张距离修正表，再按修正后剩下的偏差定防撞余量；前置相机看近处障碍要准得多，防撞层两个都用。</span></div></li>
+        <li><div><b>一个错的读数能让整个收纳筐「站不进去」</b><span>野点和混合点每个只打中一个格子，但旧地图一次击中就算障碍、要被看穿六次才清掉。带着东西时机身外形更大，收纳筐四周散着几个假障碍格，24 个站位就全不合格，机器人一次次把东西放回地上。</span></div></li>
+        <li><div><b>站远了，东西就放在了筐沿上</b><span>收纳筐四周最远的站位要伸 33 cm 才能把东西放进近侧筐壁里 5 cm，而手臂放置时最多伸 31 cm。硬东西落在筐沿上多半会弹进去或掉到外面、之后再捡；软的毛绒玩具会搭在筐沿上、卡在两片指垫之间，抖三下都下不来，机器人以为放好了，带着它开走，挂在前置相机眼前的玩具又被当成障碍，一局里原地卡住 49 次。现在站远了先往前挪一步再放；万一还粘着，就张着夹爪把它按到筐底再快速抬起；再不行就停下等人帮忙，不再带着它乱开。</span></div></li>
+        <li><div><b>舵机指令要插值</b><span>机械臂按 50 Hz 给台阶式位置指令时，电机有四分之一的时间顶在力矩上限的 80% 以上。改成按毫秒插值、限制加速度后降到 1% 以下。</span></div></li>
+      
+        <li><div><b>检出为零，不是「什么都看不见」</b><span>透明瓶在 0.4 m 处留下 136 个读到瓶身的像素，被边缘滤波删得只剩 0.8 个；没读数的像素原来的分割根本不看。可「地板上连成片没读数」本身就是线索。真机上的飞点滤波也会这样处理孤立的真读数，所以不要指望靠瓶盖、标签那几个点。</span></div></li>
+        <li><div><b>最低的那条射线落在瓶子后面</b><span>圆柱体的最低可见射线和瓶身相切，落地点比真正的触地线远约 0.7 倍半径（2 cm）。直接拿最低一排空洞当近侧边缘，固定指会落在瓶子身上。按圆截面扣掉以后才对得上。</span></div></li>
+        <li><div><b>正对着看，看不出瓶子有多长，还会估出错的方向</b><span>端面时空洞簇和瓶子一样粗，拟合出的方向在两个垂直的值之间乱跳，却自信满满。这个问题我一开始没看见：开机原地转一圈时，瓶子碰巧转到图像边缘，斜着看出了正确的朝向，12 局全部送达。关掉开机转圈再试才暴露。现在按视线夹角判断，小于 40° 就当「看不出」。</span></div></li>
+        <li><div><b>朝向的小误差会被「换边」的判据放大成死循环</b><span>第一版的判据是「当前站位的方向和估出的最佳侧面差 20° 以上就换边」。估出的朝向偏了 26°，它就挪过去，新位置又得到新的估计，再偏，再挪，一局 240 秒一次抓取都没有。改成规划器自己用的那个判据：从这里下手的窄带，比最好那一侧宽出 1 cm 以上才换。朝向偏 20–30° 时窄带只多几毫米。</span></div></li>
+        <li><div><b>瓶盖和标签读得到的部分，是瓶子的残片</b><span>空洞成片时，读到瓶身的像素会成小块，通过滤波，被分割成一件小东西，和「看不清的瓶子」关联后把它降级成普通物体，拿残缺的轮廓去夹，一局抓 3 次。现在旁边没读数的像素比它自己多 1.5 倍以上，就当残片丢掉；正在去拿的东西不让普通检测改写。黑色物体自己的空洞约占一半，不会被误伤。</span></div></li>
+        <li><div><b>「没有读数」要认真零，不是深度很小</b><span>我一度把深度小于 5 cm 都当没读数，图像最下沿机身自己的边缘（镜头前 5 cm）就成了一整条空洞带。它碰巧被「碰到图像边缘的不要」挡住，但会让脚边的东西被当成残片丢掉。真机上深度相机最近测距以内也全是 0，图像最下沿同样会有这么一条，要在实物上看一眼。</span></div></li>
+        <li><div><b>成功要分清是碰巧还是自己成的：一个失败的瓶子该忘掉什么、记住什么</b><span>难材质里 303 号布局的瓶子，原来那批是 6/6。逐行对照日志才发现是碰巧：端面时估出的位置偏了几厘米，「不在原处了」把它误删，6 秒后机器人从另一个视角重新发现，生成全新的记忆，这次估得准，抓成了。我给「侧面站不进去」加的退路让这条记忆带着旧状态继续重试，同一局丢了瓶子：它被轮子碰过，记着的位置已经不对，而近看得到的位置被锁在 1.2 cm 的不确定度，远处的新视角没法纠正。可整体清空记忆也不行：端面加成片空洞的那一局，第二轮只是把第一轮重复一遍，三轮都没成。最后的做法：试过哪几侧、从哪看过的记录留着；位置的不确定度随「多久没看到它」增长（每秒 0.5 mm），刚看过就信近看的好位置，几分钟没看过就允许远处的新视角纠正；近看时期望的位置上没有，再放宽到 25 cm 去找。两个相反的难例都过了。</span></div></li>
+            </ol>
+    </article>
+
+    <article class="sheet half">
+      <h2>哪些是真物理</h2>
+      <ul class="plain">
+        <li>轮子、滚子和地面的接触与摩擦，底盘靠摩擦力前进。</li>
+        <li>舵机力矩上限 2.94 N·m（STS3215 12 V 堵转值），转速上限由官方模型的阻尼给出。</li>
+        <li>机械臂的质量、惯量、关节限位，来自 SO-101 官方模型。</li>
+        <li>夹爪与物体的接触：夹不稳会滑、会掉、会被碰倒。</li>
+        <li>雷达：240 线射线投射，会被自己的手臂挡住。名义噪声 1 cm；另按 LD19 规格书的误差模型（每个表面固定偏差、量化、混合点、野点）跑过整局。</li>
+        <li>定位：轮子里程计（1.5% 轮径误差、3% 打滑噪声）加雷达扫描匹配，不读真值。</li>
+        <li>相机：渲染出的 320×240 深度图，地面、家具、一件件物体都从深度里分出来，再量轮廓、表面点和高度，不用已知类别或尺寸，会被家具和手臂挡住。腕部 96×72 深度图只看两片夹爪之间。</li>
+      </ul>
+    </article>
+
+    <article class="sheet half">
+      <h2>哪些是假设</h2>
+      <ul class="plain">
+        <li>开机时停在充电座上，起点位置已知。定位没有回环检测。</li>
+        <li>雷达误差按规格书的上限估：每个表面一个固定偏差，没有按距离、颜色、入射角变化的规律；角度零位误差（规格 ±2°）没有加。0.3 m 以内的真实表现要实测。</li>
+        <li>分割：只用深度图算，会漏、会粘连（见上面的台架）。深度图的毛病（黑色、反光、透明表面的空洞，边缘飞点）按规律近似，比例是估的。机器人自己手臂的像素按运动学屏蔽，仿真里直接给出。</li>
+        <li>收纳筐的大致位置事先告诉机器人，精确位置由相机看到后修正。</li>
+        <li>底盘、电池等的重量是估的（整机约 2.35 kg），滚子没有轴承间隙。</li>
+        <li>打印件不变形、舵机没有回差。软物体是多段刚体加弹性铰链和柔性接触的近似，不是布料仿真。</li>
+        <li>物体都在 3–16 cm、8–70 g 之间，至少有一处窄于 6.8 cm（夹爪最大开口）。更大、更重、更滑（玻璃、金属）的没有测。</li>
+      </ul>
+      <p class="note">这些假设每一条在验收表里都有对应的实测项。测出来不一样，就改参数重跑。</p>
+    </article>
+
+    <article class="sheet">
+      <h2>实物验收表</h2>
+      <p>按顺序做。前一项不过就先别做后一项。「仿真值」是这次试验的结果，「通过」是我建议的门槛。</p>
+      <div class="tablewrap"><table class="wide">
+        <thead><tr><th>#</th><th>测什么</th><th>怎么测</th><th>仿真值</th><th>通过</th></tr></thead>
+        <tbody><tr><td class="n">1</td><td>称重</td><td>整机和机械臂分别上秤</td><td>整机 2.33 kg，其中机械臂 0.63 kg</td><td>差 10% 以上就改 <code>model.py</code> 的 <code>P</code> 重跑</td></tr><tr><td class="n">2</td><td>舵机零位</td><td>机械臂按官方流程校准后，让夹爪尖依次碰地面上画好的 5 个点（离机身 20–30 cm），量指尖偏差</td><td>敏感度扫描：零位偏 2°（1σ）时送达率下降最多（见上表）</td><td>每个点偏差不超过 5 mm；超了重新校准</td></tr><tr><td class="n">3</td><td>底盘速度</td><td>指令 0.15 m/s，前进、横移各跑 4 秒，量实际位移</td><td>前进 0.143，横移 0.143 m/s</td><td>在指令的 ±10% 以内</td></tr><tr><td class="n">4</td><td>原地旋转</td><td>指令 0.8 rad/s 转 4 秒，量转过的角度</td><td>0.77 rad/s</td><td>±10% 以内</td></tr><tr><td class="n">5</td><td>最高速度</td><td>指令 0.4 m/s</td><td>到 0.19 m/s 饱和</td><td>记下实测值，写回 <code>MAX_WHEEL_SPEED</code></td></tr><tr><td class="n">6</td><td>里程计漂移</td><td>走一个 1 m 的正方形回到起点，量闭合误差</td><td>按 1.5% 轮径误差、3% 打滑建模：整机试验单靠里程计平均漂 2.3 m / 34 m 行程</td><td>只做记录，实测值写回 <code>robot.py</code> 的 <code>ODOM_SCALE</code>、<code>ODOM_SLIP</code></td></tr><tr><td class="n">7</td><td>雷达自遮挡</td><td>收臂状态原地采一圈，数被机身滤波丢掉的点</td><td>9/240 线</td><td>正前方盲区不超过仿真值 + 10 线</td></tr><tr><td class="n">8</td><td>雷达测距偏差</td><td>机器人正对一面平墙，用卷尺摆在 0.15、0.2、0.3、0.5、1、2 m；墙面换白墙、深色木板、黑布、亮面板四种。每个位置采 100 圈取平均，和卷尺比</td><td>LD19 规格书：0.3–12 m 平均误差 ±45 mm，0.3 m 以内不保证。仿真按每个表面固定偏差跑了标准条件 10 局：未标定（±45 mm）50/50 送达，碰撞 0 次；标定后（±20 mm）50/50 送达，碰撞 0 次</td><td>做一张「读数 → 真实距离」的修正表；修正后剩余偏差不超过 2 cm 就保持 <code>LIDAR_BIAS_MARGIN</code> = 2 cm，否则改成实测的最大值</td></tr><tr><td class="n">9</td><td>雷达角度零位</td><td>机器人停在一面长直墙前、车身用直角尺对正，看扫描里墙的方向</td><td>规格书角度误差 ±2°；仿真没有加这一项</td><td>修正后不超过 0.5°；把偏差写进雷达安装角</td></tr><tr><td class="n">10</td><td>雷达毛刺和细腿</td><td>房间里放一把椅子（腿粗约 2 cm）和一个门框边，原地采 100 圈，看过滤后丢掉的点和地图里椅子腿还在不在</td><td>整机试验里每圈平均滤掉 3.1 个点（名义雷达模型，没有野点）</td><td>1 m 内的椅子腿全部在地图里；空地上不出现障碍格</td></tr><tr><td class="n">11</td><td>定位精度</td><td>跑一局取放，途中停 5 次，每次用卷尺核对定位输出</td><td>扫描匹配：平均 1.6 cm，最大 8.1 cm，航向最大 2.6°</td><td>平均不超过 3 cm；超了先查雷达安装和自遮挡滤波</td></tr><tr><td class="n">12</td><td>碰撞后恢复</td><td>机器人直行时用手把车身推转约 10°，或者让它轻轻蹭一下椅子，看定位输出</td><td>修之前：一局蹭到椅子后航向错了 10°，又撞了 19 次；加了宽范围重找和雷达偏差余量以后，同一局 0 碰撞</td><td>2 秒内航向回到 1° 以内，地图上没有多出一道斜墙</td></tr><tr><td class="n">13</td><td>前置相机外参</td><td>地面上用胶带标出 4 个已知位置（0.25–1 m），各放一个方块；比相机量出的位置和卷尺，再看拟合出的地面倾角</td><td>敏感度扫描：安装位置偏 1 cm、角度偏 1° 时 47/50 送达</td><td>0.25 m 处位置差不超过 5 mm，地面倾角不超过 0.5°；超了重新标定外参</td></tr><tr><td class="n">14</td><td>相机测量</td><td>手边的小东西分别放在 0.25 m 和 1.5 m 处，用尺子核对相机量出的近侧边缘和轮廓中心</td><td>近侧边缘平均差 4.0 mm，1.5 m 处轮廓中心差 26 mm（<code>test_perception.py</code>）</td><td>近侧边缘不超过 6 mm，否则夹爪会落偏</td></tr><tr><td class="n">15</td><td>分割</td><td>地上摆 8 件软硬不一的东西，其中两对挨着放（间隙 1 cm、3 cm），一件贴着家具，拍 50 张，数漏掉的、两件粘成一件的、凭空多出来的</td><td>0.6–1.5 m 整件可见时检出 94/144；挨着放的见上表；贴着家具 2 cm 处 8/8，5 cm 处 8/8，10 cm 处 8/8；在没放任何东西的房间里随机看了 24 次，误报 0 个</td><td>粘连和漏检不比仿真多一倍以上；地毯、深色或反光的东西单独记录</td></tr><tr><td class="n">16</td><td>腕部相机</td><td>夹住袜子、毛绒玩具、方块各 10 次，空夹 10 次，看腕部相机说「夹爪里有东西」对不对</td><td>台架上判断错 0 次</td><td>判断错不超过 2 次</td></tr><tr><td class="n">17</td><td>单物体抓取</td><td>机器人停稳，物体在正前方 20–26 cm。找 8 件对应的实物（方块、球、玩具车、香蕉、L 形积木、石头、袜子、毛绒玩具），每件 10 次</td><td>贴胶带：方块 8/10，小球 10/10，玩具车 10/10，香蕉玩具 10/10，L 形积木 6/10，石头 9/10，袜子 10/10，毛绒玩具 9/10</td><td>每种不比仿真少 2 次以上</td></tr><tr><td class="n">18</td><td>软物体放下</td><td>把袜子和毛绒玩具各放进筐 10 次，看有没有粘在夹爪上，粘住时机器人发现了没有</td><td>整机试验 288 次放筐里抖了 2 次（软的 2 次）</td><td>粘住了都要被发现</td></tr><tr><td class="n">19</td><td>胶带对照</td><td>撕掉胶带，小球夹 10 次</td><td>7/10</td><td>应该明显变差。如果没变差，说明仿真的摩擦假设偏保守</td></tr><tr><td class="n">20</td><td>整机任务</td><td>4×3 m 场地摆 5 件，离墙 ≥30 cm，做 10 次</td><td>送达 100%，每件 51 秒，20 次试验共碰撞 0 次</td><td>送达率不低于仿真 15 个百分点，没有倾翻</td></tr><tr><td class="n">21</td><td>贴边任务</td><td>同上，物体离墙 12 cm 起</td><td>送达 98%</td><td>只做记录</td></tr><tr><td class="n">22</td><td>扎堆任务</td><td>同上，其中两对物体挨着放</td><td>送达 100%</td><td>只做记录</td></tr><tr><td class="n">23</td><td>难材质</td><td>黑袜子、黑方块、亮面小球、亮面玩具车各放在 0.25、0.6、1 m 处拍 10 次，再各夹 10 次</td><td>检出和近处误差见上表</td><td>黑色和反光的近处要看得见</td></tr><tr><td class="n">24</td><td>透明瓶：深度图上的空洞</td><td>一个透明塑料瓶（带不带瓶盖、标签各试一次）躺在地上，放在 0.4、0.6、0.8、1.0 m 处，各转 0°、45°、90°（相对视线），在白天、日光灯、背光三种光线下各拍 10 帧，数瓶子轮廓里没有读数、读到地板、读到瓶身的像素各占多少</td><td>仿真设的是 60% 没读数、30% 读到后面的地板、10% 读到瓶身，逐像素独立；成片、更少空洞的情形见页面「透明瓶」一节</td><td>没读数的像素占瓶子轮廓的比例不低于 35%，并且连成片（5×5 窗口里占 30% 以上）；比例更低、或者要靠瓶盖标签才有读数，说明这个办法对这种瓶子不灵，要换识别模型</td></tr><tr><td class="n">25</td><td>透明瓶：找到并抓起来</td><td>同上的瓶子，在 4×3 m 场地的 8 个随机位置和朝向各放一次（机器人事先不知道），数送达、数抓取次数、数有没有被推走</td><td>瓶子单独在房间里 12 局：见页面「透明瓶」一节；整机难材质条件瓶子 8/8</td><td>不比仿真少 2 局；任何一次轮子压上瓶子都要记下，看瓶子是被推走了还是被绕开了</td></tr><tr><td class="n">26</td><td>打滑检测</td><td>房间里放一个看不见的低矮东西（透明瓶，或者一根细绳），让机器人直行压上去 10 次，数检测器触发几次，再用卷尺量车实际走了多远，看轮子有没有真的打滑；另外正常跑 10 局，数没有任何东西时的误触发</td><td>仿真里 56 局整机试验共触发 1 次（1 局）；单瓶房间里只开打滑检测时，底盘 10/12 局碰到瓶子共 46 次，检测器只在 2 局触发：轻轻蹭过的不构成打滑；真打滑能检出（一次里程计 13.0 cm，仿真真值 6.6 cm）</td><td>正常跑 10 局误触发 0 次；压上去时触发几次只做记录，不要拿它当通用的低矮障碍检测；记下 <code>SLIP_RATIO</code> 要不要调</td></tr><tr><td class="n">27</td><td>算力</td><td>在树莓派 5 上跑 <code>profile_compute.py</code> 同样的模块（或者用录下来的数据离线跑），记每个模块每次的耗时</td><td>这台机器上合计约占一个核的 17%</td><td>树莓派上合计不超过两个核</td></tr><tr><td class="n">28</td><td>扒出来</td><td>方块、球、香蕉、袜子等各一件，分别放在离墙或柜子 2、4、6 cm 处，机器人从房间一侧去扒</td><td>扒出来：2 cm 处 7/16，4 cm 处 13/16，6 cm 处 14/16</td><td>4 cm 及以上不比仿真少一半以上；记录 2 cm 时是插不进去还是压到了东西</td></tr></tbody>
+      </table></div>
+    </article>
+
+    <article class="sheet half">
+      <h2>要买的东西</h2>
+      <div class="tablewrap"><table>
+        <thead><tr><th>部件</th><th>标价</th></tr></thead>
+        <tbody>
+          <tr><td>LeKiwi 底盘套件（12 V 版，含电池、全向轮、舵机、打印件）</td><td class="n">约 $226–299</td></tr>
+          <tr><td>SO-101 机械臂，12 V 版（主从一对的套件；只需要从动臂）</td><td class="n">约 $312–433</td></tr>
+          <tr><td>LD19 激光雷达（D300 / D500 套件）</td><td class="n">约 $69–104</td></tr>
+          <tr><td>Raspberry Pi 5、前置 USB 深度相机、腕部 USB 相机</td><td class="n">未查价</td></tr>
+          <tr><td>IMU 模块（测机身倾斜）</td><td class="n">未查价</td></tr>
+          <tr><td>夹爪防滑胶带、雷达支架铜柱</td><td class="n">几美元</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">2026 年 11 月各零售页面的标价，不含运费。来源：<a href="https://www.robotshop.com/products/seeedstudio-lekiwi-kit-12v-mobile-base-w-3d-printed-parts-battery">RobotShop</a>、<a href="https://rcdrone.top/products/lekiwi-kit12v-version-mobile-base-with-3d-printed-parts-and-battery">RCDrone</a>、<a href="https://openelab.com/products/seeed-studio-so-arm101-pro-assembled-kit-lerobot-6dof-robotic-arm">OpenELAB</a>、<a href="https://www.robotshop.com/products/hiwonder-ld19-d500-lidar-developer-kit-360-dtof-laser-scanner-supports-ros1-2-raspberry-pi-jetson-nano">RobotShop LD19</a>。细节见仓库 <code>docs/bom.md</code>。</p>
+    </article>
+
+    <article class="sheet half">
+      <h2>自己跑一遍</h2>
+      <pre>git clone https://github.com/ahoo/xiaoshi-robot
+cd xiaoshi-robot
+pip install mujoco numpy scipy imageio imageio-ffmpeg pillow
+cd sim
+python test_base.py        # 底盘台架
+python test_grasp.py 10    # 抓取台架
+python episode.py 4        # 一次完整试验，打印事件日志
+python run_trials.py       # 全部随机试验
+python render_video.py 4   # 生成录像</pre>
+      <p class="note">硬件参数集中在 <code>sim/model.py</code> 顶部的 <code>P</code>，传感器噪声在 <code>sim/controller.py</code> 顶部。实测后改这两处重跑。</p>
+    </article>
+
+    <article class="sheet">
+      <h2>还没做的</h2>
+      <ul class="plain">
+        <li>深度图的毛病是按规律近似的，比例是估的；强光和地毯没有建模。透明瓶靠的是「没有读数的像素连成片」这个假设（比例是估的，真瓶子要实测，验收表第 24 项），没有彩色图像识别；完全透明又没有瓶盖标签、或者读数比估的更多的瓶子，这个办法就不灵。定位没有回环检测，比这间 4×3 m 大得多的房子里会慢慢漂。雷达的角度零位误差还没有加进仿真。</li>
+        <li>软物体只做到「分段刚体」的程度。摊开的布、绳子、塑料袋这类会缠绕和大变形的东西没有测，夹法也可能要换（比如捏起一角）。</li>
+        <li>没有模拟会动的障碍（人、宠物），也没有地毯、门槛。雷达扫描面离地 20 cm，比这矮的障碍只能靠相机。</li>
+        <li>整机试验里物体离墙至少 12 cm；更近的只在台架上测了「扒出来」：离墙 4 cm 以上大多扒得出来，不到 2.5 cm 铲子插不进去，只能跳过。窄道深处、两头都站不进去的东西也扒不到。</li>
+        <li>样本量不大：标准条件 20 次，其他条件 12 次和 8 次。差几个百分点不要当真。</li>
+        <li>第一版的概念演示页保留在仓库 <code>web/concept-v0.1/</code>，它不是物理仿真，仅作对照。</li>
+      </ul>
+    </article>
+  </section>
+</div>

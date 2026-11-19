@@ -1,4 +1,5 @@
-"""Fill web/page_template.html with numbers taken straight from results/*.json -> web/dist/index.html
+"""Fill web/page_template.html with numbers taken straight from results/*.json -> web/dist/index.html (a full document) and
+web/dist/artifact.html (the same page as published to claude.ai: no document tags, the platform wraps its own)
 (and write docs/validation.md from the same numbers, so page and docs cannot drift apart).
 
   python web/build_page.py
@@ -332,6 +333,16 @@ def main():
     os.makedirs(os.path.join(HERE, 'dist'), exist_ok=True)
     open(os.path.join(HERE, 'dist', 'index.html'), 'w', encoding='utf8').write(html)
     for f in ('episode.mp4', 'episode.jpg', 'clear.mp4', 'clear.jpg'): shutil.copy(R(f), os.path.join(HERE, 'dist', f))
+    # What is published to claude.ai: the same page without its own document tags (the platform wraps its own <!doctype>/<head>/<body>
+    # around it), <title> first, the page language set by a script because the <html lang> goes with the wrapper.
+    import re
+    frag = re.sub(r'^\s*<!DOCTYPE html>\s*', '', html, flags=re.I)
+    frag = re.sub(r'<html[^>]*>\s*', '', frag, count=1); frag = re.sub(r'<head>\s*', '', frag, count=1); frag = re.sub(r'\s*</head>', '', frag, count=1)
+    frag = re.sub(r'<meta charset="utf-8">\s*', '', frag, count=1, flags=re.I); frag = re.sub(r'<meta name="viewport"[^>]*>\s*', '', frag, count=1)
+    frag = re.sub(r'<body[^>]*>\s*', '', frag, count=1); frag = re.sub(r'\s*</body>\s*</html>\s*$', '\n', frag)
+    title = re.search(r'<title>.*?</title>', frag).group(0)
+    frag = title + '\n<script>document.documentElement.lang = "zh-CN";</script>\n' + frag.replace(title, '', 1).lstrip()
+    open(os.path.join(HERE, 'dist', 'artifact.html'), 'w', encoding='utf8').write(frag)
 
     md = ['# 实物验收方案', '', '按顺序做，前一项不过先别做后一项。「仿真值」来自 `results/` 里的这一轮试验，由 `web/build_page.py` 自动填入。', '',
           '| # | 测什么 | 怎么测 | 仿真值 | 通过 |', '|---|---|---|---|---|']

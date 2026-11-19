@@ -1,7 +1,7 @@
 # 小拾取物机器人：设计与仿真现状（2026-11-19，第十二轮）
 
 - 代码仓库：https://github.com/ahoo/xiaoshi-robot （main 分支）
-- 结果页面：https://claude.ai/artifact/RKrf6fjHQ6JeapNeRMNe85 （v0.8 透明瓶）；页面的构建产物也在仓库的 [`web/dist/`](../web/dist/)
+- 结果页面：https://claude.ai/artifact/RKrf6fjHQ6JeapNeRMNe85 （v0.8 透明瓶）；页面的构建产物也在仓库的 [`web/dist/`](../web/dist/)（`artifact.html` 就是线上发布的文件）
 - 下一步计划：[`roadmap.md`](roadmap.md)；实物验收表：[`validation.md`](validation.md)；物料：[`bom.md`](bom.md)
 
 ## 硬件方案（已定）
