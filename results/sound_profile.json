@@ -1,0 +1,493 @@
+{
+ "misattribution 0 %": {
+  "day 3": {
+   "Tom": {
+    "language_preference_right": 0.8,
+    "language_preference_set": 0.8,
+    "hours_cosine": 0.819,
+    "top_zone_right": 0.85,
+    "top_intents_overlap": 0.658
+   },
+   "Emma": {
+    "language_preference_right": 0.7,
+    "language_preference_set": 0.7,
+    "hours_cosine": 0.828,
+    "top_zone_right": 0.675,
+    "top_intents_overlap": 0.75
+   },
+   "Mia": {
+    "language_preference_right": 0.85,
+    "language_preference_set": 0.15,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   },
+   "Leo": {
+    "language_preference_right": 0.725,
+    "language_preference_set": 0.725,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   }
+  },
+  "day 7": {
+   "Tom": {
+    "language_preference_right": 0.9,
+    "language_preference_set": 0.9,
+    "hours_cosine": 0.92,
+    "top_zone_right": 0.975,
+    "top_intents_overlap": 0.917
+   },
+   "Emma": {
+    "language_preference_right": 0.775,
+    "language_preference_set": 0.775,
+    "hours_cosine": 0.921,
+    "top_zone_right": 0.775,
+    "top_intents_overlap": 0.95
+   },
+   "Mia": {
+    "language_preference_right": 0.925,
+    "language_preference_set": 0.075,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   },
+   "Leo": {
+    "language_preference_right": 1.0,
+    "language_preference_set": 1.0,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   }
+  },
+  "day 14": {
+   "Tom": {
+    "language_preference_right": 0.975,
+    "language_preference_set": 0.975,
+    "hours_cosine": 0.962,
+    "top_zone_right": 1.0,
+    "top_intents_overlap": 0.983
+   },
+   "Emma": {
+    "language_preference_right": 0.875,
+    "language_preference_set": 0.875,
+    "hours_cosine": 0.95,
+    "top_zone_right": 0.925,
+    "top_intents_overlap": 0.967
+   },
+   "Mia": {
+    "language_preference_right": 1.0,
+    "language_preference_set": 0.0,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   },
+   "Leo": {
+    "language_preference_right": 1.0,
+    "language_preference_set": 1.0,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   }
+  }
+ },
+ "misattribution 10 %": {
+  "day 3": {
+   "Tom": {
+    "language_preference_right": 0.675,
+    "language_preference_set": 0.675,
+    "hours_cosine": 0.811,
+    "top_zone_right": 0.9,
+    "top_intents_overlap": 0.567
+   },
+   "Emma": {
+    "language_preference_right": 0.6,
+    "language_preference_set": 0.6,
+    "hours_cosine": 0.808,
+    "top_zone_right": 0.65,
+    "top_intents_overlap": 0.667
+   },
+   "Mia": {
+    "language_preference_right": 0.9,
+    "language_preference_set": 0.1,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   },
+   "Leo": {
+    "language_preference_right": 0.75,
+    "language_preference_set": 0.75,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   }
+  },
+  "day 7": {
+   "Tom": {
+    "language_preference_right": 0.725,
+    "language_preference_set": 0.725,
+    "hours_cosine": 0.919,
+    "top_zone_right": 0.975,
+    "top_intents_overlap": 0.892
+   },
+   "Emma": {
+    "language_preference_right": 0.65,
+    "language_preference_set": 0.65,
+    "hours_cosine": 0.905,
+    "top_zone_right": 0.85,
+    "top_intents_overlap": 0.933
+   },
+   "Mia": {
+    "language_preference_right": 0.95,
+    "language_preference_set": 0.05,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   },
+   "Leo": {
+    "language_preference_right": 1.0,
+    "language_preference_set": 1.0,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   }
+  },
+  "day 14": {
+   "Tom": {
+    "language_preference_right": 0.925,
+    "language_preference_set": 0.925,
+    "hours_cosine": 0.957,
+    "top_zone_right": 1.0,
+    "top_intents_overlap": 0.95
+   },
+   "Emma": {
+    "language_preference_right": 0.675,
+    "language_preference_set": 0.675,
+    "hours_cosine": 0.952,
+    "top_zone_right": 0.875,
+    "top_intents_overlap": 0.975
+   },
+   "Mia": {
+    "language_preference_right": 1.0,
+    "language_preference_set": 0.0,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   },
+   "Leo": {
+    "language_preference_right": 1.0,
+    "language_preference_set": 1.0,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   }
+  }
+ },
+ "misattribution 20 %": {
+  "day 3": {
+   "Tom": {
+    "language_preference_right": 0.625,
+    "language_preference_set": 0.625,
+    "hours_cosine": 0.831,
+    "top_zone_right": 0.85,
+    "top_intents_overlap": 0.558
+   },
+   "Emma": {
+    "language_preference_right": 0.45,
+    "language_preference_set": 0.45,
+    "hours_cosine": 0.82,
+    "top_zone_right": 0.75,
+    "top_intents_overlap": 0.692
+   },
+   "Mia": {
+    "language_preference_right": 0.8,
+    "language_preference_set": 0.2,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   },
+   "Leo": {
+    "language_preference_right": 0.725,
+    "language_preference_set": 0.725,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   }
+  },
+  "day 7": {
+   "Tom": {
+    "language_preference_right": 0.7,
+    "language_preference_set": 0.7,
+    "hours_cosine": 0.915,
+    "top_zone_right": 0.95,
+    "top_intents_overlap": 0.908
+   },
+   "Emma": {
+    "language_preference_right": 0.5,
+    "language_preference_set": 0.5,
+    "hours_cosine": 0.92,
+    "top_zone_right": 0.75,
+    "top_intents_overlap": 0.908
+   },
+   "Mia": {
+    "language_preference_right": 0.95,
+    "language_preference_set": 0.05,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   },
+   "Leo": {
+    "language_preference_right": 1.0,
+    "language_preference_set": 1.0,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   }
+  },
+  "day 14": {
+   "Tom": {
+    "language_preference_right": 0.775,
+    "language_preference_set": 0.775,
+    "hours_cosine": 0.957,
+    "top_zone_right": 0.975,
+    "top_intents_overlap": 0.942
+   },
+   "Emma": {
+    "language_preference_right": 0.525,
+    "language_preference_set": 0.525,
+    "hours_cosine": 0.955,
+    "top_zone_right": 0.775,
+    "top_intents_overlap": 0.975
+   },
+   "Mia": {
+    "language_preference_right": 1.0,
+    "language_preference_set": 0.0,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   },
+   "Leo": {
+    "language_preference_right": 1.0,
+    "language_preference_set": 1.0,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   }
+  }
+ },
+ "misattribution 30 %": {
+  "day 3": {
+   "Tom": {
+    "language_preference_right": 0.575,
+    "language_preference_set": 0.575,
+    "hours_cosine": 0.832,
+    "top_zone_right": 0.8,
+    "top_intents_overlap": 0.533
+   },
+   "Emma": {
+    "language_preference_right": 0.375,
+    "language_preference_set": 0.375,
+    "hours_cosine": 0.809,
+    "top_zone_right": 0.8,
+    "top_intents_overlap": 0.583
+   },
+   "Mia": {
+    "language_preference_right": 0.875,
+    "language_preference_set": 0.125,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   },
+   "Leo": {
+    "language_preference_right": 0.775,
+    "language_preference_set": 0.775,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   }
+  },
+  "day 7": {
+   "Tom": {
+    "language_preference_right": 0.65,
+    "language_preference_set": 0.65,
+    "hours_cosine": 0.913,
+    "top_zone_right": 0.975,
+    "top_intents_overlap": 0.867
+   },
+   "Emma": {
+    "language_preference_right": 0.4,
+    "language_preference_set": 0.4,
+    "hours_cosine": 0.897,
+    "top_zone_right": 0.825,
+    "top_intents_overlap": 0.917
+   },
+   "Mia": {
+    "language_preference_right": 0.925,
+    "language_preference_set": 0.075,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   },
+   "Leo": {
+    "language_preference_right": 0.925,
+    "language_preference_set": 0.925,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   }
+  },
+  "day 14": {
+   "Tom": {
+    "language_preference_right": 0.6,
+    "language_preference_set": 0.6,
+    "hours_cosine": 0.952,
+    "top_zone_right": 1.0,
+    "top_intents_overlap": 0.933
+   },
+   "Emma": {
+    "language_preference_right": 0.35,
+    "language_preference_set": 0.35,
+    "hours_cosine": 0.95,
+    "top_zone_right": 0.825,
+    "top_intents_overlap": 0.967
+   },
+   "Mia": {
+    "language_preference_right": 1.0,
+    "language_preference_set": 0.0,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   },
+   "Leo": {
+    "language_preference_right": 1.0,
+    "language_preference_set": 1.0,
+    "hours_cosine": null,
+    "top_zone_right": null,
+    "top_intents_overlap": null
+   }
+  }
+ },
+ "invariants": [
+  {
+   "name": "Mia (child): no hours, zones, intents or items kept",
+   "ok": true,
+   "detail": [
+    "aliases",
+    "consent_by",
+    "created",
+    "face",
+    "first_t",
+    "habits",
+    "lang_set",
+    "langs",
+    "last_t",
+    "n_utt",
+    "role",
+    "voice"
+   ]
+  },
+  {
+   "name": "Leo (child): no hours, zones, intents or items kept",
+   "ok": true,
+   "detail": [
+    "aliases",
+    "consent_by",
+    "created",
+    "face",
+    "first_t",
+    "habits",
+    "lang_set",
+    "langs",
+    "last_t",
+    "n_utt",
+    "role",
+    "voice"
+   ]
+  },
+  {
+   "name": "adult profile holds counters only (no text field except the name)",
+   "ok": true,
+   "detail": [
+    "aliases",
+    "consent_by",
+    "created",
+    "face",
+    "first_t",
+    "habits",
+    "hours",
+    "intents",
+    "items",
+    "lang_set",
+    "langs",
+    "last_t",
+    "n_utt",
+    "role",
+    "voice",
+    "zones"
+   ]
+  },
+  {
+   "name": "no sentence from the household appears in the stored profiles",
+   "ok": true,
+   "detail": 2029
+  },
+  {
+   "name": "\"stop learning habits\" removes the habit counters",
+   "ok": true,
+   "detail": [
+    "aliases",
+    "consent_by",
+    "created",
+    "face",
+    "first_t",
+    "habits",
+    "lang_set",
+    "langs",
+    "last_t",
+    "n_utt",
+    "role",
+    "voice"
+   ]
+  },
+  {
+   "name": "\"speak Chinese\" overrides what was learned",
+   "ok": true,
+   "detail": "zh"
+  },
+  {
+   "name": "a child card says what is kept and how to delete",
+   "ok": true,
+   "detail": "Mia (child). Languages: Chinese 40%, English 40%, mixed 21% - not enough to tell yet. For a child I keep only the name, "
+  },
+  {
+   "name": "forgetting a person deletes the whole profile",
+   "ok": true,
+   "detail": "I don't keep a profile of Emma."
+  },
+  {
+   "name": "forgetting everyone empties the store",
+   "ok": true,
+   "detail": 0
+  },
+  {
+   "name": "habit counts fade (half-life 30 days: 60 days quarter them)",
+   "ok": true,
+   "detail": 0.25
+  }
+ ],
+ "cards": {
+  "Tom": {
+   "en": "Tom (adult). Languages: Chinese 81%, English 6%, mixed 12% - I answer in Chinese. Usually around 19:00-21:00 in the living room. Often: asks where things are; asks to tidy up; says hello. Kept: a few counters, a voiceprint vector, a face vector. No recordings, no transcripts, no photos. Say \"forget Tom\" to delete all of it.",
+   "zh": "Tom（大人）。语言：中文 81%、英文 6%、中英混合 12%，我用中文回答。通常在 19-21 点出现在客厅。常常：问东西在哪；让收拾玩具；打招呼。保存的内容：几个计数器、一个声纹向量、一个人脸特征向量。没有录音、没有文字记录、没有照片。说“忘掉Tom”可以全部删除。"
+  },
+  "Emma": {
+   "en": "Emma (adult). Languages: Chinese 15%, English 64%, mixed 21% - I answer in English. Usually around 07:00-09:00, 17:00-18:00, 19:00-20:00 in the kitchen. Often: asks where things are; says hello; asks what is on the floor. Kept: a few counters, a voiceprint vector, a face vector. No recordings, no transcripts, no photos. Say \"forget Emma\" to delete all of it.",
+   "zh": "Emma（大人）。语言：中文 15%、英文 64%、中英混合 21%，我用英文回答。通常在 7-9 点、17-18 点、19-20 点出现在厨房。常常：问东西在哪；打招呼；问地上有什么。保存的内容：几个计数器、一个声纹向量、一个人脸特征向量。没有录音、没有文字记录、没有照片。说“忘掉Emma”可以全部删除。"
+  },
+  "Mia": {
+   "en": "Mia (child). Languages: Chinese 49%, English 26%, mixed 25% - not enough to tell yet. For a child I keep only the name, the language and that I can recognise them. Kept: a few counters, a voiceprint vector, a face vector. No recordings, no transcripts, no photos. Say \"forget Mia\" to delete all of it.",
+   "zh": "Mia（小孩）。语言：中文 49%、英文 26%、中英混合 25%，还不够判断。小孩的资料我只留名字、语言，以及能不能认出他/她。保存的内容：几个计数器、一个声纹向量、一个人脸特征向量。没有录音、没有文字记录、没有照片。说“忘掉Mia”可以全部删除。"
+  }
+ },
+ "seconds": 4
+}

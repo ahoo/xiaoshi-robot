@@ -122,6 +122,97 @@ def home_round_rows(start):
     return [(str(start + i + 1), a, b, c, d) for i, (a, b, c, d) in enumerate(rows)]
 
 
+def sound_round_rows(start):
+    """Round 15 (where a voice comes from, who it is, Chinese and English, profiles): rows of the validation table from results/sound_*.json and results/lang.json. Missing files give '-'.
+    Document only; the published page does not have them yet."""
+    def load(n):
+        fn = R(n); return json.load(open(fn)) if os.path.exists(fn) else None
+    SSL, VP, AS_, PF, D2, LG, CAL = (load(n) for n in ('sound_ssl.json', 'sound_voiceprint.json', 'sound_assoc.json', 'sound_profile.json', 'sound_day2.json', 'lang.json', 'sound_ssl_calib.json'))
+    p = lambda v: '-' if v is None else f'{100 * v:.0f}%'
+    TR = {'at least 30 degrees apart': '相隔 ≥30°', 'at least 60 degrees apart': '相隔 ≥60°', 'at least 100 degrees apart': '相隔 ≥100°', 'nominal array': '名义阵列（无偏差）', 'capsule positions 0.5 mm off (1 sigma)': '麦克风位置偏 0.5 mm（1σ）',
+          'capsule positions 1 mm off': '位置偏 1 mm', 'capsule positions 2 mm off': '位置偏 2 mm', 'capsule gains 1 dB apart (1 sigma)': '增益差 1 dB（1σ）', 'capsule gains 3 dB apart': '增益差 3 dB', 'positions 1 mm and gains 2 dB': '位置偏 1 mm + 增益差 2 dB'}
+    tr = lambda k: TR.get(k, k)
+    rows = []
+    # direction of a voice
+    if SSL:
+        g = lambda k: SSL.get(k, {}); b = g('base: 4 microphones, reverberation 0.5 s, robot idle')
+        c = lambda k: f'{g(k).get("median_deg", "-")}° / {p(g(k).get("within_20"))}'
+        c1 = (f'仿真（4×3 m 房间、espeak-ng 合成的中英文说话声、{b.get("n", "-")} 次/条件，**声学是我们自己的镜像声源模型，不是实测**）：4 麦阵列（半径 32 mm）中位误差 {b.get("median_deg", "-")}°，20° 内 {p(b.get("within_20"))}（中位/20°内）；'
+              f'2 麦 {c("2 microphones")}（前后分不清，不能用）；6 麦 {c("6 microphones")}；混响 0.3 s {c("reverberation 0.3 s")}，0.8 s {c("reverberation 0.8 s")}；机器人自己在开 {c("robot driving (0.15 m/s)")}；'
+              f'电视 55 dB {c("television at 55 dB (1 m)")}、62 dB {c("television at 62 dB")}、70 dB {c("television at 70 dB")}；孩子 {c("child talking")}；中文 {c("Chinese only")}、英文 {c("English only")}')
+    else: c1 = '-'
+    rows.append(('声源方向：一个人说话', '机器人放客厅中间，阵列装好；一个人站在 1、2、3、4 m 处的 8 个方向各说 5 句（中英各半，用唤醒词开头）；再开电视（55、62 dB）、让机器人自己开着走、让孩子说；读方向输出，和量角器比', c1,
+                 '20° 内不低于 80%（安静），电视 55 dB 不低于 60%；机器人开着走时不低于 70%。电视 ≥62 dB 时方向不可靠，要靠“唤醒词之前的那一秒”做背景扣除和摄像头'))
+    if CAL:
+        c2a = '仿真（名义几何建的方向估计器，实际阵列的麦克风位置有偏差）：' + '；'.join(f'{tr(k)} 中位 {v.get("median_deg", "-")}°、20° 内 {p(v.get("within_20"))}' for k, v in CAL.items()) + '。**增益差对方向没有影响**（SRP-PHAT 只用相位），位置偏 2 mm 只多约 1°；增益差会影响波束和声纹'
+    else: c2a = '-'
+    rows.append(('阵列自己的误差', '用游标卡尺量每个麦克风的位置（到 0.5 mm）；对着同一个声源（白噪声，1 m）读各路的幅度差；把量到的位置写进 `MicArray`，再重测第 53 项', c2a, '麦克风位置偏差不超过 1 mm、增益差不超过 1 dB；超了先重新标定，不要靠算法补'))
+    if SSL:
+        tt = SSL.get('two_talkers', {}); c2 = '；'.join(f'{tr(k)}：两个都找到 {p(v.get("both_found"))}（第一个 {p(v.get("first"))}）' for k, v in tt.items()) + f'；6 麦（60° 以上）{p((SSL.get("two_talkers_6mic") or {}).get("both_found"))}'
+        c2 = '仿真：' + c2 + '。**4 麦阵列同时说话的两个人经常只找到一个**'
+    else: c2 = '-'
+    rows.append(('声源方向：两个人同时说话', '两个人一左一右同时说话（相隔 30°、60°、100°），数两个方向都找到几次', c2, '只做记录；同时说话时机器人只回应喊了唤醒词的那位，另一位靠摄像头和声纹'))
+    # the voiceprint
+    if VP:
+        def line(k): v = VP.get(k) or {}; return f'认对 {p(v.get("correct"))}、认成别人 {p(v.get("wrong_person"))}、拿不准 {p(v.get("unsure"))}，陌生人被当成家人 {p(v.get("guest_named_as_member"))}，EER {p(v.get("eer"))}'
+        q = [k for k in VP if k.startswith('quiet [beamformer MVDR')]; tv55 = [k for k in VP if k.startswith('television 55')]; tv62 = [k for k in VP if k.startswith('television 62')]; mv = [k for k in VP if k.startswith('robot moving')]; far = [k for k in VP if k.startswith('far')]
+        sib = VP.get('siblings') or {}; an = VP.get('anonymous_strangers') or {}; en = VP.get('enrolled with en only') or {}; zh = VP.get('enrolled with zh only') or {}; bo = VP.get('enrolled with both languages') or {}
+        c3 = (f'仿真（espeak-ng 合成的声音，**比真人更容易分开，只能说明流水线和声学变差时的走势**）：安静 {line(q[0]) if q else "-"}；电视 55 dB：{line(tv55[0]) if tv55 else "-"}；电视 62 dB：{line(tv62[0]) if tv62 else "-"}；机器人在开：{line(mv[0]) if mv else "-"}；'
+              f'3–4 m 远：{line(far[0]) if far else "-"}；只用英文登记 认对 {p(en.get("correct"))}、只用中文登记 {p(zh.get("correct"))}、两种语言都登记 {p(bo.get("correct"))}；声音很像的两个人（pitch 差 4、音长差 2%）互相认错 {p(sib.get("mixed_up"))}；陌生人 4 个人在内存里分成 {an.get("clusters_per_4_strangers", "-")} 簇（纯度 {p(an.get("purity"))}）')
+    else: c3 = '-'
+    rows.append(('声纹：认出是谁在说话', '家里每个人（监护人同意）说三句话登记；之后在客厅各处、开电视、机器人在开着走时各说 20 句中英文命令；访客各说 20 句；用 EER 和“一百个陌生人错认一个”的阈值各报一遍', c3,
+                 '陌生人被当成家人不高于 1%（硬指标，否则不能用声纹放权限——现在也不用，只当证据）；认对多少取决于真模型，先看仿真里的走势'))
+    # putting people and voices together
+    if AS_:
+        es = AS_.get('enrolled_speaker', {}); seen = AS_.get('enrolled_speaker_seen', {}); oov = AS_.get('enrolled_speaker_out_of_view', {}); gs = AS_.get('guest_speaker', {})
+        c4 = (f'仿真（{AS_.get("n_rooms", "-")} 个房间、每间 2–4 人、电视半数开着，音频都是真走流水线）：登记过的人说话——声音+方向+摄像头合起来认对 {p(es.get("fused_right_name"))}、认成别人 {p(es.get("fused_wrong_name"))}；'
+              f'只用摄像头 认对 {p(es.get("sight_only_right_name"))}、认成别人 {p(es.get("sight_only_wrong_name"))}；只用声纹 认对 {p(es.get("voice_only_right_name"))}、认成别人 {p(es.get("voice_only_wrong_name"))}。'
+              f'在摄像头里的 {seen.get("n", "-")} 次：合起来 {p(seen.get("fused_right_name"))}，给“主人”权限 {p(seen.get("owner_role"))}；在视野外的 {oov.get("n", "-")} 次：合起来 {p(oov.get("fused_right_name"))}、认成别人 {p(oov.get("fused_wrong_name"))}，**给“主人”权限 {p(oov.get("owner_role"))}**；'
+              f'访客（没登记）被叫成家人 {p(gs.get("named_as_enrolled"))}，拿到主人权限 {p(gs.get("owner_role"))}')
+    else: c4 = '-'
+    rows.append(('声音和人对上号', '客厅里 2–4 个人（登记过的和访客）、电视开着；每人说几句带唤醒词的话；对比机器人认出的人和真实说话的人，数认对、认成别人、给了什么权限', c4,
+                 '认成别人不高于 3%；视野外的人拿到“主人”权限 0 次（硬指标：只凭声音不给任何高于陌生人的权限，要“主人”必须摄像头里认得出、声纹不否定、方向上没有电视）；站在主人方向上的访客拿不到主人权限'))
+    if AS_:
+        tv = AS_.get('television_says_the_wake_word', {}); rp = AS_.get('television_replays_an_enrolled_adult', {}); tl = AS_.get('television_learning', {}); wt = AS_.get('with_television_on', {})
+        c5 = (f'仿真：电视自己说“Hey Xiaoshi / 小拾小拾……”：先学会电视位置的情况下 {p(tv.get("only_with_learned_device_rejected"))} 被当成设备不理（总体 {p(tv.get("rejected_as_device"))}，当成人接受 {p(tv.get("accepted_as_person_or_unseen"))}，只靠摄像头会接受 {p(tv.get("sight_only_accepted"))}）；'
+              f'电视放登记过的大人的**录音**：声纹被骗 {p(rp.get("voiceprint_fooled"))}，但拿到“主人”权限 {p(rp.get("got_owner_role"))}、拿到“大人”权限 {p(rp.get("got_adult_role"))}、被当成设备 {p(rp.get("rejected_as_device"))}；'
+              f'电视位置靠听声音学会：{p(tl.get("learned"))} 的房间学会了，位置误差中位 {tl.get("position_error_m_median", "-")} m；开着电视时真人被当成电视 {p(wt.get("person_wrongly_called_device"))}（没开电视时 {p(wt.get("person_wrongly_called_device_no_tv"))}）')
+    else: c5 = '-'
+    rows.append(('电视和录音：不是人说的话', '电视开着放新闻、广告（广告里喊机器人的名字）；放一段家里大人的录音（“忘掉所有人”）；机器人在屋里走几个位置之后再试', c5,
+                 '电视喊唤醒词不被当成命令；录音拿不到“主人”权限（硬指标）；电视旁边的真人说话照常能叫醒。防录音重放的真方案（活体检测、双因素）见路线图'))
+    # Chinese and English
+    if LG:
+        sw = {(r['set'], r['cer'], r['accent'], r['mode']): r for r in LG['sweep']}; g = lambda s_, c_, a_=0.0, m_='bilingual': sw.get((s_, c_, a_, m_), {})
+        u = lambda r: p(r.get('understood')) if r else '-'
+        nz = LG['noise']; st = nz['stop_words_detected']; wk = nz['wake_word_caught']; ch = nz['chatter_no_wake']
+        c6 = (f'仿真（模拟识别器 `SimASR`，**不是声学测试**）：中文 {u(g("zh", 0.04))}（错误率 4%）/{u(g("zh", 0.15))}（15%）；英文 **没调过的测试集** {u(g("en_test", 0.0))}（识别完全正确时）/{u(g("en_test", 0.04))}（4%）/{u(g("en_test", 0.15))}（15%）；'
+              f'英文带中国口音 {u(g("en_test", 0.04, 1.0))}（4%）；中英夹杂（测试集）{u(g("mix_test", 0.0))}（完全正确）/{u(g("mix_test", 0.04))}（4%）；只会中文的机器人听英文 {u(g("en_test", 0.04, 0.0, "zh_only"))}；做成了和说的不一样的移动命令 {sum(r["wrong_motion"] for r in LG["sweep"])} 次；'
+              f'每句理解约 {LG.get("ms_per_parse_en", "-")} ms（英文）/{LG.get("ms_per_parse_zh", "-")} ms（中文）；英文多轮对话 {sum(d["ok"] for d in LG["dialogues"])}/{len(LG["dialogues"])}')
+        c7 = (f'仿真：唤醒词叫醒（识别错误率 0/5/10/20%）：中文 {p(wk["zh @cer 0.0"])}/{p(wk["zh @cer 0.05"])}/{p(wk["zh @cer 0.1"])}/{p(wk["zh @cer 0.2"])}，英文 {p(wk["en @cer 0.0"])}/{p(wk["en @cer 0.05"])}/{p(wk["en @cer 0.1"])}/{p(wk["en @cer 0.2"])}，'
+              f'英文带口音 {p(wk["en accented @cer 0.0"])}/{p(wk["en accented @cer 0.05"])}/{p(wk["en accented @cer 0.1"])}/{p(wk["en accented @cer 0.2"])}；停止词（不喊唤醒词，2.5 m，错误率 4%/15%）：中文成人 {p(st["zh adult quiet"])}/{p(st["zh adult noisy"])}，英文成人 {p(st["en adult quiet"])}/{p(st["en adult noisy"])}，'
+              f'英文孩子（15%）{p(st["en child noisy"])}，英文带口音 {p(st["en accented adult quiet"])}/{p(st["en accented adult noisy"])}；家里闲聊没喊唤醒词：中文 {ch["zh"]["not_ignored"]}/{ch["zh"]["n"]}、英文 {ch["en"]["not_ignored"]}/{ch["en"]["n"]}、夹杂 {ch["mix"]["not_ignored"]}/{ch["mix"]["n"]} 次被当成命令；“bus stop”之类句子里夹着 stop 误停 {nz["stop_word_inside_a_sentence"]["false_stops"]}/{nz["stop_word_inside_a_sentence"]["n"]}')
+    else: c6 = c7 = '-'
+    rows.append(('中文、英文、夹杂：听懂', '照 `sim/voice_data_en.py` 的英文 206 句和夹杂 52 句（`voice_data.py` 的 74 句中文照旧）真人念：中国人说英文带口音、英语母语者、孩子；开着电视', c6, '听懂（含先确认一次）中文不低于 90%，英文不低于 80%；做了和说的不一样的移动命令 0 次'))
+    rows.append(('中文、英文：唤醒词和停止词', '在客厅各处用“小拾小拾”“你好小拾”“Hey Xiaoshi”“Xiaoshi Xiaoshi”各喊 20 次；各说“停”“别动”“stop”“freeze”“wait”20 次（成人、孩子、带口音）', c7,
+                 '唤醒词 3 m 内不低于 90%；停止词 3 m 内不低于 95%，**英文也是**（仿真里英文口音时远低于中文，这是要用真的关键词检测模型补的）；闲聊误唤醒每小时不超过 1 次'))
+    # profiles
+    if PF:
+        m0 = PF['misattribution 0 %']['day 14']; m2 = PF['misattribution 20 %']['day 14']; inv = PF['invariants']
+        c8 = (f'仿真（一个编出来的四口之家，14 天，每人每天 3–7 句中英文话；语种是对真句子跑 `detect_lang` 得到的）：语言偏好判对（大人）{p(m0["Tom"]["language_preference_right"])}/{p(m0["Emma"]["language_preference_right"])}；中英都说的孩子不硬定一种语言 {p(m0["Mia"]["language_preference_right"])}；'
+              f'常出现的时段和真实分布的余弦 {m0["Tom"]["hours_cosine"]}/{m0["Emma"]["hours_cosine"]}，常说的事前三名重合 {p(m0["Tom"]["top_intents_overlap"])}/{p(m0["Emma"]["top_intents_overlap"])}；声音-人物对错 20% 时 {p(m2["Tom"]["language_preference_right"])}/{p(m2["Emma"]["language_preference_right"])}、{m2["Tom"]["hours_cosine"]}/{m2["Emma"]["hours_cosine"]}；'
+              f'隐私检查 {sum(c["ok"] for c in inv)}/{len(inv)}：孩子的画像里没有时段/意图/物品、没有任何原话、能一键关习惯学习、能删、衰减')
+    else: c8 = '-'
+    rows.append(('人物画像：记什么、能不能看和删', '家里的大人说“你对我了解什么”，读卡片；让一个孩子说几天话，看孩子的卡片；说“忘掉我”，查文件；两个月不用，看习惯计数还剩多少', c8,
+                 '卡片说清存了什么、没存什么、怎么删；孩子只留名字、语言、认不认得；删了就没有；文件里没有任何原话、录音、图片；没有对年龄、性别、情绪、健康的推断'))
+    if D2:
+        ev = D2['events']; ch2 = D2['checks']
+        c9 = (f'仿真（MuJoCo 4×3 m 家，{D2["sim_s"]} 秒，一家三口加访客加电视）：整句通过 {D2["passed"]}/{D2["n_checks"]} 项——' + '；'.join(f'{"通过" if c["ok"] else "**没过**"}：{c["name"]}' for c in ch2) + f'；碰撞 {D2["collisions"]}、碰到人 {sum(D2["contacts"])} 次。这个场景是我写的，**不证明真家庭也这样**')
+    else: c9 = '-'
+    rows.append(('整机：声音那一侧连起来', '真人演一遍第二天的脚本：电视开着，爸爸在沙发上用中文下命令，妈妈在厨房用英文问，访客在门口喊，电视里喊机器人的名字，放爸爸的录音，孩子说一句，最后爸爸要看孩子的卡片', c9,
+                 '每一项和仿真一样；任何一项没过都先查，不要往下做'))
+    return [(str(start + i + 1), a, b, c, d) for i, (a, b, c, d) in enumerate(rows)]
+
+
 def modes_round():
     """Round 13 (self-righting, charging, remote control, navigation): strings for the page and rows for the validation table, from results/modes_*.json
     and results/righting.json. Missing files give '-' rather than an error, so the page builds while a bench is still running."""
@@ -532,6 +623,7 @@ def main():
           '| # | 测什么 | 怎么测 | 仿真值 | 通过 |', '|---|---|---|---|---|']
     md += [f'| {i + 1} | {a} | {b} | {c} | {d} |'.replace('<code>', '`').replace('</code>', '`').replace('<b>', '**').replace('</b>', '**') for i, (a, b, c, d) in enumerate(valid)]
     md += [f'| {n} | {a} | {b_} | {c} | {d} |' for n, a, b_, c, d in home_round_rows(len(valid))]          # round 14: only in the document, not on the published page
+    md += [f'| {n} | {a} | {b_} | {c} | {d} |' for n, a, b_, c, d in sound_round_rows(len(valid) + 12)]          # round 15: only in the document, not on the published page
     if SE:
         md += ['', '## 敏感度：每次只让一项变差（标准条件 10 局）', '', '| 变差的那一项 | 第十轮代码 | 第十一轮代码 | 抓取失败/尝试（最新） | 定位最大误差（最新） |', '|---|---|---|---|---|']
         md += sens_md

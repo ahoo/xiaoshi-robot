@@ -1,0 +1,93 @@
+{
+ "nominal array": {
+  "label": "nominal array",
+  "n": 100,
+  "found": 1.0,
+  "median_deg": 7.8,
+  "mean_deg": 11.9,
+  "p90_deg": 23.5,
+  "within_10": 0.62,
+  "within_20": 0.86,
+  "within_30": 0.96,
+  "no_background_median_deg": 6.0,
+  "no_background_within_20": 0.9
+ },
+ "capsule positions 0.5 mm off (1 sigma)": {
+  "label": "capsule positions 0.5 mm off (1 sigma)",
+  "n": 100,
+  "found": 1.0,
+  "median_deg": 8.1,
+  "mean_deg": 12.1,
+  "p90_deg": 23.5,
+  "within_10": 0.62,
+  "within_20": 0.85,
+  "within_30": 0.94,
+  "no_background_median_deg": 6.1,
+  "no_background_within_20": 0.9
+ },
+ "capsule positions 1 mm off": {
+  "label": "capsule positions 1 mm off",
+  "n": 100,
+  "found": 1.0,
+  "median_deg": 8.3,
+  "mean_deg": 12.2,
+  "p90_deg": 23.5,
+  "within_10": 0.64,
+  "within_20": 0.84,
+  "within_30": 0.94,
+  "no_background_median_deg": 6.8,
+  "no_background_within_20": 0.9
+ },
+ "capsule positions 2 mm off": {
+  "label": "capsule positions 2 mm off",
+  "n": 100,
+  "found": 1.0,
+  "median_deg": 9.0,
+  "mean_deg": 13.7,
+  "p90_deg": 24.2,
+  "within_10": 0.57,
+  "within_20": 0.81,
+  "within_30": 0.93,
+  "no_background_median_deg": 7.4,
+  "no_background_within_20": 0.9
+ },
+ "capsule gains 1 dB apart (1 sigma)": {
+  "label": "capsule gains 1 dB apart (1 sigma)",
+  "n": 100,
+  "found": 1.0,
+  "median_deg": 7.8,
+  "mean_deg": 11.9,
+  "p90_deg": 23.5,
+  "within_10": 0.62,
+  "within_20": 0.86,
+  "within_30": 0.96,
+  "no_background_median_deg": 5.9,
+  "no_background_within_20": 0.91
+ },
+ "capsule gains 3 dB apart": {
+  "label": "capsule gains 3 dB apart",
+  "n": 100,
+  "found": 1.0,
+  "median_deg": 7.8,
+  "mean_deg": 11.9,
+  "p90_deg": 23.7,
+  "within_10": 0.62,
+  "within_20": 0.86,
+  "within_30": 0.96,
+  "no_background_median_deg": 5.9,
+  "no_background_within_20": 0.9
+ },
+ "positions 1 mm and gains 2 dB": {
+  "label": "positions 1 mm and gains 2 dB",
+  "n": 100,
+  "found": 1.0,
+  "median_deg": 8.4,
+  "mean_deg": 12.2,
+  "p90_deg": 23.6,
+  "within_10": 0.64,
+  "within_20": 0.84,
+  "within_30": 0.94,
+  "no_background_median_deg": 6.6,
+  "no_background_within_20": 0.9
+ }
+}

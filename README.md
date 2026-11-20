@@ -6,6 +6,8 @@
 
 在家里还能做的（第十四轮，**只在仿真里做了我们自己写的那部分，认人和语音识别在仿真里是替身/模拟**）：扫描家里建三维地图并导出，记住东西放在哪、换了场景后认出挪过的，靠头部相机分大人和小孩并在人靠近时放慢和停下，听中文命令（唤醒词、停止词、谁能让它做什么）。孩子的数据怎么处理：[`docs/privacy.md`](docs/privacy.md)。三维查看器：[`results/home_scan_seed1.html`](results/home_scan_seed1.html)（下载后用浏览器打开）。
 
+第十五轮加了**声音**（同样只在仿真里做了我们自己写的那部分）：用麦克风阵列听声音从哪个方向来（4 麦中位误差约 8°）、用声纹（音色）认出是谁在说话、把方向、声纹和摄像头里的人对起来（电视的声音和录音不当成人、只凭声音拿不到“主人”权限）、**中文、英文和中英夹杂都能听懂、用提问的语言回答**，并给登记过的人建一张本机的、能看能删的画像（语言偏好、常在的时段、常叫它做的事；不存原话，孩子只存最少的）。仿真里没有声音，我们用自己写的房间声学和 espeak-ng 合成的中英文说话声把声音渲染出来再走真算法，**声学和声音都是仿真，不是实测**。
+
 - 当前状态和已知限制：[`docs/status.md`](docs/status.md)；下一步计划：[`docs/roadmap.md`](docs/roadmap.md)
 - 试验结果和实物验收表：[`docs/validation.md`](docs/validation.md)
 - 要买的东西：[`docs/bom.md`](docs/bom.md)
@@ -37,7 +39,15 @@
 | `sim/home.py` | `Home`：把三维地图和物件记录挂到前置相机的每一帧上（`Agent.depth_hook`，不挂的时候旧路径不变） |
 | `sim/inventory.py` | 物件记录：颜色直方图 + 尺寸 → 种类猜测；跨次会话再识别（挪过位置的认得出是同一件）；「不见了」「还没核实」；按名字问「在哪」；命名；存本机 JSON，不存图片 |
 | `sim/people.py` | 人和孩子：仿真里的人（五种身高、走、站、坐、追着机器人跑）；头部深度相机（立杆）；深度图检测、跟踪、身高 → 大人/小孩/不确定；激光雷达上会动的东西（相机看不到的方向）；登记簿（要大人同意、可删、只存特征向量）；安全层 `Guard`（放慢、停下、手臂不动）；**认人那一层是替身，见 `docs/privacy.md`** |
-| `sim/voice.py`、`sim/voice_data.py` | 中文语音：唤醒词和停止词、模拟的语音识别（同音字、声调、平翘舌、前后鼻音、掉字、孩子和远处更差）、拼音模糊匹配的理解、多轮对话、谁能让它做什么、执行器、可选大模型的接口；`voice_data.py` 是带标注的说法 |
+| `sim/voice.py`、`sim/voice_data.py`、`sim/voice_data_en.py` | 中文和英文语音（第十五轮起两种语言和夹杂）：唤醒词和停止词、模拟的语音识别（中文：同音字、声调、平翘舌、前后鼻音、掉字；英文：同音词、差一个音素的词、中国人说英文的口音、掉词；夹杂时另一种语言的词会被写成对方的字）、拼音/音素模糊匹配的理解、多轮对话、谁能让它做什么、执行器、可选大模型的接口、声纹登记；`voice_data.py` 是带标注的中文说法，`voice_data_en.py` 是英文和夹杂的（开发集、第一次看过的保留集、没调过的测试集） |
+| `sim/lang.py` | 双语工具：语种判断、英文音素（CMU 词典）和音素距离匹配、英文唤醒词/停止词/意图/物品/地点/是否、句型（动词+东西）、拼音写的名字（`xiaoshi`）、英文识别错误模型 |
+| `sim/acoustics.py` | 声学仿真：长方体房间（镜像声源法 3 阶 + 扩散尾巴）、2/4/6 麦阵列、espeak-ng 合成的中英文说话声、电视、机器人自己的风扇和轮子声、背景和麦克风自噪声 |
+| `sim/doa.py` | 声源方向：STFT + SRP-PHAT，唤醒词前一秒做背景协方差扣除，延迟求和和 MVDR 波束形成；**文件名不叫 ssl.py，免得盖住标准库** |
+| `sim/speaker.py` | 声纹：MFCC + 音高统计 → 在背景声音上训练的 LDA 投影；登记（要同意、只存向量）、识别（认出/不认识/拿不准）、每人分数归一化、陌生人匿名编号（只在内存、一天清掉）、忘掉 |
+| `sim/assoc.py` | 声音和人对上号：方向 + 声纹 + 摄像头 → 谁说的（看得见的人 / 视野外的人 / 设备）；用听到的声音学会电视在哪；**只凭声音不给任何高于陌生人的权限，“主人”要摄像头里认得出的大人在声音的方向上、声纹不否定、方向上没有已知的电视/手机** |
+| `sim/soundfront.py` | 把仿真里的一句话渲染成麦克风信号，走方向、波束、声纹、关联，交给 `VoiceSystem` |
+| `sim/profiles.py` | 人物画像：只存计数（语言、时段、房间、常叫它做的事、自己的东西），孩子最少，能看（中英文卡片）、能删、衰减 |
+| `sim/sound_lab.py`、`sim/test_sound.py`、`sim/test_lang.py`、`sim/test_assoc.py`、`sim/test_day2.py` | 第十五轮台架：声源方向、阵列误差、声纹；中英文听懂；声音和人对上号、画像；整机的第二天 → `results/sound_*.json`、`results/lang.json` |
 | `sim/test_home.py` | 第十四轮台架：`scan`、`inventory`、`people_static`、`safety`、`identity`、`voice`、`day`、`export` → `results/home_*.json` |
 | `sim/test_modes.py` | 模式、充电座、遥控、导航、摔倒的台架 → `results/modes_*.json` |
 | `sim/test_righting.py` | 起身台架：每种躺姿的动作在新场景里的成功率，以及 28 次推倒 → `results/righting.json` |
@@ -55,7 +65,8 @@
 ## 运行
 
 ```bash
-pip install mujoco numpy scipy imageio imageio-ffmpeg pillow
+pip install mujoco numpy scipy imageio imageio-ffmpeg pillow pypinyin cmudict
+sudo apt-get install espeak-ng      # 第十五轮：合成说话声，只有声音台架用
 cd sim
 python test_base.py          # 底盘台架，几十秒
 python test_grasp.py 10      # 抓取台架，每种物体 10 次 × 两种夹爪摩擦
@@ -77,6 +88,14 @@ python test_home.py identity    # 登记簿和认人的阈值（替身识别器�
 python test_home.py safety 1 2  # 人和机器人干活同场：成年人走过、孩子冲过来、幼儿在筐边、一家三口；安全层开/关 -> results/home_people_safety.json
 python test_home.py voice       # 中文命令：加噪声扫描、没喊唤醒词的闲聊、停止词、权限表、多轮对话、大模型接口 -> results/home_voice.json
 python test_home.py day 3       # 一整天连起来：语音、扫描、登记孩子、孩子冲过来、停下和继续、忘掉 -> results/home_day.json
+python test_sound.py ssl 100      # 声源方向：2/4/6 麦、混响、电视、机器人自己在开、孩子、两个人同时说话 -> results/sound_ssl.json
+python test_sound.py ssl_calib 100  # 阵列自己的误差：麦克风位置偏、增益差 -> results/sound_ssl_calib.json
+python test_sound.py train_voice    # 训练声纹的投影（60 个背景声音 + 20 个校准）-> results/sound_voicemodel.npz
+python test_sound.py voiceprint     # 声纹：认对、认错、陌生人、电视、机器人在开、远处、两种语言、声音很像的两个人 -> results/sound_voiceprint.json
+python test_lang.py lang            # 中文、英文、夹杂：听懂（开发集/保留集/测试集）、口音、只会中文的机器人、唤醒词和停止词、闲聊、多轮对话 -> results/lang.json
+python test_assoc.py assoc 200      # 声音和人对上号：200 个房间、电视、录音重放、访客 -> results/sound_assoc.json
+python test_assoc.py profile        # 人物画像：一个编出来的四口之家 14 天，隐私检查 -> results/sound_profile.json
+MUJOCO_GL=egl python test_day2.py 5 # 整机的第二天：电视、厨房里的声音、访客、录音、孩子 -> results/sound_day2.json
 python test_modes.py dock 10  # 充电座：10 个随机起点倒车对接（PROCS=3 用 3 个进程），-> results/modes_dock.json
 python test_modes.py fall 16  # 摔倒：16 次随机位置、方向、力度的推倒，看能不能起来、起来后位置对不对
 python test_modes.py nav 6    # 自主导航：6 个随机布局各 6 个可达目标和 2 个到不了的目标
@@ -112,6 +131,7 @@ python ../web/build_page.py  # 用 results/ 里的数字重新生成页面和 do
 - **遥控和导航**：网络延迟、丢包没有建模；导航只在 4×3 m 单房间里测过，没有会动的障碍物。
 - **三维地图和物件记录**（第十四轮）：地图只记前置相机（离地 12 cm、向下 25°）看得到的面，所以家具只有下面 0.3–0.6 m 是实的，高处和顶面靠盒子估；靠墙那一面的深度看不到；盒子比真的大 4–14 cm（体素和噪声）。只在 4×3 m 单房间里测过，多房间没测。物件种类靠颜色直方图和尺寸，仿真里八种东西颜色各不相同，**这是最好情况**，黑色和反光的东西没有颜色，认不出种类；两个一模一样的东西分不开。
 - **人和孩子**（第十四轮）：仿真里的人是五种身高的刚体人形（躯干、头、两腿、两臂），按脚本走、站、坐、追着机器人跑，走路会绕开机器人（脚本里写的规则）；真的孩子不会这么听话。头部相机和立杆是新加的硬件，**立杆的重量和重心仿真里没算**。大人/小孩只看身高（和坐着时的肩宽）：约 11 岁以下算小孩，12 岁的算大人；坐着的大人会被分成小孩或不确定（保守）。**认出是哪个孩子那一层是替身**（给每个人画一个固定的特征向量、按距离和朝向加噪声），只能测登记簿、阈值、同意和删除这些我们自己写的逻辑，不能说明真的人脸模型认得准不准。
+- **声音**（第十五轮）：**仿真里没有声音，我们自己写了房间声学（镜像声源法，长方体，家具不挡声）、麦克风阵列、espeak-ng 合成的说话声（几种合成器音色 + 音高 + 声道长度，比真人更容易分开）、电视和机器人自己的噪声，再把渲染出来的麦克风信号交给真的方向、波束、声纹算法。** 所有声压级（说话 62 dB、电视 55–70 dB、风扇 38 dB）都是估的；声纹是经典特征 + LDA，不是神经网络；识别器和英文口音是模拟的。真阵列、真声音、真电视、真孩子，都没测。
 - **语音**（第十四轮）：仿真里没有声音，语音识别是模拟的（同音字、声调、平翘舌、前后鼻音、掉字，孩子和远处更差），后面的理解、对话、权限、执行是真代码。真麦克风阵列、客厅里的电视声、六岁孩子的口音、TTS 的声音、真大模型怎么回答，都没测。
 
 ## 参考
