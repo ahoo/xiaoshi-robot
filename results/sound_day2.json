@@ -1,7 +1,7 @@
 {
  "seed": 5,
  "sim_s": 167,
- "wall_s": 334,
+ "wall_s": 276,
  "checks": [
   {
    "name": "the television is found from its sound alone",
@@ -1465,11 +1465,10 @@
   },
   {
    "seed": 7,
-   "passed": 11,
+   "passed": 12,
    "n_checks": 14,
    "failed": [
     "the television is found from its sound alone ([], (3.7, 0.3), 5)",
-    "a stranger out of view cannot send the robot to charge ('person', 'adult', 'charge', \"OK, I'll go and charge.\")",
     "Tom (owner, in view) starts the tidy-up job in English ('IDLE', 'confirm', 'Do you want me to tidy up the toys?')"
    ],
    "collisions": 0,

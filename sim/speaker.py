@@ -136,11 +136,15 @@ class Voiceprints:
 
     def forget(self, name, t=0.0):
         ok = self.people.pop(name, None) is not None
-        if ok: self.log.append((round(t, 1), 'forget', name)); self.save()
+        if ok:
+            self.log = [e for e in self.log if name not in e[2:]]                                  # the name goes from the log as well as from the records
+            for p in self.people.values():
+                if p.get('consent_by') == name: p['consent_by'] = '(forgotten)'
+            self.log.append((round(t, 1), 'forget', None)); self.save()
         return ok
 
     def forget_all(self, t=0.0):
-        n = len(self.people); self.people = {}; self.anon = []; self.log.append((round(t, 1), 'forget_all', n)); self.save(); return n
+        n = len(self.people); self.people = {}; self.anon = []; self.log = [e for e in self.log if not any(isinstance(v, str) for v in e[2:])]; self.log.append((round(t, 1), 'forget_all', n)); self.save(); return n
 
     def save(self):
         if self.path: json.dump(dict(people=self.people, log=self.log), open(self.path, 'w'), ensure_ascii=False)
@@ -169,7 +173,7 @@ class Voiceprints:
         sc = sorted(((z, n) for n, z in self.scores(emb).items()), reverse=True); z1, n1 = sc[0] if sc else (-9.0, None); z2 = sc[1][0] if len(sc) > 1 else -9.0; ev = self.evidence(emb)
         if n1 is not None and z1 >= self.Z_ACCEPT and z1 - z2 >= self.Z_MARGIN: return dict(status='known', name=n1, z=z1, z2=z2, anon=None, llr=ev)
         if n1 is not None and z1 >= self.Z_ACCEPT and z1 - z2 < self.Z_MARGIN: return dict(status='unsure', name=None, z=z1, z2=z2, anon=None, why='two voices too close', llr=ev)
-        if n1 is not None and z1 >= self.Z_UNKNOWN: return dict(status='unsure', name=None, z=z1, z2=z2, anon=self._anon(emb), why='between known and unknown', llr=ev)
+        if n1 is not None and z1 >= self.Z_UNKNOWN: return dict(status='unsure', name=None, z=z1, z2=z2, anon=None, why='between known and unknown', llr=ev)      # may well be a family member: not a stranger to be clustered
         return dict(status='unknown', name=None, z=z1, z2=z2, anon=self._anon(emb), llr=ev)
 
     def _anon(self, emb):

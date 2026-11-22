@@ -40,6 +40,28 @@
    "child": 0,
    "unknown": 24,
    "device": 0
+  },
+  "by_view": {
+   "in_view": {
+    "n": 8,
+    "roles": {
+     "owner": 0,
+     "adult": 8,
+     "child": 0,
+     "unknown": 0,
+     "device": 0
+    }
+   },
+   "out_of_view": {
+    "n": 24,
+    "roles": {
+     "owner": 0,
+     "adult": 0,
+     "child": 0,
+     "unknown": 24,
+     "device": 0
+    }
+   }
   }
  },
  "with_television_on": {
@@ -48,6 +70,23 @@
   "sight_only_right_name": 0.173,
   "person_wrongly_called_device": 0.128,
   "person_wrongly_called_device_no_tv": 0.0
+ },
+ "out_of_view_speakers_attributed_to_a_visible_person": {
+  "n_out_of_view": 301,
+  "attributed": 8,
+  "rate": 0.027,
+  "roles": {
+   "owner": 2,
+   "adult": 0,
+   "child": 1,
+   "unknown": 5
+  },
+  "posterior_quantiles": [
+   0.697,
+   0.736,
+   0.915
+  ],
+  "adult_role_posteriors": []
  },
  "direction_error_deg_median": 5.5,
  "television_says_the_wake_word": {
@@ -71,5 +110,5 @@
   "learned": 0.93,
   "position_error_m_median": 0.19
  },
- "seconds": 297
+ "seconds": 339
 }

@@ -165,6 +165,12 @@ def bench_assoc(procs=3, n=200, seed0=10000):
     out['guest_speaker'] = dict(n=len(G), named_as_enrolled=rate([r['fused_name'] is not None for r in G]), owner_role=rate([r['fused_role'] == 'owner' for r in G]), role_counts={k: sum(1 for r in G if r['fused_role'] == k) for k in ('owner', 'adult', 'child', 'unknown', 'device')})
     out['with_television_on'] = dict(n=len([r for r in E if r['tv']]), fused_right_name=acc([r for r in E if r['tv']], 'fused_name'), sight_only_right_name=acc([r for r in E if r['tv']], 'vision_name'),
                                     person_wrongly_called_device=rate([r['fused_source'] == 'device' for r in P if r['tv']]), person_wrongly_called_device_no_tv=rate([r['fused_source'] == 'device' for r in P if not r['tv']]))
+    # who gets the grown-up's rights by mistake: out-of-view speakers whose voice was attributed to a person in view (and to an unnamed one), by the posterior the associator had
+    OV = [r for r in P if not r['seen']]; att = [r for r in OV if r['fused_source'] == 'person']
+    out['out_of_view_speakers_attributed_to_a_visible_person'] = dict(n_out_of_view=len(OV), attributed=len(att), rate=rate([r['fused_source'] == 'person' for r in OV]), roles={k: sum(1 for r in att if r['fused_role'] == k) for k in ('owner', 'adult', 'child', 'unknown')},
+                                                                      posterior_quantiles=[round(float(np.quantile([r['fused_post'] for r in att], q)), 3) for q in (0.1, 0.5, 0.9)] if att else None,
+                                                                      adult_role_posteriors=sorted(round(r['fused_post'], 3) for r in att if r['fused_role'] == 'adult'))
+    out['guest_speaker']['by_view'] = {lab: dict(n=len(rs), roles={k: sum(1 for r in rs if r['fused_role'] == k) for k in ('owner', 'adult', 'child', 'unknown', 'device')}) for lab, rs in (('in_view', [r for r in G if r['seen']]), ('out_of_view', [r for r in G if not r['seen']]))}
     out['direction_error_deg_median'] = round(float(np.median([r['doa_err'] for r in P])), 1)
     T = [r for r in rows if r['kind'] == 'tv']; R = [r for r in rows if r['kind'] == 'replay']
     out['television_says_the_wake_word'] = dict(n=len(T), learned_the_television_first=rate([r['learned'] for r in T]), rejected_as_device=rate([r['fused_source'] == 'device' for r in T]), accepted_as_person_or_unseen=rate([r['fused_source'] in ('person', 'unseen') for r in T]),
@@ -175,7 +181,7 @@ def bench_assoc(procs=3, n=200, seed0=10000):
     tvs = [s for s in res if s['learned'] is not None]
     out['television_learning'] = dict(n=len(tvs), learned=rate([s['learned'] for s in tvs]), position_error_m_median=round(float(np.median([s['tv_err'] for s in tvs if s['tv_err'] is not None])), 2) if any(s['tv_err'] is not None for s in tvs) else None)
     print(json.dumps(out, ensure_ascii=False, indent=1)); out['seconds'] = round(time.time() - t0)
-    os.makedirs(RES, exist_ok=True); json.dump(out, open(os.path.join(RES, 'sound_assoc.json'), 'w'), ensure_ascii=False, indent=1, default=float)
+    os.makedirs(RES, exist_ok=True); json.dump(out, open(os.path.join(RES, os.environ.get('ASSOC_OUT', 'sound_assoc.json')), 'w'), ensure_ascii=False, indent=1, default=float)
 
 
 # --------------------------------------------------------------------------------------------- profiles over a fortnight
@@ -253,6 +259,19 @@ def bench_profile(n=40):
     c = pr.card('Mia', 'en'); chk('a child card says what is kept and how to delete', 'forget Mia' in c and 'only the name' in c, c[:120])
     pr.forget('Emma'); chk('forgetting a person deletes the whole profile', pr.export('Emma') is None and "don't keep" in pr.card('Emma', 'en'), pr.card('Emma', 'en')[:80])
     pr.forget_all(); chk('forgetting everyone empties the store', not pr.people, len(pr.people))
+    import tempfile
+    fn = tempfile.mktemp(suffix='.json'); p1 = PR.Profiles(fn); p1.enrol('Tom', 'adult', 'owner', 1.7e9); p1.enrol('Mia', 'child', 'Tom', 1.7e9); p1.observe_presence('Tom', 1.7e9 + 3600 * 19, 'kitchen'); p1.decay(1.7e9 + 100)
+    h0 = sum(p1.people['Tom']['hours']); p2 = PR.Profiles(fn); p2.decay(1.7e9 + 100 + 86400); chk('a restart does not fade the habits away (real clock, one day later: 0.977 of what there was)', h0 == 1.0 and abs(sum(p2.people['Tom']['hours']) - 0.977) < 0.01, (h0, sum(p2.people['Tom']['hours'])))
+    p2.decay(1.7e9 + 200 * 86400); chk('hours, rooms and intents of somebody not heard of for 120 days are cleared (the languages stay)', sum(p2.people['Tom']['hours']) == 0 and not p2.people['Tom']['zones'] and 'langs' in p2.people['Tom'], (sum(p2.people['Tom']['hours']), p2.people['Tom']['zones']))
+    p3 = PR.Profiles(tz_offset_h=8.0); p3.enrol('Tom', 'adult', 'owner', 0.0); p3.observe_presence('Tom', 3600 * 11, 'kitchen'); chk('hours are the household\'s local hours (UTC+8: 11:00 UTC is 19:00)', p3.people['Tom']['hours'][19] == 1.0, p3.people['Tom']['hours'][19])
+    import speaker as SP
+    rng_ = np.random.default_rng(0); mdl = SP.VoiceModel(); mdl.cohort = rng_.normal(size=(50, 6)); mdl.cohort /= np.linalg.norm(mdl.cohort, axis=1, keepdims=True); e6 = np.ones(6) / math.sqrt(6)
+    fv = tempfile.mktemp(suffix='.json'); vp = SP.Voiceprints(mdl, fv); vp.enrol('Tom', 'adult', [e6] * 3, 'owner'); vp.enrol('Mia', 'child', [e6] * 3, 'Tom'); vp.forget('Tom')
+    chk('voiceprints: after "forget Tom" the file does not contain Tom (not in the log, not as the consenting adult)', 'Tom' not in open(fv).read(), json.load(open(fv)).get('log'))
+    fp = tempfile.mktemp(suffix='.json'); p4 = PR.Profiles(fp); p4.enrol('Tom', 'adult', 'owner', 0.0); p4.enrol('Mia', 'child', 'Tom', 0.0); p4.forget('Tom'); chk('profiles: after "forget Tom" the file does not contain Tom', 'Tom' not in open(fp).read(), json.load(open(fp)).get('log'))
+    import people as PPL
+    fr = tempfile.mktemp(suffix='.json'); rg = PPL.Registry(fr); smp = [np.ones(24) / math.sqrt(24)] * 5; rg.enrol('Tom', 'adult', smp, 'owner'); rg.enrol('Mia', 'child', smp, 'Tom'); rg.forget('Tom'); chk('face registry: after "forget Tom" the file does not contain Tom', 'Tom' not in open(fr).read(), json.load(open(fr)).get('log'))
+    rg.forget_all(); chk('face registry: after "forget everyone" no name is left in the file', not any(n in open(fr).read() for n in ('Tom', 'Mia')), None)
     _, pr2 = household(9, days=2); before = sum(pr2.people['Tom']['hours']); pr2.decay(2 * 86400 + 60 * 86400); after = sum(pr2.people['Tom']['hours']); chk('habit counts fade (half-life 30 days: 60 days quarter them)', 0.2 < after / before < 0.3, round(after / before, 3))
     res['invariants'] = checks
     for c in checks: print('  ', 'PASS' if c['ok'] else 'FAIL', c['name'], '' if c['ok'] else c['detail'])

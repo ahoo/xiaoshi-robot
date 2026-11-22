@@ -509,11 +509,15 @@ class Registry:
 
     def forget(self, name, t=0.0):
         ok = self.people.pop(name, None) is not None
-        if ok: self.log.append((round(t, 1), 'forget', name)); self.save()
+        if ok:
+            self.log = [e for e in self.log if name not in e[2:]]                                  # the name goes from the log as well as from the records
+            for p in self.people.values():
+                if p.get('consent_by') == name: p['consent_by'] = '(forgotten)'
+            self.log.append((round(t, 1), 'forget', None)); self.save()
         return ok
 
     def forget_all(self, t=0.0):
-        n = len(self.people); self.people = {}; self.log.append((round(t, 1), 'forget_all', n)); self.save(); return n
+        n = len(self.people); self.people = {}; self.log = [e for e in self.log if not any(isinstance(v, str) for v in e[2:])]; self.log.append((round(t, 1), 'forget_all', n)); self.save(); return n
 
     def identify(self, samples):
         """samples: the looks of one track. -> (name or None, best score, runner-up score). Unknown unless clearly one enrolled person."""

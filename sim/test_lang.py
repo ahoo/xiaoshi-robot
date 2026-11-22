@@ -140,6 +140,35 @@ def dialogues():
     vs = new(llm=llm); a = vs.hear('Hey Xiaoshi, this room is so messy', role='owner'); b = vs.hear('yes', role='owner')
     chk('English: a language-model proposal still has to be confirmed', a.get('action') == 'confirm' and a.get('via') == 'llm' and b.get('via') == 'confirmed' and vs.actions[-1][0] == 'tidy', (a.get('action'), a.get('reply'), b.get('via')))
     vs = new(llm=llm); a = vs.hear('Hey Xiaoshi, tell me a story', role='child'); chk('English: free text is not spoken to a child', a.get('action') == 'reask', a.get('action'))
+    # a voiceprint belongs to the person who consented (or to the one the grown-up named), not to whoever speaks next; strangers' voices go at midnight; profiles fade
+    import numpy as np
+    import profiles as PR
+    import speaker as SP
+    rng = np.random.default_rng(0); mdl = SP.VoiceModel(); mdl.cohort = rng.normal(size=(100, 8)); mdl.cohort /= np.linalg.norm(mdl.cohort, axis=1, keepdims=True)
+    unit = lambda v: v / np.linalg.norm(v); tom = unit(rng.normal(size=8)); other = unit(rng.normal(size=8)); near = lambda v: unit(v + 0.1 * rng.normal(size=8))
+    def mk():
+        v = new(); v.voiceprints = SP.Voiceprints(mdl); v.profiles = PR.Profiles(); return v
+    def say(v, text, name='Tom', source='person', emb=None, loc=(1.0, 1.0), role='owner'):
+        v.advance(2.0); return v.hear(text, ident=dict(source=source, name=name, role=role, loc=loc, emb=emb, speech_s=2.0))
+    vs = mk(); say(vs, 'Hey Xiaoshi, remember my voice'); say(vs, 'I agree'); a = say(vs, 'a long sentence from somebody who is not tom at all', name=None, emb=other, loc=(3.0, 2.0), role='unknown')
+    for i in range(3): b = say(vs, f'sentence {i} from tom himself, long enough to count', emb=near(tom))
+    chk('voice enrolment: a stranger speaking first is ignored and the print is Tom\'s', 'another voice ignored' in str(a.get('action')) and 'Tom' in vs.voiceprints.people and float(np.array(vs.voiceprints.people['Tom']['emb']) @ tom) > 0.9, (a.get('action'), b.get('action')))
+    vs = mk(); say(vs, 'Hey Xiaoshi, remember my voice'); say(vs, 'I agree'); a = say(vs, 'the television talking away to nobody in particular', name=None, source='device', emb=other, role='device')
+    chk('voice enrolment: the television is not enrolled', 'device' in str(a.get('action')) and not vs.voiceprints.people, a.get('action'))
+    vs = mk(); say(vs, "Hey Xiaoshi, remember Mia's voice, her name is Mia"); say(vs, 'I agree'); a = say(vs, 'Tom keeps talking while Mia should be speaking here', emb=near(tom))
+    for i in range(3): b = say(vs, f'sentence {i} said by mia herself for the voiceprint', name='Mia', emb=near(other), loc=(2.0, 1.0), role='child')
+    chk('voice enrolment for somebody else: the grown-up\'s own voice is not taken, and the role stored is the lower one', 'another voice ignored' in str(a.get('action')) and list(vs.voiceprints.people) == ['Mia'] and vs.voiceprints.people['Mia']['role'] == 'child', (a.get('action'), list(vs.voiceprints.people)))
+    vs = mk(); vs.voiceprints.anon.append(dict(id='voice#1', c=tom, n=1)); vs.profiles.enrol('Tom', 'adult', 'owner', 0.0); vs.profiles.observe_presence('Tom', 3600 * 19, 'kitchen')
+    vs.advance(86400 * 0.9); vs.tick(); before = len(vs.voiceprints.anon); vs.advance(86400 * 0.2); vs.tick()
+    chk('strangers\' voices are forgotten when the day changes, the profiles fade', before == 1 and not vs.voiceprints.anon and sum(vs.profiles.people['Tom']['hours']) < 1.0, (before, len(vs.voiceprints.anon)))
+    class Tk:                                                  # a person in view whom the robot cannot name
+        def __init__(self, i, who=None): self.id, self.who = i, who
+    def sayt(v, text, track, role='adult', name=None):
+        v.advance(2.0); return v.hear(text, ident=dict(source='person', name=name, role=role, loc=None, track=track))
+    vs = new(); a = sayt(vs, 'Hey Xiaoshi, go and charge', Tk(7)); b = sayt(vs, 'yes', Tk(9)); c = sayt(vs, 'yes', Tk(7))
+    chk('a motion command on direction alone (an unnamed grown-up in view) is asked back, and only that person can say yes', a.get('action') == 'confirm' and not str(b.get('action')).startswith('charge') and c.get('via') == 'confirmed' and vs.actions[-1][0] == 'charge', (a.get('action'), b.get('action'), c.get('action')))
+    vs = new(); a = sayt(vs, 'Hey Xiaoshi, go and charge', Tk(3, who='Emma'), name='Emma'); vs = new(); b = sayt(vs, 'Hey Xiaoshi, tidy up the toys', Tk(7))
+    chk('a named grown-up is not asked back, and neither is what a child may ask for', a.get('action') == 'charge' and b.get('action') == 'tidy', (a.get('action'), b.get('action')))
     return res
 
 

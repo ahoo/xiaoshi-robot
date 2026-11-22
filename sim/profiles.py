@@ -29,14 +29,15 @@ INTENT_ZH = dict(where_is='问东西在哪', tidy='让收拾玩具', fetch_item=
 TRACKED_INTENTS = tuple(INTENT_EN)
 
 
-def _hour(t): return int((t % DAY) // 3600)
+def _hour(t, tz_h=0.0): return int(((t + 3600.0 * tz_h) % DAY) // 3600)                       # the hour of the day in the household's time zone (the simulator's clock starts at local midnight)
 
 
 class Profiles:
-    def __init__(self, path=None, half_life_days=HALF_LIFE_DAYS):
-        self.path = path; self.half = half_life_days; self.people = {}; self.log = []; self._t_decay = 0.0
+    def __init__(self, path=None, half_life_days=HALF_LIFE_DAYS, tz_offset_h=0.0):
+        """tz_offset_h: hours the household's clock is ahead of the clock that times are given in (UTC for a real clock; 0 in the simulator)."""
+        self.path = path; self.half = half_life_days; self.people = {}; self.log = []; self._t_decay = None; self.tz = tz_offset_h
         if path and os.path.exists(path):
-            try: self.people = json.load(open(path))['people']
+            try: d = json.load(open(path)); self.people = d['people']; self._t_decay = d.get('t_decay')                    # where the fading had got to: a restart must not fade everything again from the epoch
             except (OSError, ValueError, KeyError): pass
 
     # ---------------------------------------------------------------- creating and deleting (the consent record is in the registries; here only that it exists)
@@ -53,11 +54,15 @@ class Profiles:
 
     def forget(self, name, t=0.0):
         ok = self.people.pop(name, None) is not None
-        if ok: self.log.append((round(t, 1), 'forget', name)); self.save()
+        if ok:
+            self.log = [e for e in self.log if name not in e[2:]]                                  # the name goes from the log as well as from the records
+            for p in self.people.values():
+                if p.get('consent_by') == name: p['consent_by'] = '(forgotten)'
+            self.log.append((round(t, 1), 'forget', None)); self.save()
         return ok
 
     def forget_all(self, t=0.0):
-        n = len(self.people); self.people = {}; self.log.append((round(t, 1), 'forget_all', n)); self.save(); return n
+        n = len(self.people); self.people = {}; self.log = [e for e in self.log if not any(isinstance(v, str) for v in e[2:])]; self.log.append((round(t, 1), 'forget_all', n)); self.save(); return n
 
     def set_habits(self, name, on, t=0.0):
         p = self.people.get(name)
@@ -74,7 +79,7 @@ class Profiles:
         p['lang_set'] = lang; self.save(); return True
 
     def save(self):
-        if self.path: json.dump(dict(people=self.people, log=self.log), open(self.path, 'w'), ensure_ascii=False)
+        if self.path: json.dump(dict(people=self.people, log=self.log, t_decay=self._t_decay), open(self.path, 'w'), ensure_ascii=False)
 
     # ---------------------------------------------------------------- learning (only about people who were enrolled)
     def observe_utterance(self, name, lang, intent=None, t=0.0, item=None):
@@ -88,7 +93,7 @@ class Profiles:
     def observe_presence(self, name, t, zone):
         p = self.people.get(name)
         if p is None or not p.get('habits'): return False
-        p['hours'][_hour(t)] += 1.0; p['zones'][zone] = p['zones'].get(zone, 0.0) + 1.0; p['last_t'] = round(t, 1); return True
+        p['hours'][_hour(t, self.tz)] += 1.0; p['zones'][zone] = p['zones'].get(zone, 0.0) + 1.0; p['last_t'] = round(t, 1); return True
 
     def claim_item(self, name, item, t=0.0):
         """'That's my ball': only the person's own statement makes a thing theirs."""
@@ -103,14 +108,20 @@ class Profiles:
         return None
 
     def decay(self, t):
-        """Counts fade with a half-life; a person not heard of for PURGE_DAYS and not asked to be kept loses the habit counters."""
+        """Counts fade with a half-life (the first call only sets where the fading starts); the hours, rooms and intents of a person not seen or heard for PURGE_DAYS are cleared altogether
+        (the languages and the things they said were theirs stay: those are not habits)."""
+        if self._t_decay is None: self._t_decay = t; self.save()
         dt = (t - self._t_decay) / DAY
-        if dt <= 0: return
-        f = 0.5 ** (dt / self.half); self._t_decay = t
-        for p in self.people.values():
-            if p.get('hours'): p['hours'] = [h * f for h in p['hours']]
-            for d in ('zones', 'intents'):
-                if p.get(d): p[d] = {k: v * f for k, v in p[d].items() if v * f > 0.05}
+        if dt > 0:
+            f = 0.5 ** (dt / self.half); self._t_decay = t
+            for p in self.people.values():
+                if p.get('hours'): p['hours'] = [h * f for h in p['hours']]
+                for d in ('zones', 'intents'):
+                    if p.get(d): p[d] = {k: v * f for k, v in p[d].items() if v * f > 0.05}
+        for n, p in self.people.items():
+            if p.get('habits') and t - p.get('last_t', t) > PURGE_DAYS * DAY and (any(p.get('hours') or []) or p.get('zones') or p.get('intents')):
+                p['hours'] = [0.0] * 24; p['zones'] = {}; p['intents'] = {}; self.log.append((round(t, 1), 'habits_purged', None))
+        self.save()
 
     # ---------------------------------------------------------------- what is known
     def lang_pref(self, name):

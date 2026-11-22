@@ -42,7 +42,7 @@
     "language_preference_right": 0.775,
     "language_preference_set": 0.775,
     "hours_cosine": 0.921,
-    "top_zone_right": 0.775,
+    "top_zone_right": 0.75,
     "top_intents_overlap": 0.95
    },
    "Mia": {
@@ -104,7 +104,7 @@
     "language_preference_right": 0.6,
     "language_preference_set": 0.6,
     "hours_cosine": 0.808,
-    "top_zone_right": 0.65,
+    "top_zone_right": 0.675,
     "top_intents_overlap": 0.667
    },
    "Mia": {
@@ -128,7 +128,7 @@
     "language_preference_set": 0.725,
     "hours_cosine": 0.919,
     "top_zone_right": 0.975,
-    "top_intents_overlap": 0.892
+    "top_intents_overlap": 0.883
    },
    "Emma": {
     "language_preference_right": 0.65,
@@ -190,7 +190,7 @@
     "language_preference_set": 0.625,
     "hours_cosine": 0.831,
     "top_zone_right": 0.85,
-    "top_intents_overlap": 0.558
+    "top_intents_overlap": 0.567
    },
    "Emma": {
     "language_preference_right": 0.45,
@@ -282,7 +282,7 @@
     "language_preference_set": 0.575,
     "hours_cosine": 0.832,
     "top_zone_right": 0.8,
-    "top_intents_overlap": 0.533
+    "top_intents_overlap": 0.542
    },
    "Emma": {
     "language_preference_right": 0.375,
@@ -317,9 +317,9 @@
    "Emma": {
     "language_preference_right": 0.4,
     "language_preference_set": 0.4,
-    "hours_cosine": 0.897,
+    "hours_cosine": 0.898,
     "top_zone_right": 0.825,
-    "top_intents_overlap": 0.917
+    "top_intents_overlap": 0.925
    },
    "Mia": {
     "language_preference_right": 0.925,
@@ -349,7 +349,7 @@
     "language_preference_set": 0.35,
     "hours_cosine": 0.95,
     "top_zone_right": 0.825,
-    "top_intents_overlap": 0.967
+    "top_intents_overlap": 0.975
    },
    "Mia": {
     "language_preference_right": 1.0,
@@ -429,7 +429,7 @@
   {
    "name": "no sentence from the household appears in the stored profiles",
    "ok": true,
-   "detail": 2029
+   "detail": 2030
   },
   {
    "name": "\"stop learning habits\" removes the habit counters",
@@ -468,6 +468,80 @@
    "name": "forgetting everyone empties the store",
    "ok": true,
    "detail": 0
+  },
+  {
+   "name": "a restart does not fade the habits away (real clock, one day later: 0.977 of what there was)",
+   "ok": true,
+   "detail": [
+    1.0,
+    0.9771599684342459
+   ]
+  },
+  {
+   "name": "hours, rooms and intents of somebody not heard of for 120 days are cleared (the languages stay)",
+   "ok": true,
+   "detail": [
+    0.0,
+    {}
+   ]
+  },
+  {
+   "name": "hours are the household's local hours (UTC+8: 11:00 UTC is 19:00)",
+   "ok": true,
+   "detail": 1.0
+  },
+  {
+   "name": "voiceprints: after \"forget Tom\" the file does not contain Tom (not in the log, not as the consenting adult)",
+   "ok": true,
+   "detail": [
+    [
+     0.0,
+     "enrol",
+     "Mia"
+    ],
+    [
+     0.0,
+     "forget",
+     null
+    ]
+   ]
+  },
+  {
+   "name": "profiles: after \"forget Tom\" the file does not contain Tom",
+   "ok": true,
+   "detail": [
+    [
+     0.0,
+     "enrol",
+     "Mia"
+    ],
+    [
+     0.0,
+     "forget",
+     null
+    ]
+   ]
+  },
+  {
+   "name": "face registry: after \"forget Tom\" the file does not contain Tom",
+   "ok": true,
+   "detail": [
+    [
+     0.0,
+     "enrol",
+     "Mia"
+    ],
+    [
+     0.0,
+     "forget",
+     null
+    ]
+   ]
+  },
+  {
+   "name": "face registry: after \"forget everyone\" no name is left in the file",
+   "ok": true,
+   "detail": null
   },
   {
    "name": "habit counts fade (half-life 30 days: 60 days quarter them)",

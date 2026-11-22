@@ -209,7 +209,7 @@ def sound_round_rows(start):
         CK = {'the television is found from its sound alone': '只凭声音找到电视的位置', "a follow-up from somebody else is not taken as part of Tom's conversation": '别人插话不当成 Tom 的话'}
         fails = '；'.join(f'{CK.get(c["name"], c["name"])}' for c in ch2 if not c['ok']) or '无'
         c9 = (f'仿真（MuJoCo 4×3 m 家，{D2["sim_s"]} 秒，一家三口加访客加会说话的电视，每句话真的渲染成麦克风信号）：种子 {D2["seed"]} 通过 {D2["passed"]}/{D2["n_checks"]} 项（没过：{fails}）；'
-              + (f'换 {len(oth)} 个别的随机种子再演：' + '、'.join(f'{o["passed"]}/{o["n_checks"]}' for o in oth) + '（常见的没过：电视位置没学对或没学会、视野外的陌生人被算到视野里的大人头上，**其中一个种子里机器人答应了陌生人去充电**）；' if oth else '')
+              + (f'换 {len(oth)} 个别的随机种子再演：' + '、'.join(f'{o["passed"]}/{o["n_checks"]}' for o in oth) + '（常见的没过：电视位置没学对或没学会、Tom 在视野里时机器人先转头去看别的声音；审查之前有一个种子里机器人答应了视野外陌生人去充电，加了“权限只靠方向时先问回去”之后五个种子都没有）；' if oth else '')
               + f'全部种子碰撞 {D2["collisions"] + sum(o["collisions"] for o in oth)}、碰到人 {sum(D2["contacts"]) + sum(o["contacts"] for o in oth)} 次。这个场景是我写的，**不证明真家庭也这样**')
     else: c9 = '-'
     rows.append(('整机：声音那一侧连起来', '真人演一遍第二天的脚本：电视开着，爸爸在沙发上用中文下命令，妈妈在厨房用英文问，访客在门口喊，电视里喊机器人的名字，放爸爸的录音，孩子说一句，最后爸爸要看孩子的卡片', c9,

@@ -35,7 +35,7 @@ def _day2_job(seed=5):
         rng = np.random.default_rng(seed + 1); home = Home(sup.r, sup.a, inv_path=f'/tmp/day2_inv_{seed}.json'); sup.home = home
         vs = VoiceSystem(sup, home, sup.ppl, asr=SimASR(0.04, seed, accent=0.3), seed=seed); ppl = sup.ppl; reg = ppl.registry
         model = SP.VoiceModel.load(os.path.join(RES, 'sound_voicemodel.npz')); vp = SP.Voiceprints(model); pr = PR.Profiles(); vs.voiceprints = vp; vs.profiles = pr
-        asc = AS.Associator(role_of=lambda n: vp.role(n) or reg.role(n), has_voice=lambda n: n in vp.people, bounds=(0.0, 4.0, 0.0, 3.0))
+        asc = AS.Associator(role_of=lambda n: 'child' if 'child' in (vp.role(n), reg.role(n)) else (vp.role(n) or reg.role(n)), has_voice=lambda n: n in vp.people, bounds=(0.0, 4.0, 0.0, 3.0))
         voices = {0: SL.voice_spec(rng, 'adult'), 1: SL.voice_spec(rng, 'adult'), 2: SL.voice_spec(rng, 'child'), 3: SL.voice_spec(rng, 'adult')}
         # yesterday: Tom and Mia were enrolled by face (with consent), and Tom, Emma and Mia by voice
         for nm, i, role, by in (('Tom', 0, 'adult', 'owner'), ('Mia', 2, 'child', 'Tom')):
