@@ -8,7 +8,7 @@ pose and settled; a candidate is 4 phases of (4 arm joint targets, 3 wheel speed
 tilt angle left (plus half the smallest tilt reached on the way, to give the search something to climb on). Every candidate is judged on N scenarios that differ in
 arm calibration (1 deg), roller friction (+-20 %), chassis mass (+-8 %), and the exact resting pose (3 deg, any heading), the same N for every candidate.
 The arm may use 30 rad/s^2 here (8 for normal driving). Candidates whose arm would pass through the chassis are penalised (the model has no arm-body collisions).
-Results: results/righting_search.json.
+Results: results/righting_search.json. ARM_CAM=forearm (any key of model.ARM_CAMS) in the environment puts the arm camera, and its weight, on the robot being searched with.
 """
 import json, math, os, sys, time
 import numpy as np
@@ -27,7 +27,7 @@ def quat_axis(axis, ang):
 class Env:
     def __init__(self, cls, arm_acc=30.0):
         self.cls = cls; self.arm_acc = arm_acc
-        self.r = Robot([], seed=0, robot_pose=(2.0, 1.5, 0.0))
+        self.r = Robot([], seed=0, robot_pose=(2.0, 1.5, 0.0), **({'arm_cam': os.environ['ARM_CAM']} if os.environ.get('ARM_CAM') else {}))      # ARM_CAM=forearm: search with the camera's weight on the arm (round 16)
         r = self.r; m = r.m
         jid = [mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, j) for j in ('shoulder_pan', 'shoulder_lift', 'elbow_flex', 'wrist_flex')]
         self.lo = np.array([m.jnt_range[j][0] for j in jid]) + 0.03; self.hi = np.array([m.jnt_range[j][1] for j in jid]) - 0.03

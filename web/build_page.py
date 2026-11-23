@@ -214,6 +214,73 @@ def sound_round_rows(start):
     else: c9 = '-'
     rows.append(('整机：声音那一侧连起来', '真人演一遍第二天的脚本：电视开着，爸爸在沙发上用中文下命令，妈妈在厨房用英文问，访客在门口喊，电视里喊机器人的名字，放爸爸的录音，孩子说一句，最后爸爸要看孩子的卡片', c9,
                  '每一项和仿真一样；任何一项没过都先查，不要往下做'))
+    # 63-70: round 16 (camera on the arm instead of a mast, the language-model gateway, the wake-word spotter)
+    AP, AF, AFU, AR, AM, LL, WK, SF, SP, SFU, SM, SFA, APU, PSM = (load(n) for n in ('armcam_pose.json', 'armcam_faces.json', 'armcam_faces_forearm_up.json', 'armcam_righting.json', 'armcam_mic_height.json', 'llm.json', 'wake.json',
+                                                                          'home_people_static_forearm.json', 'home_people_static_periscope.json', 'home_people_static_forearm_up.json', 'home_people_safety_mast.json', 'home_people_safety_forearm_up.json', 'armcam_pose_forearm_up.json', 'home_people_static.json'))
+    def _pose():
+        if not AP: return '-'
+        PP = dict(AP); PP.update(APU or {})
+        f = lambda k: f'{PP[k]["height_m"]:.2f} m、仰 {PP[k]["elevation_deg"]:.1f}°、由关节读数算出的朝向平均差 {PP[k]["believed_pose_angle_error_deg"]["mean"]:.2f}°（最大 {PP[k]["believed_pose_angle_error_deg"]["max"]:.2f}°）、位置差 {PP[k]["believed_pose_position_error_mm"]["mean"]:.0f} mm'
+        return (f'仿真（`python test_armcam.py pose`，关节标定残差 0.4°/个）：立杆 {PP["mast"]["height_m"]:.2f} m、仰 {PP["mast"]["elevation_deg"]:.0f}°；**前臂（仰 25.5°）** {f("forearm")}，手臂不动；**前臂（仰 32.5°，推荐）** {f("forearm_up")}，手臂不动；**夹爪外侧（潜望镜）** {f("periscope")}，从行进姿势抬起来要 {PP["periscope"]["time_to_raise_s"]:.0f} s，抬着时手臂干不了别的')
+    rows.append(('手臂相机：装在哪、离地多高、机器人知不知道它朝哪', '装好后量相机离地高度、仰角；手臂在行进姿势和（潜望镜方案的）抬起姿势各量一次；在相机前放标定板，把“由关节读数算出的相机位姿”和实测比，换几个手臂姿势', _pose(),
+                 '朝向差不超过 1.5°、高度差不超过 2 cm；超了就重新标定关节零位、重量支架'))
+    def _stat(x):
+        if not x: return None
+        S = x['summary']; d = S['by_distance']; found = [d[k]['found'] for k in d]; he = [d[k]['h_err_median'] for k in d if d[k]['h_err_median'] is not None]; sc = S['size_class']
+        return dict(found=f'{100 * min(found):.0f}–{100 * max(found):.0f}%', h=f'{100 * min(he):.1f}–{100 * max(he):.1f} cm', kids=f'{sc["stand/child"]["child"]}/{sum(sc["stand/child"].values())}', unsure=sc['stand/child']['unsure'],
+                    adult=f'{sc["stand/adult"]["adult"]}/{sum(sc["stand/adult"].values())}', c2a=S['child_called_adult'], extra=S['extra_tracks_with_a_person'])
+    def _people():
+        m, a, b, c = (_stat(PSM), _stat(SF), _stat(SP), _stat(SFU))
+        if not (m and a and b): return '-'
+        t = lambda n, x: f'{n}：检出 {x["found"]}、身高误差中位数 {x["h"]}、站着的孩子分成“小孩” {x["kids"]}（其中 {x["unsure"]} 个只到“不确定”，安全层照小孩办）、大人 {x["adult"]}、孩子被叫成大人 {x["c2a"]} 次'
+        return ('仿真（`CAM=… python test_home.py people_static 150`，同一批 150 次摆位）：' + '；'.join([t('立杆', m), t('前臂（仰 25.5°）', a), t('潜望镜', b)] + ([t('**前臂（仰 32.5°，推荐）**', c)] if c else []))
+                + '。近处（1–1.5 m）前臂相机偶尔看不到头顶（身高只算下限）')
+    rows.append(('手臂相机：找人、身高、分大人和孩子', '同第 46 项：身高已知的大人和孩子站在 1、2、3 m 处，正对和背对，读检测到的身高和分类；坐着的也测', _people(), '孩子被叫成大人 0 次；大人叫成孩子可以（偏安全）；检出率和立杆比不低 5 个百分点'))
+    def _faces():
+        if not AF: return '-'
+        F = dict(AF)
+        if AFU: F.update(AFU)
+        AFM = load('armcam_faces_mast.json')
+        if AFM: F.update(AFM)                                   # the mast again with the same face rules as the arm cameras
+        g = lambda k: f'{100 * F[k]["enrolled_facing"]["named_right"]:.0f}%（中位 {F[k]["enrolled_facing"]["median_time_to_name_s"]} s，头出画面的机会 {F[k]["looks_where_the_head_was_out_of_the_picture"]}）' if k in F else None
+        near = lambda k: f'{100 * F[k]["enrolled_facing_by_distance"]["1.0-1.7 m"]["named_right"]:.0f}%' if k in F else None
+        return ('仿真（`python test_armcam.py faces 60`；**替身识别器**，只测相机把脸送进画面的次数和时间，不测真的人脸模型）：登记过的人正对机器人时叫对名字：立杆 ' + g('mast') + '；前臂（仰 25.5°） ' + g('forearm') + '，其中 1–1.7 m 只有 ' + near('forearm') + '；潜望镜 ' + g('periscope')
+                + ('；**前臂（仰 32.5°，推荐）** ' + g('forearm_up') + '，其中 1–1.7 m ' + near('forearm_up') if 'forearm_up' in F else '') + f'；没登记的人叫出名字 0 次、叫错 0 次（三种装法都是）')
+    rows.append(('手臂相机：认人', '家里每个人（监护人同意）登记；之后他们从 3 m 外走到 1 m 内、正对和侧对机器人、换几个站位；读机器人叫出名字的时间和对错；陌生人走过', _faces(),
+                 '叫错名字 0 次；正对时 2 秒内叫对不低于 90%（要用真的人脸模型在你家的人身上量）；叫不出的时候不如实说“不认识”就不通过'))
+    def _safety():
+        if not SFA: return '-'
+        a = {r['scenario']: r for r in SFA['runs'] if r.get('guard', True)}; m = {r['scenario']: r for r in (SM['runs'] if SM else []) if r.get('guard', True)}
+        parts = []
+        for sc, cn in (('adult_cross', '大人走过来'), ('child_run', '孩子冲过来'), ('toddler_basket', '幼儿在筐边'), ('family', '一家三口')):
+            if sc not in a: continue
+            x = a[sc]; y = m.get(sc); parts.append(f'{cn}：送达 {x["delivered"]}/{x["total"]}、碰到人 {sum(x["contacts"])} 次、最近 {min(x["min_gap_cm"]):.0f} cm、停了 {x["halts"]} 次' + (f'（立杆 {y["halts"]} 次，最近 {min(y["min_gap_cm"]):.0f} cm）' if y else ''))
+        blind = [r['cam_blind_share'] for r in SFA['runs'] if r.get('cam_blind_share') is not None]
+        return '仿真（`CAM=forearm_up python test_home.py safety`，420 秒，安全层开；括号里是立杆）：' + '；'.join(parts) + f'。手臂干活时相机看地板，**整套任务里约 {100 * (sum(blind) / len(blind) if blind else 0):.0f}% 的时间相机没在看人**（那段时间只有激光雷达和安全层的“刚才有人站在那里”的记忆）'
+    rows.append(('手臂相机：人和机器人同场干活', '同第 50 项：大人走过来、孩子冲过来、幼儿在筐边、一家三口；机器人在收玩具；安全层开；读碰到人的次数、最近的距离、停了几次、手臂有没有在有人伸手可及的范围内时动', _safety(), '碰到人 0 次；最近距离不比立杆差；手臂在有人伸手可及的范围内时一定停'))
+    def _right():
+        if not AR: return '-'
+        u = AR['upright_of_n']
+        return ('仿真（`python test_armcam.py righting`，12 次随机摆放、同样的扰动，**存着的起身动作是没有相机时搜出来的**）起身成功率，按相机的重量 0/20/40/50/60/75 g：' + '；'.join(f'{c} ' + '、'.join(u[c][k] for k in ('0 g', '20 g', '40 g', '50 g', '60 g', '75 g')) for c in ('side_l', 'side_r', 'fwd'))
+                + '。**20 g 以下没影响，40 g 开始有失败，75 g 时两种侧倒都起不来**：要么用更轻的相机，要么装上以后重搜起身动作（`ARM_CAM=forearm_up python search_righting.py refine …`，带相机跑，这一轮没做）')
+    rows.append(('手臂相机的重量和起身', '把装了相机的机器人在软垫上推倒（侧倒、前倾），自己起身 10 次；先用低加速度', _right(), '10 次都起得来；起身时手臂撑地、相机不碰地（镜头没刮花）；起不来就重搜动作或换更轻的相机'))
+    def _mic():
+        if not AM: return '-'
+        g = lambda k: f'中位 {AM[k]["median_err_deg"]:.0f}°、20° 内 {100 * AM[k]["within_20deg"]:.0f}%'
+        return ('仿真（`python test_armcam.py mic`，4 麦，混响 0.5 s，只有房间声学）声源方向，阵列离地 0.5 m（立杆）/0.3/0.2 m（上层板）：安静 ' + ' / '.join(g(f'{h} m / idle') for h in ('0.50', '0.30', '0.20')) + '；机器人自己开着走 ' + ' / '.join(g(f'{h} m / driving') for h in ('0.50', '0.30', '0.20'))
+                + '；电视 60 dB ' + ' / '.join(g(f'{h} m / tv') for h in ('0.50', '0.30', '0.20')) + '。**机身和手臂挡声、风扇和舵机更近的噪声仿真里没有**')
+    rows.append(('麦克风阵列装在上层板（没有立杆）', '阵列装在上层板后部、雷达旁；同第 53 项的做法量声源方向；机器人不动、自己开着走、手臂抬着各量一遍；风扇开和关各一遍', _mic(), '20° 内不低于 80%（安静）、开着走时不低于 70%；比装在 0.5 m 时差超过 10 个百分点就换位置或加隔声'))
+    def _wake():
+        if not WK: return '-'
+        return (f'仿真（`python test_wake.py`）：真的关键词模型（sherpa-onnx，中英双语 3 M 参数，树莓派 CPU）装得上、词变成对的音素、能在一段真录音里听出词、{WK["false_alarm_material_s"]:.0f} 秒别的真人说话加静音加噪声里 0 次误唤醒、冷却时间和“机器人自己说话时只压唤醒词、不压停止词”都对；'
+                f'**espeak 合成的“小拾小拾”“Hey Xiaoshi”它 {WK["espeak_wake_hits"]} 次叫得醒，所以没有一个数字能说“真人喊小拾小拾有多灵”**；通过 {WK["passed"]}/{WK["total"]} 项')
+    rows.append(('唤醒词和停止词：在你家的命中率和误唤醒', '家里每个人在不同房间、离 1–4 m 各喊“小拾小拾”“你好小拾”“Hey Xiaoshi”20 次、喊“停下来”“别动”“stop”20 次；再录家里一整天的声音（电视、聊天、吸尘器、机器人自己说话）放给它听；用 `wakeword.evaluate()` 扫阈值', _wake(),
+                 '命中不低于 90%；误唤醒不超过每天 1 次；机器人自己说话时不被自己叫醒；要调阈值就在你家的录音上调'))
+    def _llm():
+        if not LL: return '-'
+        return (f'仿真（`python test_llm.py`，真的 Anthropic SDK 加假的网络，**没有对真模型的测试**）：{LL["passed"]}/{LL["total"]} 项通过：发出去的请求只有去掉人名和数字之后的这一句话；孩子和认不出的人的话不发；停止词、没喊唤醒词的话、静音时不发；改写出来的命令要和模型说的意图一致、一律先口头问一次、记人忘人静音停止永远不接受；'
+                '拒答、被截断、不是 JSON、401/429/500、断网都退回“我没听清”；每分钟 6 次的限额和连续 3 次失败熔断 60 秒')
+    rows.append(('大模型接口', '设好 `ANTHROPIC_API_KEY`，跑 `python test_llm.py live`（六句，几美分）；主人说“房间乱糟糟的”“把红色的球放进筐里”“讲个笑话”；拔网线再说一遍；孩子说一句，看日志', _llm(), '六句里改写对的不少于 5 句；断网时机器人照常用本机能力；孩子的话日志里没有发送记录；响应时间记下来（决定要不要换小模型）'))
     return [(str(start + i + 1), a, b, c, d) for i, (a, b, c, d) in enumerate(rows)]
 
 

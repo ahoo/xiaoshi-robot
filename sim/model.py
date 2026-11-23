@@ -37,6 +37,18 @@ P = dict(
     pad_friction=1.0,         # jaws with grip tape; bare PLA is about 0.35
 )
 
+# Cameras on the arm instead of a mast (build_xml(arm_cam='forearm' | 'periscope')): a small RGB-D camera (RealSense D435 / OAK-D Lite class, about 75 g, 90 x 25 x 25 mm) on a printed bracket.
+#   forearm     on top of the forearm, 6 cm from the elbow, looking along the forearm and tilted 45 degrees up from it: in the carry pose (the arm's pose while driving and carrying) that is
+#               0.38 m above the floor looking forward and 26 degrees up. Nothing has to move for it to look. While the arm reaches down to the floor it looks at the floor.
+#   periscope   on the outer face of the fixed jaw, looking sideways out of the gripper with the jaws pointing up; the arm has to be raised into `look` (joint angles) first:
+#               0.57 m above the floor, looking forward and 23-32 degrees up. The arm cannot do anything else while it looks.
+# `look`: the joint angles (5) at which the camera looks forward and up; None = the carry pose already does.
+ARM_CAMS = dict(
+    forearm=dict(body='lower_arm', pos=(-0.06, 0.04, 0.018), xyaxes=(0.0, 0.0, -1.0, 0.7071, 0.7071, 0.0), fovy=60.0, mass=0.075, look=None),
+    forearm_up=dict(body='lower_arm', pos=(-0.06, 0.04, 0.018), xyaxes=(0.0, 0.0, -1.0, 0.7880, 0.6157, 0.0), fovy=60.0, mass=0.075, look=None),                    # the same, tilted 52 degrees up from the forearm: 33 degrees above the horizontal
+    periscope=dict(body='gripper', pos=(-0.035, 0.0, -0.02), xyaxes=(0.0, -1.0, 0.0, 0.0, 0.0, -1.0), fovy=60.0, mass=0.075, look=(0.0, -0.20, -1.29, -0.50, 0.0)),
+)
+
 ROOM_W, ROOM_H = 4.0, 3.0
 # static furniture: (name, cx, cy, sx, sy, height, rgba); circles use sx as radius and sy=None
 FURNITURE = [
@@ -81,9 +93,10 @@ def _wheel_xml(i, ang_deg):
     return '\n'.join(s)
 
 
-def _arm_parts():
+def _arm_parts(arm_cam=None):
     """Read the official SO-101 MJCF and return (defaults, assets, body, actuators) as XML strings,
-    with the gripper collision replaced by primitive pads (a convex hull of the jaw mesh fills the grip gap)."""
+    with the gripper collision replaced by primitive pads (a convex hull of the jaw mesh fills the grip gap).
+    arm_cam: a key of ARM_CAMS: a camera (and its 75 g) is added to that link."""
     root = ET.parse(os.path.join(SO101_DIR, 'so101_new_calib.xml')).getroot()
     defaults = ''.join(ET.tostring(d, encoding='unicode') for dd in root.findall('default') for d in dd)
     assets = ''.join(ET.tostring(a, encoding='unicode') for a in root.find('asset'))
@@ -111,6 +124,14 @@ def _arm_parts():
     qinv = np.zeros(4); mujoco.mju_negQuat(qinv, jq)
     ET.SubElement(jaw, 'geom', dict(name='pad_moving', type='box', pos=' '.join(f'{v:.5f}' for v in c), quat=' '.join(f'{v:.6f}' for v in qinv),
                                     size='0.0045 0.007 0.0295')).attrib.update(_attrs(pad))
+    if arm_cam:
+        c = ARM_CAMS[arm_cam]; parent = next(b for b in base.iter('body') if b.get('name') == c['body'])
+        cb = ET.SubElement(parent, 'body', dict(name='armcam_body', pos=' '.join(str(v) for v in c['pos'])))
+        ET.SubElement(cb, 'inertial', dict(pos='0 0 0', mass=str(c['mass']), diaginertia='2e-5 2e-5 2e-5'))                      # the camera's weight is carried by the servos
+        ET.SubElement(cb, 'camera', dict(name='armcam', pos='0 0 0', xyaxes=' '.join(str(v) for v in c['xyaxes']), fovy=str(c['fovy'])))
+        za = np.cross(c['xyaxes'][:3], c['xyaxes'][3:])                                                                          # behind the lens; drawn only, no collision
+        ET.SubElement(cb, 'geom', dict(type='box', size='0.045 0.0125 0.0125', pos=' '.join(f'{0.0125 * v:.5f}' for v in za), xyaxes=' '.join(str(v) for v in c['xyaxes']),
+                                       contype='0', conaffinity='0', group='2', rgba='0.1 0.1 0.12 1', mass='0'))
     acts = []
     for a in root.find('actuator'):
         lim = P['gripper_torque'] if a.get('name') == 'gripper' else P['servo_stall']
@@ -126,11 +147,12 @@ def _attrs(s):
     return out
 
 
-def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET, dock=False, people=(), head_cam=False):
+def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET, dock=False, people=(), head_cam=False, arm_cam=None):
     """objects: list of (kind, x, y, yaw, spec) with spec from objects.sample(). Returns MJCF text. World frame: x right, y 'down' the room plan, z up.
     people: keys of people.SPECS (mocap humans a script moves, body names p0_*, p1_*, ...). head_cam: a depth camera on a 0.5 m mast, tilted 28 degrees up
-    (the mast is drawn but has no mass or collision; people.HeadCam reads it). Both are off by default and then the model is exactly what it was."""
-    defaults, assets, arm_body, arm_acts = _arm_parts()
+    (the mast is drawn but has no mass or collision; people.HeadCam reads it). arm_cam: a key of ARM_CAMS, a camera on the arm instead (people.ArmCam reads it; use one of the two, not both).
+    All are off by default and then the model is exactly what it was."""
+    defaults, assets, arm_body, arm_acts = _arm_parts(arm_cam)
     R = P['wheel_radius']
     lx, ly, lz = P['lidar_pos']
     furn = []

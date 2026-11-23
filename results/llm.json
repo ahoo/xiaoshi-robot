@@ -1,0 +1,361 @@
+{
+ "checks": [
+  {
+   "name": "redact: names, digits, e-mail, links",
+   "ok": true,
+   "detail": "某人的电话是 ，邮箱 ，看 然后收拾玩具"
+  },
+  {
+   "name": "redact: English name, digit run",
+   "ok": true,
+   "detail": "Tell someone to call please"
+  },
+  {
+   "name": "redact: a Latin name only as a whole word",
+   "ok": true,
+   "detail": "someone tidied up and Edward helped"
+  },
+  {
+   "name": "redact: cut to 160 characters",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "reply cleaning: links, tags, control characters",
+   "ok": true,
+   "detail": "好的 script x /script 呢"
+  },
+  {
+   "name": "gateway: a command comes back as intent + rewrite",
+   "ok": true,
+   "detail": "{'intent': 'tidy', 'rephrase': '收拾玩具'}"
+  },
+  {
+   "name": "gateway: role \"child\" is not sent",
+   "ok": true,
+   "detail": "(None, [])"
+  },
+  {
+   "name": "gateway: role \"unknown\" is not sent",
+   "ok": true,
+   "detail": "(None, [])"
+  },
+  {
+   "name": "gateway: role \"guest\" is not sent",
+   "ok": true,
+   "detail": "(None, [])"
+  },
+  {
+   "name": "gateway: off means nothing is sent",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway: the owner can narrow it to the owner only",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway: a known name is hidden in what is sent",
+   "ok": true,
+   "detail": "['某人说我觉得家里有点乱']"
+  },
+  {
+   "name": "gateway: rate limit (3 per minute)",
+   "ok": true,
+   "detail": "{'sent': 3, 'answered': 3, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 2, 'skipped_breaker': 0, 'errors': 0, 'empty': 0, 'command': 3, 'chat': 0, 'unclear': 0, 'rejected': 0}"
+  },
+  {
+   "name": "gateway: ... and it recovers a minute later",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway: a failing provider gives None and opens the breaker after 3",
+   "ok": true,
+   "detail": "(3, {'sent': 3, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 3, 'errors': 3, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 0})"
+  },
+  {
+   "name": "gateway: the breaker closes after 60 s and tries again",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway: the log holds no words by default",
+   "ok": true,
+   "detail": "{'t': 1795411352.7, 'role': 'owner', 'chars': 8, 'result': 'command', 'ms': 0, 'sha': '4155ea81'}"
+  },
+  {
+   "name": "gateway: with keep_text the last five are in memory only",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway: clear() empties the log",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway: refuses an answer that is tidy-with-forget",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is nonsense",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is empty-text",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is long",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is stop",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is privacy",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is kind",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is list",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is empty-chat",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: a chat reply is cleaned",
+   "ok": true,
+   "detail": "{'say': '好的 b 你好 /b'}"
+  },
+  {
+   "name": "gateway: \"unclear\" is no proposal",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "claude: a command comes back through the real SDK",
+   "ok": true,
+   "detail": "{'intent': 'tidy', 'rephrase': '收拾玩具'}"
+  },
+  {
+   "name": "claude: model, effort and schema",
+   "ok": true,
+   "detail": "('claude-opus-5-5', 'low')"
+  },
+  {
+   "name": "claude: refusal fallback is asked for",
+   "ok": true,
+   "detail": "('default', 'server-side-fallback-2026-07-01')"
+  },
+  {
+   "name": "claude: nothing but the redacted sentence goes as the user message",
+   "ok": true,
+   "detail": "([{'role': 'user', 'content': '某人说我觉得家里有点乱'}], ['fallbacks', 'max_tokens', 'messages', 'model', 'output_config', 'system'])"
+  },
+  {
+   "name": "claude: the system prompt names the allowed requests and none of the forbidden",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "claude: tokens are counted",
+   "ok": true,
+   "detail": "{'input': 21, 'output': 7, 'calls': 1}"
+  },
+  {
+   "name": "claude: with fallbacks off it is the plain endpoint",
+   "ok": true,
+   "detail": "(dict_keys(['max_tokens', 'messages', 'model', 'output_config', 'system']), None)"
+  },
+  {
+   "name": "claude: another model is a parameter",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "claude: a refusal -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 0, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 1})"
+  },
+  {
+   "name": "claude: a cut-off answer -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 0, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 1})"
+  },
+  {
+   "name": "claude: not JSON -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 0, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 1})"
+  },
+  {
+   "name": "claude: JSON that is not an object -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 0, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 1})"
+  },
+  {
+   "name": "claude: no text block -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 0, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 1})"
+  },
+  {
+   "name": "claude: an HTTP 500 -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 1, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 0})"
+  },
+  {
+   "name": "claude: an HTTP 429 -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 1, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 0})"
+  },
+  {
+   "name": "claude: an HTTP 401 (bad key) -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 1, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 0})"
+  },
+  {
+   "name": "claude: no network -> no proposal",
+   "ok": true,
+   "detail": "{'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 1, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 0}"
+  },
+  {
+   "name": "voice: the model rewrites, the robot asks, and only \"yes\" makes it move",
+   "ok": true,
+   "detail": "('confirm', 'confirmed', [('tidy', {})])"
+  },
+  {
+   "name": "voice: what was sent is the sentence after the wake word, nothing else",
+   "ok": true,
+   "detail": "['我觉得家里有点乱']"
+  },
+  {
+   "name": "voice: \"no\" cancels it",
+   "ok": true,
+   "detail": "('cancelled', [])"
+  },
+  {
+   "name": "voice: a rewrite that parses as something else is refused (the model said tidy, the sentence says forget)",
+   "ok": true,
+   "detail": "('reask', 'forget', [])"
+  },
+  {
+   "name": "voice: ... also when it is another allowed request",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: a model cannot ask for \"forget\"",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: a model cannot ask for \"enrol\"",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: a model cannot ask for \"privacy\"",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: a model cannot ask for \"stop\"",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: a child's sentence is not sent",
+   "ok": true,
+   "detail": "([], 'reask')"
+  },
+  {
+   "name": "voice: nor is that of somebody the robot cannot name",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "voice: the stop word never reaches the model",
+   "ok": true,
+   "detail": "([], 2)"
+  },
+  {
+   "name": "voice: talk without the wake word never reaches it",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "voice: set_online(False) -> the robot manages alone",
+   "ok": true,
+   "detail": "([], 'reask')"
+  },
+  {
+   "name": "voice: the names the robot knows are hidden in what is sent (the gateway is given the list)",
+   "ok": true,
+   "detail": "['某人说我觉得家里有点乱，某人 也这么说']"
+  },
+  {
+   "name": "voice: muted means nothing is sent",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "voice: a chat reply is spoken (adult)",
+   "ok": true,
+   "detail": "{'t': 0.0, 'said': None, 'role': 'owner', 'speaker': None, 'heard': None, 'asr_conf': 0.95, 'woke': True, 'intent': None, 'conf': 0.0, 'slots': {}, 'action': 'llm reply', 'via': 'llm', 'reply': '从前有一只小机器人。'}"
+  },
+  {
+   "name": "voice: ... but not to a child (nothing is sent either)",
+   "ok": true,
+   "detail": "('reask', [])"
+  },
+  {
+   "name": "voice: a provider with no answer -> \"I did not catch that\"",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: a provider that is down -> the same, and the robot still works on its own",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: an injected sentence that is understood locally is handled locally (denied to a guest) and not sent",
+   "ok": true,
+   "detail": "([], 'denied')"
+  },
+  {
+   "name": "voice: an injected sentence that fools the model still only gets a question, and no motion",
+   "ok": true,
+   "detail": "('confirm', [])"
+  },
+  {
+   "name": "voice: a grown-up who is not the owner may be offered what a grown-up may do",
+   "ok": true,
+   "detail": "confirm"
+  },
+  {
+   "name": "voice: English works the same way",
+   "ok": true,
+   "detail": "('confirm', 'Do you want me to tidy up the toys?')"
+  }
+ ],
+ "passed": 71,
+ "total": 71
+}

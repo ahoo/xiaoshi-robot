@@ -6,6 +6,8 @@ What is real here and what is a stand-in (the simulator cannot test everything; 
                       crouching along scripts. The lidar sees their legs, the cameras see the whole body. Contacts with the robot are counted.
   HeadCam             a depth camera on a short mast (0.5 m, tilted 28 degrees up, 91 x 60 degree field of view, the noise of a consumer stereo camera).
                       The base camera sits 12 cm above the floor and sees only legs; a person's height needs something that sees the head.
+  ArmCam              the same camera on the robot's arm instead of a mast (model.ARM_CAMS): where it looks follows the joints, so its pose is computed from the servo readings (with the error
+                      of their calibration) for every frame, and it is used only while it looks somewhere useful and the arm is not moving.
   PersonDetector      depth only: points 0.15 to 2.1 m above the floor, seen from above on a 4 cm grid, clusters = people when they are tall and compact enough;
                       height = the top of the cluster (a lower bound when it touches the top of the image), shoulder width at 80 % of the height.
                       A static-map check rejects tall furniture the scan has already seen. Tracked over frames (nearest neighbour, constant velocity).
@@ -235,9 +237,11 @@ def _zfar(m, z):
 
 class HeadCam:
     """Depth image of the mast camera, as points in the chassis frame (z from the floor) and in the world through the robot's own pose estimate."""
-    def __init__(self, robot, rng):
-        self.r = robot; self.rng = rng; m = robot.m
-        self.cam = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_CAMERA, 'head')
+    arm = False                      # True for ArmCam: the pose changes from frame to frame and the camera is not always looking at anything useful
+
+    def __init__(self, robot, rng, name='head'):
+        self.r = robot; self.rng = rng; m = robot.m; self.name = name
+        self.cam = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_CAMERA, name)
         self.dep = mujoco.Renderer(m, HH, HW); self.dep.enable_depth_rendering()
         self.seg = mujoco.Renderer(m, HH, HW); self.seg.enable_segmentation_rendering()
         f = (HH / 2) / math.tan(math.radians(m.cam_fovy[self.cam]) / 2); self.f = f
@@ -252,15 +256,20 @@ class HeadCam:
             a = er.normal(0, math.radians(ce[1]), 3); q = np.zeros(4); Rx = np.zeros(9)
             mujoco.mju_axisAngle2Quat(q, a / max(np.linalg.norm(a), 1e-9), float(np.linalg.norm(a))); mujoco.mju_quat2Mat(Rx, q); self.R_bc = Rx.reshape(3, 3) @ self.R_bc
         root = int(m.body_rootid[robot.chassis]); self.self_geoms = np.array([g for g in range(m.ngeom) if int(m.body_rootid[m.geom_bodyid[g]]) == root])
-        self.depth = None; self.self_mask = None
+        self.depth = None; self.self_mask = None; self.self_share = 0.0
+
+    def ready(self): return True
+
+    @property
+    def height(self): return float(self.t_bc[2])
 
     def capture(self):
         d, m = self.r.d, self.r.m
         with _zfar(m, HEAD_RANGE + 0.5):
-            self.dep.update_scene(d, 'head'); depth = self.dep.render().astype(np.float64)
-            self.seg.update_scene(d, 'head'); s = self.seg.render()
+            self.dep.update_scene(d, self.name); depth = self.dep.render().astype(np.float64)
+            self.seg.update_scene(d, self.name); s = self.seg.render()
         lab = np.where(s[..., 1] == mujoco.mjtObj.mjOBJ_GEOM, s[..., 0], -1)
-        self.self_mask = np.isin(lab, self.self_geoms)
+        self.self_mask = np.isin(lab, self.self_geoms); self.self_share = float(self.self_mask.mean())
         depth = depth + self.rng.normal(0, 1, depth.shape) * (HEAD_SIGMA[0] + HEAD_SIGMA[1] * depth ** 2) * perturb.get('depth_noise', 1.0)
         far = depth >= HEAD_RANGE; depth[far] = 0.0                                   # nothing measured there
         e = self._edges(depth); depth[e] = 0.0
@@ -280,6 +289,42 @@ class HeadCam:
         x, y, th = pose; c, s = math.cos(th), math.sin(th)
         W = np.stack([x + c * P[..., 0] - s * P[..., 1], y + s * P[..., 0] + c * P[..., 1], P[..., 2]], -1)
         return W, (z > 0.1) & ~self.self_mask
+
+
+class ArmCam(HeadCam):
+    """The camera on the arm (model.ARM_CAMS). Its pose in the chassis frame is not fixed: the robot works it out from the angles its servos report (forward kinematics through the same arm
+    model), plus the error of its calibration of them (`arm_cam_cal_deg` per joint, one draw for the run, 0.4 degrees: backlash and zero point of the STS3215s) and the usual mount error.
+    It is only worth reading while it looks forward and a little up (not at the floor, as the forearm does while the arm reaches for something) and while the arm is not moving
+    (blur and a pose that is not what the servos last said)."""
+    arm = True
+    ELEV_MIN, ELEV_MAX = -8.0, 62.0      # degrees of the optical axis above the horizontal
+    MAX_JOINT_SPEED = 0.30               # rad/s
+    MAX_SELF = 0.35                      # more of the picture than this is the robot itself: no use
+
+    def __init__(self, robot, rng):
+        super().__init__(robot, rng, 'armcam')
+        m = robot.m; self.fk = mujoco.MjData(m); self.q0 = m.qpos0.copy()
+        er = np.random.default_rng(int(rng.integers(1 << 30))); self.cal = er.normal(0, math.radians(perturb.get('arm_cam_cal_deg', 0.4)), 5)
+        self.mount = (np.eye(3), np.zeros(3)); ce = perturb.get('head_cam_err', None)
+        if ce:
+            a = er.normal(0, math.radians(ce[1]), 3); q = np.zeros(4); Rx = np.zeros(9); mujoco.mju_axisAngle2Quat(q, a / max(np.linalg.norm(a), 1e-9), float(np.linalg.norm(a))); mujoco.mju_quat2Mat(Rx, q)
+            self.mount = (Rx.reshape(3, 3), er.normal(0, ce[0], 3))
+        self.elev = 0.0; self._set()
+
+    def _set(self):
+        """The camera's pose in the chassis frame (z from the floor) for the joint angles the robot reads now."""
+        r = self.r; fd = self.fk; fd.qpos[:] = self.q0; fd.qpos[r.arm_qadr[:5]] = r.joints()[:5] + self.cal
+        mujoco.mj_kinematics(r.m, fd); mujoco.mj_camlight(r.m, fd)
+        Rb = fd.xmat[r.chassis].reshape(3, 3); pb = fd.xpos[r.chassis]; Rc = fd.cam_xmat[self.cam].reshape(3, 3); pc = fd.cam_xpos[self.cam]
+        R = Rb.T @ Rc; t = Rb.T @ (pc - pb); t[2] += pb[2]
+        self.R_bc = self.mount[0] @ R; self.t_bc = t + self.mount[1]; self.elev = math.degrees(math.asin(float(np.clip(-self.R_bc[2, 2], -1, 1))))
+
+    def ready(self):
+        self._set()
+        return self.ELEV_MIN <= self.elev <= self.ELEV_MAX and float(np.abs(self.r.arm_vel[:5]).max()) < self.MAX_JOINT_SPEED
+
+    def capture(self):
+        self._set(); return super().capture()
 
 
 # ---------------------------------------------------------------------------------------------------------------- finding people in depth
@@ -337,15 +382,25 @@ class PersonDetector:
     """Head-camera depth -> tracked people with height and size class. Everything it uses is what the robot has on board: the depth image, its own pose estimate and,
     if it has scanned the room, the 3D map (to tell a tall cupboard it has already seen from a person)."""
     def __init__(self, robot, agent, rng, static_map=None, period=0.2):
-        self.r, self.a = robot, agent; self.cam = HeadCam(robot, rng); self.tracks = []; self.period = period; self._t = -9.0; self.static_map = static_map
+        self.r, self.a = robot, agent; self.tracks = []; self.period = period; self._t = -9.0; self.static_map = static_map
+        self.cam = HeadCam(robot, rng) if mujoco.mj_name2id(robot.m, mujoco.mjtObj.mjOBJ_CAMERA, 'head') >= 0 else ArmCam(robot, rng)          # the mast camera, or else the one on the arm
         self.frames = 0; self.t_ms = 0.0; self.raw = []; self.rng = rng
+        self.blind_total = 0.0; self._tb = None; self.blind_s = 0.0; self.seen_s = 0.0      # seconds the camera was not looking anywhere useful / was
 
     # ---- one frame
     def process(self):
         t = self.r.t
         if t - self._t < self.period - 1e-6 or self.a.freeze: return False
-        self._t = t; t0 = time.time(); self.frames += 1
-        self.cam.capture(); pose = self.a.pose(); W, ok = self.cam.points(pose)
+        self._t = t; dt = 0.0 if self._tb is None else t - self._tb; self._tb = t
+        if not self.cam.ready():                                       # looking at the floor, or the arm is moving: nothing learned, and the tracks must not be aged for it
+            self.blind_total += dt; self.blind_s += dt
+            for k in self.tracks:
+                if t - k.t > 0.6: k.coast = True
+            return False
+        self.seen_s += dt; t0 = time.time(); self.frames += 1
+        self.cam.capture()
+        if self.cam.self_share > getattr(self.cam, 'MAX_SELF', 1.0): return False
+        pose = self.a.pose(); W, ok = self.cam.points(pose)
         det = self._cluster(W, ok, pose)
         self._associate(t, det, pose); self.t_ms += (time.time() - t0) * 1000.0
         return True
@@ -391,13 +446,13 @@ class PersonDetector:
                 if k in used: continue
                 px, py = k.predict(t); dd = math.hypot(px - d['x'], py - d['y'])
                 if dd < 0.7 and (best is None or dd < best[0]): best = (dd, k)
-            if best: best[1].update(t, d['x'], d['y'], d['h'], d['cut'], d['w'], d.get('grp', False)); used.add(best[1])
-            else: self.tracks.append(Track(t, d['x'], d['y'], d['h'], d['cut'], d['w'], d.get('grp', False)))
+            if best: best[1].update(t, d['x'], d['y'], d['h'], d['cut'], d['w'], d.get('grp', False)); best[1].b0 = self.blind_total; used.add(best[1])
+            else: nk = Track(t, d['x'], d['y'], d['h'], d['cut'], d['w'], d.get('grp', False)); nk.b0 = self.blind_total; self.tracks.append(nk)
         for k in self.tracks:
             if k not in used:
                 k.misses += 1; k.coast = True
                 if t - k.t < 1.5: k.x, k.y = k.predict(t)[0], k.predict(t)[1]
-        self.tracks = [k for k in self.tracks if t - k.t < 3.0]
+        self.tracks = [k for k in self.tracks if t - k.t - min(self.blind_total - getattr(k, 'b0', self.blind_total), 6.0) < 3.0]      # time the camera was not looking is not held against a track (up to 6 s)
         for k in self.tracks:
             h, lb = k.height; k.cls = 'unsure' if sum(k.grp) * 2 > len(k.grp) else classify(h, k.width, lb); k.dist = math.hypot(k.x - pose[0], k.y - pose[1])
 
@@ -479,11 +534,13 @@ class FaceStandIn:
             a = rng.normal(size=EMB_D); v = family_share * fam[f] / np.linalg.norm(fam[f]) + math.sqrt(1 - family_share ** 2) * a / np.linalg.norm(a); self.v[w] = v / np.linalg.norm(v)
         self.rng = np.random.default_rng(seed + 1)
 
-    def look(self, who, dist, facing, speed):
-        """One noisy feature vector of a person `who` seen at `dist` m, `facing` = cosine between where they face and the direction to the camera. -> (vector, sigma)."""
+    def look(self, who, dist, facing, speed, elev=0.0):
+        """One noisy feature vector of a person `who` seen at `dist` m, `facing` = cosine between where they face and the direction to the camera, `elev` = how many degrees upward the
+        camera looks at the face (a face seen steeply from below is harder; the arm camera is lower than a person's face, as the mast camera was). -> (vector, sigma)."""
         sig = 0.30 + 0.28 * dist
         if facing < 0.5: sig *= 2.2
         if speed > 0.8: sig *= 1.3
+        if elev > 40.0: sig *= 1.0 + 0.02 * (elev - 40.0)
         e = self.v[who] + self.rng.normal(0, sig / math.sqrt(EMB_D), EMB_D)
         return e / np.linalg.norm(e), sig
 
@@ -626,13 +683,15 @@ class Guard:
 class PeopleSystem:
     """Everything about people on one object, hooked into the Supervisor (modes.py) by `sup.attach_people(system)`: it moves the simulated people, reads the head camera,
     tracks, sizes and (for enrolled people) names them, and runs the safety guard."""
-    def __init__(self, robot, agent, names, scripts, who=None, family=None, seed=0, registry_path=None, guard=True, static_map=None, period=0.2, guard_cfg=None, comply=None):
+    def __init__(self, robot, agent, names, scripts, who=None, family=None, seed=0, registry_path=None, guard=True, static_map=None, period=0.2, guard_cfg=None, comply=None, strict_face=None):
         self.r, self.a = robot, agent; self.names = list(names); self.who = list(who) if who else [f'p{i}' for i in range(len(names))]
         self.people = People(robot, names, scripts, comply=comply, seed=seed); self.det = PersonDetector(robot, agent, np.random.default_rng(seed + 11), static_map, period)
         self.face = FaceStandIn(self.who, family or [w for w in self.who], seed + 5); self.registry = Registry(registry_path)
         self.movers = LidarMovers(agent); self.guard = Guard(self.det, guard_cfg) if guard else None
         if self.guard: self.guard.extra = self.movers.confirmed; self.guard.on_ask = self.people.ask_to_move
         self.enabled = True; self.t_identify = 0.0; self.ident_log = []
+        self.strict_face = self.det.cam.arm if strict_face is None else bool(strict_face)      # a face is only looked at if the head is in the picture, and a steep look up costs (always so for the arm camera)
+        self.n_face_out = 0
         self.n_look = 0; self.n_false = 0; self.cls_votes = [dict() for _ in names]; self.id_votes = [dict() for _ in names]
 
     # --- called by the supervisor each tick
@@ -654,12 +713,23 @@ class PeopleSystem:
                 if dd < 0.6 and (best is None or dd < best[0]): best = (dd, s)
             self.n_look += 1
             if best is None: k.truth = None; self.n_false += 1; continue
-            s = best[1]; k.truth = s['i']; d = math.hypot(s['x'] - rx, s['y'] - ry)
+            s = best[1]; k.truth = s['i']; d = math.hypot(s['x'] - rx, s['y'] - ry); elev = 0.0
             facing = math.cos(s['yaw']) * (rx - s['x']) / max(d, 1e-6) + math.sin(s['yaw']) * (ry - s['y']) / max(d, 1e-6)
-            e, sig = self.face.look(self.who[s['i']], d, facing, s['v']); k.emb = (k.emb + [e])[-IDENT_N:]; k.frontal = (k.frontal + [facing >= 0.5])[-IDENT_N:]
+            if self.strict_face:
+                fh = 0.93 * s['h']; cam = self.det.cam; elev = math.degrees(math.atan2(fh - cam.height, max(d, 0.05)))
+                if not self._in_picture(s['x'] - rx, s['y'] - ry, th, fh): self.n_face_out += 1; continue
+            e, sig = self.face.look(self.who[s['i']], d, facing, s['v'], elev); k.emb = (k.emb + [e])[-IDENT_N:]; k.frontal = (k.frontal + [facing >= 0.5])[-IDENT_N:]
             who, s1, s2 = self.registry.identify(k.emb); k.who, k.who_conf = who, s1
             if k.hits >= 4:
                 v = self.cls_votes[s['i']]; v[k.cls] = v.get(k.cls, 0) + 1; v = self.id_votes[s['i']]; key = who or 'unknown'; v[key] = v.get(key, 0) + 1
+
+    def _in_picture(self, dx, dy, th, fh):
+        """Is a face at (dx, dy) from the robot and fh m above the floor inside the camera's picture (4 degrees from the edge)? Uses the camera pose the robot believes."""
+        cam = self.det.cam; c, sn = math.cos(th), math.sin(th)
+        p = cam.R_bc.T @ (np.array([c * dx + sn * dy, -sn * dx + c * dy, fh]) - cam.t_bc)
+        if p[2] >= -0.05: return False
+        fovy = float(self.r.m.cam_fovy[cam.cam]); fovx = math.degrees(2 * math.atan(math.tan(math.radians(fovy) / 2) * HW / HH))
+        return abs(math.degrees(math.atan2(p[0], -p[2]))) <= fovx / 2 - 4.0 and abs(math.degrees(math.atan2(p[1], -p[2]))) <= fovy / 2 - 4.0
 
     # --- what the rest of the robot asks
     def tracks(self, min_hits=2): return self.det.confirmed(min_hits)

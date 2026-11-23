@@ -211,6 +211,7 @@ NO = ['不', '不是', '不对', '不要', '不行', '不同意', '错了', '不
 NEEDS = {'where_is': ['item'], 'fetch_item': ['item'], 'go_to': ['place'], 'name_item': ['item', 'newname'], 'enrol': [], 'forget': []}
 MOTION = {'tidy', 'fetch_item', 'go_to', 'scan_home', 'charge', 'resume', 'come_here'}
 SENSITIVE = {'enrol', 'forget', 'privacy'}
+NEVER_FROM_LLM = frozenset({'stop', 'enrol', 'forget', 'privacy', 'profile_show', 'set_lang'})      # said by a person or not at all: nothing a language model wrote may remember or forget somebody, switch the microphone, or stand for the stop word
 # who may ask what: the lowest role that may. owner > adult (a grown-up the robot does not know) > child (also: unsure, nobody seen)
 ROLE_RANK = {'owner': 3, 'adult': 2, 'child': 1, 'unknown': 1}
 MIN_ROLE = {'stop': 'unknown', 'status': 'unknown', 'greet': 'unknown', 'identity': 'unknown', 'help': 'unknown', 'where_is': 'unknown', 'list_items': 'unknown', 'what_new': 'unknown',
@@ -397,6 +398,13 @@ class NLU:
         return dict(intent=top[1], conf=round(top[0], 3), slots=slots, missing=top[3], alts=[(round(c, 2), i) for c, i, _, _, _ in scored[1:4]], text=raw if toks else t, phrase=top[2], lang=top[4])
 
 
+class TextASR:
+    """For a real recogniser run outside this file: `VoiceSystem(asr=TextASR())` takes the words it wrote down as they are (no simulated errors) with a fixed confidence (0.9: a real one reports its own,
+    pass it as `conf` if you have it)."""
+    def __init__(self, conf=0.9): self.conf = conf
+    def hear(self, said, child=False, dist=1.5, **kw): return said, self.conf
+
+
 # ---------------------------------------------------------------------------------------------------------------- an optional language model (never in control)
 class LLMBackend:
     """Interface for a language model that may help with sentences the phrase matcher did not understand. It sees only the text of what was said (no audio, no images, no names unless the owner
@@ -432,6 +440,7 @@ class VoiceSystem:
         self.tts = []; self.log = []; self.actions = []; self.muted = False; self.resume_cmd = None; self.setup_mode = setup_mode; self.keep_transcripts = keep_transcripts
         if ppl is not None and getattr(ppl, 'guard', None) is not None: ppl.guard.speak = lambda text: self.speak(text, lang=self._ambient_lang())          # what the guard says goes through the same mouth
         self.extra_persons = []; self._retry = None; self.stats = dict(heard=0, ignored=0, reask=0, confirm=0, denied=0, acted=0, stop=0); self.owner_names = set(); self._enrol = None; self.session_mark = 0
+        if self.llm is not None and getattr(self.llm, 'names_default', False): self.llm.names = lambda: self._person_names(True)                  # llm.Gateway hides the names of the people the robot knows in what it sends
         self.lang = 'zh'; self.default_lang = 'zh'; self.prefs = {}                         # the language of this exchange; of the household; of a named person (from the profile)
         self._who = None; self._loc = None; self.profiles = None; self._ident = None; self._lk = None; self.session_key = None; self.reidentify = None; self.voiceprints = None; self._venrol = None
         self._decay_t = -1e9; self._day = None                                                   # when the profiles last faded; which day it is (strangers' voices are forgotten when it changes)
@@ -478,17 +487,22 @@ class VoiceSystem:
         if k.cls == 'adult': return 'owner' if (self.setup_mode and not any(p['role'] == 'adult' for p in reg.people.values())) else 'adult'
         return 'child'
 
-    def _names(self):
+    def _person_names(self, owners=False):
         persons = (list(self.ppl.registry.people) if self.ppl is not None else []) + list(self.extra_persons)
         for store in (self.voiceprints, self.profiles):                                                    # people who were enrolled by voice only are people too
             if store is not None: persons += [n for n in store.people if n not in persons]
+        return persons + [n for n in self.owner_names if owners and n not in persons]
+
+    def _names(self):
+        persons = self._person_names()
         items = {}
         if self.home is not None and self.home.inv is not None: items = {i: it['name'] for i, it in self.home.inv.items.items() if it['name']}
         self.nlu.set_names(persons, items)
 
     # ---- one utterance
-    def hear(self, said, speaker=None, role=None, dist=1.5, _retry=False, snr_db=None, who=None, ident=None):
-        """One utterance. `speaker` is the simulated person (the stand-in for 'where the voice came from', as in round 14); `ident` is what the sound side made of it instead (assoc.Associator.resolve:
+    def hear(self, said, speaker=None, role=None, dist=1.5, _retry=False, snr_db=None, who=None, ident=None, kws=None):
+        """One utterance. `kws`: what the keyword spotter on the audio (wakeword.py) said: True = it heard the wake word (the text is then taken as woken whether or not the recogniser wrote the name),
+        False = it did not (a name in the text does not wake the robot), 'stop' = it heard a stop word; None = no spotter: the wake and stop words are looked for in the text, as before. `speaker` is the simulated person (the stand-in for 'where the voice came from', as in round 14); `ident` is what the sound side made of it instead (assoc.Associator.resolve:
         source person / unseen / device / ambiguous, the name if known, the position, the role, plus the voice embedding for an enrolment in progress). With `ident` the role comes from it, a device is
         ignored (except the stop word), and a follow-up without the wake word is taken only from the person who started the conversation."""
         if ident is not None:
@@ -498,7 +512,7 @@ class VoiceSystem:
         if who is not None and self.profiles is not None:
             pl = self.profiles.lang_pref(who)
             if pl: self.prefs[who] = pl
-        rec = self._hear(said, speaker, role, dist, _retry, snr_db, who, ident)
+        rec = self._hear(said, speaker, role, dist, _retry, snr_db, who, ident, kws)
         self._after(rec, who, ident); return rec
 
     def _truth_loc(self, speaker):
@@ -520,7 +534,7 @@ class VoiceSystem:
         if who is not None and self.profiles is not None: self.profiles.observe_utterance(who, self._lk, rec.get('intent') if rec.get('intent') not in ('wake', 'yes', 'no') else None, self.now())
         if rec.get('intent') in ('wake',) or rec.get('woke'): self.session_key = self._key(ident)
 
-    def _hear(self, said, speaker, role, dist, _retry, snr_db, who, ident):
+    def _hear(self, said, speaker, role, dist, _retry, snr_db, who, ident, kws=None):
         now = self.now(); role = role or self.role_of(speaker); self.stats['heard'] += 1
         rec = dict(t=round(now, 1), said=said if self.keep_transcripts else None, role=role, speaker=speaker)
         if self.muted: self.stats['ignored'] += 1; rec.update(action='ignored: muted'); self.log.append(rec); return rec
@@ -529,9 +543,9 @@ class VoiceSystem:
             st = self.ppl.people.state[speaker]; rx, ry, _ = self.ppl.r.true_pose(); child_voice = st['cls'] == 'child'; dist = math.hypot(st['x'] - rx, st['y'] - ry)
         text, aconf = self.asr.hear(said, child=child_voice, dist=dist, **({} if snr_db is None else dict(snr_db=snr_db))); rec.update(heard=text if self.keep_transcripts else None, asr_conf=round(aconf, 2)); self._names()
         self.lang = self._pick_lang(text, who); self._lang_t = now; self._lk = L.detect_lang(text)[0]
-        if self.nlu.is_stop_word(text):                                       # always on, no wake word, anyone
+        if kws == 'stop' or (kws is None and self.nlu.is_stop_word(text)):             # always on, no wake word, anyone
             self._do_stop(); self.stats['stop'] += 1; rec.update(intent='stop', action='stop', reply=self.speak(('好的，我停下来了', "OK, I've stopped."))); self.session_until = now + SESSION_S; self.log.append(rec); return rec
-        woke = self.nlu.has_wake(text); live = now < self.session_until or (self.pending is not None and now <= self.pending['until'])
+        woke = (kws is True) if kws is not None else self.nlu.has_wake(text); live = now < self.session_until or (self.pending is not None and now <= self.pending['until'])
         if self._venrol is not None and self._venrol.get('collect') and not woke and (ident is None or ident.get('source') != 'device'):
             r = self._collect_voice(ident, rec, now)
             if r is not None: self.log.append(r); return r
@@ -553,7 +567,7 @@ class VoiceSystem:
                 st = self.ppl.people.state[speaker]; x, y, th = self.sup.a.pose(); az = math.atan2(st['y'] - y, st['x'] - x)                       # round 14: the simulator's truth
             if az is not None:
                 x, y, th = self.sup.a.pose(); self.sup.go_to(x, y, th=az, tol=0.15)
-                self._retry = dict(said=said, speaker=speaker, t_ready=now + 3.5, ident=ident); self.session_until = now + SESSION_S
+                self._retry = dict(said=said, speaker=speaker, t_ready=now + 3.5, ident=ident, kws=kws); self.session_until = now + SESSION_S
                 rec.update(action='turning toward the speaker', reply=self.speak(('我转过来看看', 'Let me turn and have a look.'))); self.log.append(rec); return rec
         if self.pending is not None and now > self.pending['until']: self.pending = None
         if self.pending is not None:
@@ -562,15 +576,18 @@ class VoiceSystem:
         rec['_body'] = body; self._command(body, role, aconf, speaker, rec); rec.pop('_body', None); self.session_until = now + (PENDING_S if self.pending else SESSION_S); self.log.append(rec); return rec
 
     # ---- commands
-    def _command(self, body, role, aconf, speaker, rec):
+    def _command(self, body, role, aconf, speaker, rec, via_llm=None):
+        """via_llm: the intent a language model said this sentence (its rewrite of the request) means; our own parse of the sentence has to agree, and the action is then always asked about first."""
         p = self.nlu.parse(body); conf = p['conf'] * (0.55 + 0.45 * aconf); intent = p['intent']; slots = dict(p['slots'])
         if intent is not None and intent not in ('yes', 'no'): self.lang = p.get('lang', self.lang)           # answer in the language of the phrase that was understood
         if intent == 'privacy' and p.get('phrase') in ('静音', '别听', '关掉麦克风', '别看', 'mute', 'stop listening', 'turn off the microphone'): slots['mute'] = True
         if intent == 'forget' and re.search(r'(所有|全部|大家|每个人|\beveryone\b|\beverybody\b|\bevery one\b)', body, re.I): slots['all'] = True
         if intent in ('enrol', 'forget') and re.search(r'(声音|声纹|\bvoice\b)', body, re.I): slots['voice'] = True
         rec.update(intent=intent, conf=round(conf, 2), slots={k: v for k, v in slots.items() if k != 'item_word'})
+        if via_llm is not None and (intent != via_llm or intent in NEVER_FROM_LLM):                      # the model's rewrite does not parse as the model said, or says one of the things only a person may say
+            self.stats['reask'] += 1; rec.update(action='reask', via='llm'); rec['reply'] = self.speak(('我没听清，请再说一遍', "Sorry, I didn't catch that. Could you say it again?")); return
         weak = intent is None or conf < 0.45 or (bool(p['missing']) and conf < 0.7 and not slots.get('anaphora'))
-        if weak and self.llm is not None and self._ask_llm(body, role, rec): return
+        if weak and via_llm is None and self.llm is not None and self._ask_llm(body, role, rec, aconf, speaker): return
         if intent is None or conf < 0.45:
             self.stats['reask'] += 1; rec.update(action='reask'); rec['reply'] = self.speak(('我没听清，请再说一遍', "Sorry, I didn't catch that. Could you say it again?") if intent is None else (f'我没太听清，你是说“{self._intent_cn(intent)}”吗？', f'I am not sure I heard you right. Did you mean "{self._intent_en(intent)}"?')); 
             if intent is not None: self.pending = dict(kind='confirm', intent=intent, slots=slots, role=role, until=self.now() + PENDING_S)
@@ -585,7 +602,7 @@ class VoiceSystem:
         if missing:
             ask = dict(item=('要哪一个东西？', 'Which one do you mean?'), place=('要去哪里？', 'Where should I go?'), newname=('想叫它什么名字？', 'What would you like to call it?'))[missing[0]]
             self.pending = dict(kind='slot', intent=intent, slots=slots, slot=missing[0], role=role, until=self.now() + PENDING_S); rec.update(action='ask', reply=self.speak(ask)); return
-        if intent in MOTION and (conf < 0.7 or self._thin_authority(intent, role)):                 # not sure enough to move, or not sure enough who is asking: ask first
+        if intent in MOTION and (conf < 0.7 or via_llm is not None or self._thin_authority(intent, role)):                 # not sure enough to move (a model's guess never is), or not sure enough who is asking: ask first
             self.stats['confirm'] += 1; self.pending = dict(kind='confirm', intent=intent, slots=slots, role=role, until=self.now() + PENDING_S, key=self._key(self._ident))
             rec.update(action='confirm', reply=self.speak((f'你是要我{self._intent_cn(intent, slots)}吗？', f'Do you want me to {self._intent_en(intent, slots)}?'))); return
         self._execute(intent, slots, role, rec)
@@ -624,20 +641,27 @@ class VoiceSystem:
         if self._ident is not None and self._ident.get('source') == 'unseen' and role in ('adult', 'unknown'): who = ('我听到了，但没看到你。这个要在我面前说才行', "I can hear you but I can't see you. Please say that in front of me.")
         rec['reply'] = self.speak(who); return False
 
-    def _ask_llm(self, body, role, rec):
-        try: out = self.llm.propose(body, dict(self.ctx), role)
+    def _ask_llm(self, body, role, rec, aconf=1.0, speaker=None):
+        try: out = self.llm.propose(body, dict(self.ctx, lang=self.lang), role)
         except Exception: return False
         if not isinstance(out, dict): return False
-        if 'intent' in out and out['intent'] in MIN_ROLE:
+        if out.get('rephrase') and out.get('intent') in MIN_ROLE:                  # llm.Gateway: the request rewritten in a form the phrase matcher knows. OUR parse of that sentence decides what is done, to what, where
+            if out['intent'] in NEVER_FROM_LLM or not isinstance(out['rephrase'], str): return False
+            rec['via'] = 'llm'; self._command(out['rephrase'], role, aconf, speaker, rec, via_llm=out['intent']); return True
+        if 'intent' in out and out['intent'] in MIN_ROLE and out['intent'] not in NEVER_FROM_LLM:            # the plain form (tests): an intent and slots
             rec.update(intent=out['intent'], via='llm'); slots = dict(out.get('slots') or {})
             if not self._allowed(out['intent'], role, rec): return True
             if out['intent'] in MOTION or out['intent'] in SENSITIVE:           # a model's guess is never enough to move or to store anything about a person: ask
-                self.stats['confirm'] += 1; self.pending = dict(kind='confirm', intent=out['intent'], slots=slots, role=role, until=self.now() + PENDING_S)
+                self.stats['confirm'] += 1; self.pending = dict(kind='confirm', intent=out['intent'], slots=slots, role=role, until=self.now() + PENDING_S, key=self._key(self._ident))
                 rec.update(action='confirm', reply=self.speak((f'你是要我{self._intent_cn(out["intent"], slots)}吗？', f'Do you want me to {self._intent_en(out["intent"], slots)}?'))); return True
             self._execute(out['intent'], slots, role, rec); return True
         if 'say' in out and isinstance(out['say'], str) and role in ('owner', 'adult') and len(out['say']) <= 80:
             rec.update(action='llm reply', via='llm', reply=self.speak(out['say'])); return True
         return False
+
+    def set_online(self, on):
+        """The owner's switch for the language model: off, and the robot understands only what it can on its own (the hardware mute key does the same for the microphone)."""
+        if self.llm is not None and hasattr(self.llm, 'set_enabled'): self.llm.set_enabled(on)
 
     # ---- answers to an open question
     def _answer(self, body, role, aconf, speaker, rec):
@@ -809,7 +833,7 @@ class VoiceSystem:
         if self._retry is not None and now >= self._retry['t_ready']:
             rt, self._retry = self._retry, None; idn = rt.get('ident')
             if idn is not None and self.reidentify is not None: idn = self.reidentify(idn)                 # the camera now looks that way: who is there?
-            self.hear(rt['said'], speaker=rt['speaker'], _retry=True, ident=idn)
+            self.hear(rt['said'], speaker=rt['speaker'], _retry=True, ident=idn, kws=rt.get('kws'))
         if self.pending is not None and now > self.pending['until']: self.pending = None
         E = self._enrol
         if E is not None and E.get('by') and self.ppl is not None:

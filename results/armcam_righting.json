@@ -1,0 +1,157 @@
+{
+ "camera": "forearm, camera mass swept",
+ "upright_of_n": {
+  "side_l": {
+   "0 g": "12/12",
+   "20 g": "12/12",
+   "40 g": "12/12",
+   "50 g": "11/12",
+   "60 g": "7/12",
+   "75 g": "0/12"
+  },
+  "side_r": {
+   "0 g": "12/12",
+   "20 g": "12/12",
+   "40 g": "10/12",
+   "50 g": "5/12",
+   "60 g": "2/12",
+   "75 g": "0/12"
+  },
+  "fwd": {
+   "0 g": "12/12",
+   "20 g": "9/12",
+   "40 g": "9/12",
+   "50 g": "10/12",
+   "60 g": "12/12",
+   "75 g": "11/12"
+  }
+ },
+ "rows": [
+  {
+   "cls": "side_l",
+   "mass": 0.0,
+   "upright": 12,
+   "n": 12,
+   "mean_final_tilt": 0.0
+  },
+  {
+   "cls": "side_l",
+   "mass": 0.02,
+   "upright": 12,
+   "n": 12,
+   "mean_final_tilt": 0.0
+  },
+  {
+   "cls": "side_l",
+   "mass": 0.04,
+   "upright": 12,
+   "n": 12,
+   "mean_final_tilt": 0.0
+  },
+  {
+   "cls": "side_l",
+   "mass": 0.05,
+   "upright": 11,
+   "n": 12,
+   "mean_final_tilt": 9.3
+  },
+  {
+   "cls": "side_l",
+   "mass": 0.06,
+   "upright": 7,
+   "n": 12,
+   "mean_final_tilt": 46.4
+  },
+  {
+   "cls": "side_l",
+   "mass": 0.075,
+   "upright": 0,
+   "n": 12,
+   "mean_final_tilt": 111.3
+  },
+  {
+   "cls": "side_r",
+   "mass": 0.0,
+   "upright": 12,
+   "n": 12,
+   "mean_final_tilt": 0.0
+  },
+  {
+   "cls": "side_r",
+   "mass": 0.02,
+   "upright": 12,
+   "n": 12,
+   "mean_final_tilt": 0.0
+  },
+  {
+   "cls": "side_r",
+   "mass": 0.04,
+   "upright": 10,
+   "n": 12,
+   "mean_final_tilt": 18.5
+  },
+  {
+   "cls": "side_r",
+   "mass": 0.05,
+   "upright": 5,
+   "n": 12,
+   "mean_final_tilt": 64.9
+  },
+  {
+   "cls": "side_r",
+   "mass": 0.06,
+   "upright": 2,
+   "n": 12,
+   "mean_final_tilt": 92.7
+  },
+  {
+   "cls": "side_r",
+   "mass": 0.075,
+   "upright": 0,
+   "n": 12,
+   "mean_final_tilt": 111.3
+  },
+  {
+   "cls": "fwd",
+   "mass": 0.0,
+   "upright": 12,
+   "n": 12,
+   "mean_final_tilt": 0.0
+  },
+  {
+   "cls": "fwd",
+   "mass": 0.02,
+   "upright": 9,
+   "n": 12,
+   "mean_final_tilt": 27.8
+  },
+  {
+   "cls": "fwd",
+   "mass": 0.04,
+   "upright": 9,
+   "n": 12,
+   "mean_final_tilt": 27.8
+  },
+  {
+   "cls": "fwd",
+   "mass": 0.05,
+   "upright": 10,
+   "n": 12,
+   "mean_final_tilt": 18.5
+  },
+  {
+   "cls": "fwd",
+   "mass": 0.06,
+   "upright": 12,
+   "n": 12,
+   "mean_final_tilt": 0.0
+  },
+  {
+   "cls": "fwd",
+   "mass": 0.075,
+   "upright": 11,
+   "n": 12,
+   "mean_final_tilt": 9.3
+  }
+ ]
+}

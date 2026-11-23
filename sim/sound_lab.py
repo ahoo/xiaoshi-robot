@@ -46,7 +46,7 @@ def chain(spec, rng, cond=None, lang=None, text=None, robot=None, yaw=None, pos=
     """A talker says something; the robot hears it with its array. -> dict(audio=the beamformed utterance (16 kHz), az_est, az_true (robot frame), dist, speech_s, lang, text, found) or found=False.
     cond: rt60, array, level (dB SPL at 1 m), speed/turn (robot moving), tv (television level at 1 m), dmin/dmax, pos_err_mm, gain_err_db."""
     cond = cond or {}; seed = int(rng.integers(1 << 30))
-    room = A.Room(ROOM, rt60=cond.get('rt60', 0.5)); arr = A.MicArray(cond.get('array', '4mic'), pos_err_mm=cond.get('pos_err_mm', 0.0), gain_err_db=cond.get('gain_err_db', 0.0), seed=seed); sc = A.Scene(room, arr, seed=seed + 1); est = D.DOA(arr.nominal)
+    room = A.Room(ROOM, rt60=cond.get('rt60', 0.5)); arr = A.MicArray(cond.get('array', '4mic'), height=cond.get('mic_height', 0.50), pos_err_mm=cond.get('pos_err_mm', 0.0), gain_err_db=cond.get('gain_err_db', 0.0), seed=seed); sc = A.Scene(room, arr, seed=seed + 1); est = D.DOA(arr.nominal)
     yaw = rng.uniform(-math.pi, math.pi) if yaw is None else yaw; fixed = robot is not None
     for _ in range(60):                                                                       # a far talker (3-4 m) needs the robot near a wall: try other places for it
         rb = robot or (rng.uniform(0.7, 3.3), rng.uniform(0.7, 2.3))

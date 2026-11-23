@@ -1,0 +1,15 @@
+{
+ "forearm_up": {
+  "height_m": 0.387,
+  "elevation_deg": 32.5,
+  "time_to_raise_s": 0.0,
+  "believed_pose_angle_error_deg": {
+   "mean": 0.74,
+   "max": 1.17
+  },
+  "believed_pose_position_error_mm": {
+   "mean": 1.7,
+   "max": 2.4
+  }
+ }
+}

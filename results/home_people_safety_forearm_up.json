@@ -1,0 +1,215 @@
+{
+ "runs": [
+  {
+   "scenario": "none",
+   "seed": 1,
+   "guard": true,
+   "camera": "forearm_up",
+   "delivered": 5,
+   "total": 5,
+   "finished": false,
+   "sim_time": 420.0,
+   "collisions": 0,
+   "stuck": 0,
+   "wall_s": 401,
+   "mode_end": "TASK"
+  },
+  {
+   "scenario": "adult_cross",
+   "seed": 1,
+   "guard": true,
+   "camera": "forearm_up",
+   "delivered": 5,
+   "total": 5,
+   "finished": false,
+   "sim_time": 420.0,
+   "collisions": 0,
+   "stuck": 0,
+   "wall_s": 611,
+   "mode_end": "TASK",
+   "contacts": [
+    0
+   ],
+   "contact_s": [
+    0.0
+   ],
+   "contact_speed": [],
+   "min_gap_cm": [
+    52.0
+   ],
+   "halts": 2,
+   "halt_s": 2.5,
+   "slow_s": 0.0,
+   "arm_pauses": 0,
+   "false_track_share": 0.0,
+   "cls_votes": [
+    {}
+   ],
+   "ms_per_frame": 102,
+   "cam_blind_share": 0.118,
+   "face_out": 0,
+   "events": [
+    [
+     22.4,
+     "TASK",
+     "有人在附近（unsure coming fast 1.0 m/s），先停一下"
+    ]
+   ]
+  },
+  {
+   "scenario": "child_run",
+   "seed": 1,
+   "guard": true,
+   "camera": "forearm_up",
+   "delivered": 5,
+   "total": 5,
+   "finished": false,
+   "sim_time": 420.0,
+   "collisions": 0,
+   "stuck": 0,
+   "wall_s": 592,
+   "mode_end": "TASK",
+   "contacts": [
+    0
+   ],
+   "contact_s": [
+    0.0
+   ],
+   "contact_speed": [],
+   "min_gap_cm": [
+    13.8
+   ],
+   "halts": 3,
+   "halt_s": 5.5,
+   "slow_s": 0.0,
+   "arm_pauses": 0,
+   "false_track_share": 0.0,
+   "cls_votes": [
+    {
+     "child": 4
+    }
+   ],
+   "ms_per_frame": 102,
+   "cam_blind_share": 0.115,
+   "face_out": 0,
+   "events": [
+    [
+     27.0,
+     "TASK",
+     "有人在附近（unsure at 0.08 m），先停一下"
+    ],
+    [
+     65.4,
+     "TASK",
+     "有人在附近（unsure coming fast 1.7 m/s），先停一下"
+    ]
+   ]
+  },
+  {
+   "scenario": "toddler_basket",
+   "seed": 1,
+   "guard": true,
+   "camera": "forearm_up",
+   "delivered": 5,
+   "total": 5,
+   "finished": false,
+   "sim_time": 420.0,
+   "collisions": 0,
+   "stuck": 0,
+   "wall_s": 497,
+   "mode_end": "TASK",
+   "contacts": [
+    0
+   ],
+   "contact_s": [
+    0.0
+   ],
+   "contact_speed": [],
+   "min_gap_cm": [
+    114.3
+   ],
+   "halts": 1,
+   "halt_s": 1.1,
+   "slow_s": 0.0,
+   "arm_pauses": 0,
+   "false_track_share": 0.0,
+   "cls_votes": [
+    {
+     "child": 24
+    }
+   ],
+   "ms_per_frame": 88,
+   "cam_blind_share": 0.119,
+   "face_out": 4,
+   "events": [
+    [
+     370.1,
+     "TASK",
+     "有人在附近（unsure at 0.11 m），先停一下"
+    ]
+   ]
+  },
+  {
+   "scenario": "family",
+   "seed": 1,
+   "guard": true,
+   "camera": "forearm_up",
+   "delivered": 5,
+   "total": 5,
+   "finished": false,
+   "sim_time": 420.0,
+   "collisions": 0,
+   "stuck": 0,
+   "wall_s": 414,
+   "mode_end": "TASK",
+   "contacts": [
+    0,
+    0,
+    0
+   ],
+   "contact_s": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "contact_speed": [],
+   "min_gap_cm": [
+    22.5,
+    49.5,
+    34.0
+   ],
+   "halts": 3,
+   "halt_s": 6.7,
+   "slow_s": 4.3,
+   "arm_pauses": 0,
+   "false_track_share": 0.0,
+   "cls_votes": [
+    {
+     "adult": 47,
+     "unsure": 4
+    },
+    {
+     "child": 38
+    },
+    {
+     "child": 27
+    }
+   ],
+   "ms_per_frame": 75,
+   "cam_blind_share": 0.118,
+   "face_out": 22,
+   "events": [
+    [
+     35.2,
+     "TASK",
+     "有人在附近（child coming fast 0.7 m/s），先停一下"
+    ],
+    [
+     86.0,
+     "TASK",
+     "有人在附近（unsure coming fast 1.0 m/s），先停一下"
+    ]
+   ]
+  }
+ ]
+}

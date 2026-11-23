@@ -8,6 +8,8 @@
 
 第十五轮加了**声音**（同样只在仿真里做了我们自己写的那部分）：用麦克风阵列听声音从哪个方向来（4 麦中位误差约 8°）、用声纹（音色）认出是谁在说话、把方向、声纹和摄像头里的人对起来（电视的声音和录音不当成人、只凭声音拿不到“主人”权限）、**中文、英文和中英夹杂都能听懂、用提问的语言回答**，并给登记过的人建一张本机的、能看能删的画像（语言偏好、常在的时段、常叫它做的事；不存原话，孩子只存最少的）。仿真里没有声音，我们用自己写的房间声学和 espeak-ng 合成的中英文说话声把声音渲染出来再走真算法，**声学和声音都是仿真，不是实测**。
 
+第十六轮把**相机从头部立杆挪到了机械臂上**（装在前臂上、向上翻到仰 32.5°，行进姿势下就朝前向上看，不用抬手臂，不要立杆；仿真里找人、分大人孩子、认人（替身识别器）、人和机器人同场干活都和立杆差不多，代价是手臂干活时约 12% 的时间看不到人，以及**75 g 的相机装上去，侧倒后存着的起身动作就起不来了（0/12），要重搜或换更轻的相机**，见 [`docs/status.md`](docs/status.md)）；接上了**大模型 API**（`sim/llm.py`，Claude 的接口，默认关，只发唤醒词之后这一句话的文字，孩子和认不出的人的话不发，动作仍要先口头确认；真模型没有测过）；唤醒词和停止词改成**在声音上直接听**（`sim/wakeword.py`，sherpa-onnx 的中英双语关键词模型，词用文字写进去；真录音上验证了流程，**真人喊“小拾小拾”有多灵没有测**）。
+
 - 当前状态和已知限制：[`docs/status.md`](docs/status.md)；下一步计划：[`docs/roadmap.md`](docs/roadmap.md)
 - 试验结果和实物验收表：[`docs/validation.md`](docs/validation.md)
 - 要买的东西：[`docs/bom.md`](docs/bom.md)
@@ -46,6 +48,9 @@
 | `sim/speaker.py` | 声纹：MFCC + 音高统计 → 在背景声音上训练的 LDA 投影；登记（要同意、只存向量）、识别（认出/不认识/拿不准）、每人分数归一化、陌生人匿名编号（只在内存、一天清掉）、忘掉 |
 | `sim/assoc.py` | 声音和人对上号：方向 + 声纹 + 摄像头 → 谁说的（看得见的人 / 视野外的人 / 设备）；用听到的声音学会电视在哪；**只凭声音不给任何高于陌生人的权限，“主人”要摄像头里认得出的大人在声音的方向上、声纹不否定、方向上没有已知的电视/手机** |
 | `sim/soundfront.py` | 把仿真里的一句话渲染成麦克风信号，走方向、波束、声纹、关联，交给 `VoiceSystem` |
+| `sim/llm.py` | 大模型接口（第十六轮）：`Gateway`（默认关；只发唤醒词之后这一句话的文字，去人名/长数字/邮箱/网址；孩子和认不出的人的话不发；限额、熔断、不记原话的日志）+ `ClaudeProvider`（Anthropic SDK，默认 `claude-opus-5-5`）；模型只能把话**改写**成机器人听得懂的一句或回一句闲聊，机器人自己再解析、先口头确认，记人/忘人/静音/换语言/停止永远不从模型接受 |
+| `sim/wakeword.py` | 唤醒词和停止词在声音上直接听（第十六轮）：`SherpaWake`（sherpa-onnx 流式关键词识别，中英双语 3 M 参数；词用文字写进去；冷却时间；机器人自己说话时只压唤醒词不压停止词）、`keyword_lines`、`evaluate`（在你自己的录音上扫阈值，量命中和每小时误唤醒）、`fetch_model` |
+| `sim/test_llm.py`、`sim/test_wake.py`、`sim/test_armcam.py` | 第十六轮的测试：大模型接口 71 项（真 SDK 加假网络）；唤醒词 16 项（真模型加真录音）；手臂相机的位姿、认人、起身（相机重量扫描）、麦克风装低了的声源方向 |
 | `sim/profiles.py` | 人物画像：只存计数（语言、时段、房间、常叫它做的事、自己的东西），孩子最少，能看（中英文卡片）、能删、衰减 |
 | `sim/sound_lab.py`、`sim/test_sound.py`、`sim/test_lang.py`、`sim/test_assoc.py`、`sim/test_day2.py` | 第十五轮台架：声源方向、阵列误差、声纹；中英文听懂；声音和人对上号、画像；整机的第二天 → `results/sound_*.json`、`results/lang.json` |
 | `sim/test_home.py` | 第十四轮台架：`scan`、`inventory`、`people_static`、`safety`、`identity`、`voice`、`day`、`export` → `results/home_*.json` |
@@ -67,6 +72,7 @@
 ```bash
 pip install mujoco numpy scipy imageio imageio-ffmpeg pillow pypinyin cmudict
 sudo apt-get install espeak-ng      # 第十五轮：合成说话声，只有声音台架用
+pip install anthropic sherpa-onnx sentencepiece   # 第十六轮，可选：大模型接口的测试要 anthropic；唤醒词的真模型测试要后两个（没装就跳过，不算通过）
 cd sim
 python test_base.py          # 底盘台架，几十秒
 python test_grasp.py 10      # 抓取台架，每种物体 10 次 × 两种夹爪摩擦
@@ -93,6 +99,13 @@ python test_sound.py ssl_calib 100  # 阵列自己的误差：麦克风位置偏
 python test_sound.py train_voice    # 训练声纹的投影（60 个背景声音 + 20 个校准）-> results/sound_voicemodel.npz
 python test_sound.py voiceprint     # 声纹：认对、认错、陌生人、电视、机器人在开、远处、两种语言、声音很像的两个人 -> results/sound_voiceprint.json
 python test_lang.py lang            # 中文、英文、夹杂：听懂（开发集/保留集/测试集）、口音、只会中文的机器人、唤醒词和停止词、闲聊、多轮对话 -> results/lang.json
+python test_armcam.py pose       # 手臂相机：离地多高、朝哪、机器人由关节读数算出的位姿差多少（立杆/前臂/潜望镜）-> results/armcam_pose.json
+CAMS=mast,forearm,periscope python test_armcam.py faces 60   # 手臂相机认人：登记过的人 1–3 m 外，叫对名字的比例和用时（替身识别器）-> results/armcam_faces.json
+python test_armcam.py righting   # 相机 0–75 g 装在前臂上，存着的起身动作还灵不灵 -> results/armcam_righting.json
+python test_armcam.py mic        # 麦克风阵列离地 0.5/0.3/0.2 m：声源方向 -> results/armcam_mic_height.json
+CAM=forearm python test_home.py people_static 150   # 同上台架，相机装在前臂（CAM=periscope|forearm_up 也行）；CAM=forearm python test_home.py safety 1：同场干活
+python test_llm.py               # 大模型接口：71 项检查，不联网 -> results/llm.json；有密钥时 python test_llm.py live 跑六句真的
+python test_wake.py              # 唤醒词/停止词：真关键词模型 + 真录音（需要 pip install sherpa-onnx sentencepiece，python test_wake.py fetch 下模型）-> results/wake.json
 python test_assoc.py assoc 200      # 声音和人对上号：200 个房间、电视、录音重放、访客 -> results/sound_assoc.json
 python test_assoc.py profile        # 人物画像：一个编出来的四口之家 14 天，隐私检查 -> results/sound_profile.json
 MUJOCO_GL=egl python test_day2.py 5 # 整机的第二天：电视、厨房里的声音、访客、录音、孩子 -> results/sound_day2.json
@@ -109,6 +122,26 @@ MUJOCO_GL=egl python render_video.py modes 3 ../results/modes.mp4   # 一次任�
 python run_trials.py 2       # 全部 56 次随机试验，2 个进程（双核约 2–3 小时，渲染相机图像占了一半时间）；中断后重跑会接着做
 MUJOCO_GL=egl python render_video.py 4    # 录像，需要能离屏渲染的环境
 python ../web/build_page.py  # 用 results/ 里的数字重新生成页面和 docs/validation.md
+```
+
+### 把唤醒词、识别器、大模型接到真机上（第十六轮）
+
+仿真里没有声音，下面这段是真机上的接法（**没有在真机上跑过**，接口都有测试，见 `test_llm.py`、`test_wake.py`）：
+
+```python
+from voice import VoiceSystem, TextASR
+from llm import Gateway, ClaudeProvider          # 不传 llm 就是完全离线，只用本机能听懂的
+from wakeword import SherpaWake                  # pip install sherpa-onnx sentencepiece；python test_wake.py fetch 下模型
+
+vs = VoiceSystem(sup=sup, home=home, ppl=ppl, asr=TextASR(), llm=Gateway(ClaudeProvider()))    # asr: 真识别器写下的字原样交进来；需要 ANTHROPIC_API_KEY；孩子和认不出的人的话不会发出去
+kws = SherpaWake()                               # 常开，在机器人本机上跑
+while True:
+    for e in kws.feed(mic_chunk):                # mic_chunk: 波束形成之后的 16 kHz 单声道，一小块一小块地喂
+        if e['kind'] == 'stop': vs.hear('停', kws='stop')                       # 停止词不要唤醒词，也不经过任何网络
+        else:                                                                    # 唤醒词：这时才开始录这一句话、交给识别器
+            text = my_recogniser.listen_until_silence()                          # 本机识别器或别的，自己接
+            vs.hear(text, ident=front.resolve(...), kws=True)                    # 声音这一侧的“谁说的”见 soundfront.py
+    # 机器人自己说话时：kws.suppress(until_t) 只压唤醒词；回声消除要在麦克风芯片上做
 ```
 
 开发环境是 MuJoCo 4.0.1、Python 3、无显示器的 Linux。带窗口的交互查看器（`python -m mujoco.viewer`）没有在这个环境里试过。

@@ -4,3 +4,4 @@ __pycache__/
 results/frames/
 results/.trials_cache/
 cache/
+third_party/sherpa-kws/

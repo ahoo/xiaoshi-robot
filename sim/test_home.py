@@ -4,7 +4,7 @@
   python test_home.py export [seed]       one scan with the toys on the floor: point cloud (PLY), stand-alone viewer page (HTML), numbers against the truth
   python test_home.py inv1 [seeds]        object records, one session: found, kind guessed (standard layouts and the hard-material ones)
   python test_home.py inventory [seeds]   object records across two sessions: things moved, taken away, new; identity of each
-  python test_home.py people_static [n]   people: found, how tall, child or adult, from a standing robot (150 trials), false tracks in an empty room
+  python test_home.py people_static [n]   people: found, how tall, child or adult, from a standing robot (150 trials), false tracks in an empty room (CAM=forearm|periscope: camera on the arm)
   python test_home.py pairs               a child standing close to a grown-up: are they told apart, is the child ever called an adult
   python test_home.py identity            the registry and the thresholds of the (stand-in) recogniser: consent, enrolment, confusions, forgetting
   python test_home.py safety [seeds]      people and the robot at work: an adult walks up, a child runs at it, a toddler by the basket, a family; guard on and off
@@ -244,10 +244,17 @@ def _static_job(args):
     import people as P
     from episode import _furn_dist
     from robot import Robot
-    seed, n_trials = args
+    seed, n_trials = args[:2]; cam = args[2] if len(args) > 2 else 'mast'                  # 'mast' (round 14), or a camera on the arm: 'forearm', 'periscope' (model.ARM_CAMS)
     rng = np.random.default_rng(seed); names = list(P.SPECS)
-    r = Robot([], seed=seed, people=names, head_cam=True, robot_pose=(2.0, 1.5, 0.0)); stub = _Stub(r)
+    r = Robot([], seed=seed, people=names, robot_pose=(2.0, 1.5, 0.0), **(dict(head_cam=True) if cam == 'mast' else dict(arm_cam=cam))); stub = _Stub(r)
     scripts = [P.Script([]) for _ in names]; ps = P.People(r, names, scripts); det = P.PersonDetector(r, stub, np.random.default_rng(seed + 3))
+    look = None if cam == 'mast' else __import__('model').ARM_CAMS[cam]['look']
+    if look is not None:                                                                       # the periscope: raise the arm and let it settle before anyone is looked at
+        r.set_arm(q5=np.array(look))
+        for _ in range(600):
+            ps.update(); r.step()
+            if r.arm_done(0.02): break
+        for _ in range(50): ps.update(); r.step()
     rows = []; fp = []
     def place(i, x, y, yaw, posture):
         scripts[i] = P.Script([('at', x, y, yaw)] + ([('posture', 'sit', 0.01)] if posture == 'sit' else [])); ps.scripts = scripts
@@ -284,9 +291,9 @@ def _static_job(args):
     return rows, fp, det.t_ms / max(det.frames, 1)
 
 
-def bench_people_static(procs=2, trials=150):
+def bench_people_static(procs=2, trials=150, cam='mast'):
     per = trials // procs
-    with mp.Pool(procs, maxtasksperchild=1) as p: out = p.map(_static_job, [(100 + i, per) for i in range(procs)])
+    with mp.Pool(procs, maxtasksperchild=1) as p: out = p.map(_static_job, [(100 + i, per, cam) for i in range(procs)])
     rows = [r for o in out for r in o[0]]; fp = [v for o in out for v in o[1]]; ms = float(np.mean([o[2] for o in out]))
     def stat(sel):
         a = [r for r in rows if sel(r)]
@@ -305,7 +312,7 @@ def bench_people_static(procs=2, trials=150):
             conf[f'{posture}/{tc}'] = {c: sum(1 for r in sel if r['cls'] == c) for c in ('child', 'unsure', 'adult')}
     res['size_class'] = conf
     res['child_called_adult'] = int(sum(1 for r in rows if r['found'] and r['truth_cls'] == 'child' and r['cls'] == 'adult'))
-    print(json.dumps(res, ensure_ascii=False, indent=1)); _save('people_static', dict(summary=res, rows=rows))
+    print(json.dumps(res, ensure_ascii=False, indent=1)); _save('people_static' if cam == 'mast' else f'people_static_{cam}', dict(summary=res, rows=rows, camera=cam))
 
 def _pair_job(args):
     """A child and a grown-up standing close together, at different gaps and in two arrangements (side by side, one in front of the other): are both found, and what is the pair called?"""
@@ -372,28 +379,30 @@ def _scenario(name, seed):
 
 def _safety_job(args):
     from episode import run_supervised
-    seed, scen, guard, t_end = args
+    seed, scen, guard, t_end = args[:4]; cam = args[4] if len(args) > 4 else 'mast'
     pe = _scenario(scen, seed)
-    if pe is not None: pe['guard'] = guard
+    if pe is not None: pe['guard'] = guard; pe['cam'] = cam
     t0 = time.time(); res, sup = run_supervised(seed, start='task', people=pe, t_end=t_end, perturbation=dict(lidar_model='ld19cal'))
-    out = dict(scenario=scen, seed=seed, guard=guard, delivered=res['delivered'], total=res['total'], finished=res['finished'], sim_time=res['sim_time'], collisions=res['collisions'], stuck=res['stuck'],
+    out = dict(scenario=scen, seed=seed, guard=guard, camera=cam, delivered=res['delivered'], total=res['total'], finished=res['finished'], sim_time=res['sim_time'], collisions=res['collisions'], stuck=res['stuck'],
                wall_s=round(time.time() - t0), mode_end=res['mode'])
     pp = sup.ppl
     if pp is not None:
         g = pp.guard; ps = pp.people
         out.update(contacts=[int(v) for v in ps.contact_events], contact_s=[round(v, 2) for v in ps.contact_t], contact_speed=ps.contact_speed, min_gap_cm=[round(100 * v, 1) for v in ps.min_gap],
                    halts=None if g is None else g.stats['halts'], halt_s=None if g is None else round(g.stats['halt_s'], 1), slow_s=None if g is None else round(g.stats['slow_s'], 1),
-                   arm_pauses=None if g is None else g.stats['arm_pauses'], false_track_share=round(pp.n_false / max(pp.n_look, 1), 3), cls_votes=pp.cls_votes, ms_per_frame=round(pp.det.t_ms / max(pp.det.frames, 1)))
+                   arm_pauses=None if g is None else g.stats['arm_pauses'], false_track_share=round(pp.n_false / max(pp.n_look, 1), 3), cls_votes=pp.cls_votes, ms_per_frame=round(pp.det.t_ms / max(pp.det.frames, 1)),
+                   cam_blind_share=round(pp.det.blind_s / max(pp.det.blind_s + pp.det.seen_s, 1e-9), 3), face_out=pp.n_face_out)
         out['events'] = [e for e in sup.events if '有人' in e[2]][:12]
     return out
 
 
-def bench_people_safety(seeds=(1, 2), procs=2, scenarios=('none', 'adult_cross', 'child_run', 'toddler_basket', 'family'), t_end=420.0):
-    jobs = [(s, sc, g, t_end) for s in seeds for sc in scenarios for g in ((True,) if sc == 'none' else (False, True))]
+def bench_people_safety(seeds=(1, 2), procs=2, scenarios=('none', 'adult_cross', 'child_run', 'toddler_basket', 'family'), t_end=420.0, cam='mast'):
+    jobs = [(s, sc, g, t_end, cam) for s in seeds for sc in scenarios for g in ((True,) if sc == 'none' else (False, True))]
     with mp.Pool(procs, maxtasksperchild=1) as p: res = p.map(_safety_job, jobs)
     for r in res: print({k: v for k, v in r.items() if k not in ('events', 'cls_votes')})
-    fn = os.path.join(RES, 'home_people_safety.json'); old = json.load(open(fn))['runs'] if os.path.exists(fn) else []
-    keys = {(r['scenario'], r['seed'], r['guard']) for r in res}; _save('people_safety', dict(runs=[r for r in old if (r['scenario'], r['seed'], r['guard']) not in keys] + res))
+    name = 'people_safety' if cam == 'mast' else f'people_safety_{cam}'
+    fn = os.path.join(RES, f'home_{name}.json'); old = json.load(open(fn))['runs'] if os.path.exists(fn) else []
+    keys = {(r['scenario'], r['seed'], r['guard']) for r in res}; _save(name, dict(runs=[r for r in old if (r['scenario'], r['seed'], r['guard']) not in keys] + res))
 
 
 # --------------------------------------------------------------------------------------------- voice (language side, no robot)
@@ -788,5 +797,5 @@ if __name__ == '__main__':
     elif what == 'day': bench_day(tuple(a) or (3,))
     elif what == 'identity': bench_identity()
     elif what == 'pairs': bench_pairs(procs=procs)
-    elif what == 'safety': bench_people_safety(tuple(a) or (1, 2), procs=procs)
-    elif what == 'people_static': bench_people_static(procs=procs, trials=a[0] if a else 150)
+    elif what == 'safety': bench_people_safety(tuple(a) or (1, 2), procs=procs, cam=os.environ.get('CAM', 'mast'))
+    elif what == 'people_static': bench_people_static(procs=procs, trials=a[0] if a else 150, cam=os.environ.get('CAM', 'mast'))
