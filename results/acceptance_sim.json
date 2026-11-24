@@ -253,10 +253,17 @@
     }
    ],
    "why": "",
-   "jobs": {},
-   "source": "读 results/ 里已有的结果",
-   "mode": "已有结果",
-   "when": "2026-11-24 15:27"
+   "jobs": {
+    "fall_room": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 446,
+     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/fall_room.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-24 17:18"
   },
   "C3": {
    "verdict": "PASS",
