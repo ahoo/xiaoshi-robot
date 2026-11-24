@@ -148,8 +148,8 @@ def dialogues():
     unit = lambda v: v / np.linalg.norm(v); tom = unit(rng.normal(size=8)); other = unit(rng.normal(size=8)); near = lambda v: unit(v + 0.1 * rng.normal(size=8))
     def mk():
         v = new(); v.voiceprints = SP.Voiceprints(mdl); v.profiles = PR.Profiles(); return v
-    def say(v, text, name='Tom', source='person', emb=None, loc=(1.0, 1.0), role='owner'):
-        v.advance(2.0); return v.hear(text, ident=dict(source=source, name=name, role=role, loc=loc, emb=emb, speech_s=2.0))
+    def say(v, text, name='Tom', source='person', emb=None, loc=(1.0, 1.0), role='owner', **kw):
+        v.advance(2.0); return v.hear(text, ident=dict(source=source, name=name, role=role, loc=loc, emb=emb, speech_s=2.0, **kw))
     vs = mk(); say(vs, 'Hey Xiaoshi, remember my voice'); say(vs, 'I agree'); a = say(vs, 'a long sentence from somebody who is not tom at all', name=None, emb=other, loc=(3.0, 2.0), role='unknown')
     for i in range(3): b = say(vs, f'sentence {i} from tom himself, long enough to count', emb=near(tom))
     chk('voice enrolment: a stranger speaking first is ignored and the print is Tom\'s', 'another voice ignored' in str(a.get('action')) and 'Tom' in vs.voiceprints.people and float(np.array(vs.voiceprints.people['Tom']['emb']) @ tom) > 0.9, (a.get('action'), b.get('action')))
@@ -163,10 +163,52 @@ def dialogues():
     chk('strangers\' voices are forgotten when the day changes, the profiles fade', before == 1 and not vs.voiceprints.anon and sum(vs.profiles.people['Tom']['hours']) < 1.0, (before, len(vs.voiceprints.anon)))
     class Tk:                                                  # a person in view whom the robot cannot name
         def __init__(self, i, who=None): self.id, self.who = i, who
-    def sayt(v, text, track, role='adult', name=None):
-        v.advance(2.0); return v.hear(text, ident=dict(source='person', name=name, role=role, loc=None, track=track))
+    def sayt(v, text, track, role='adult', name=None, loc=None, **kw):
+        v.advance(2.0); return v.hear(text, ident=dict(source='person', name=name, role=role, loc=loc, track=track, **kw))
+    # enrolment of a voice when nobody could be told from anybody (no name, no voice id, no track, no place), a neighbour within 0.8 m, a track made anew
+    vs = mk(); say(vs, 'Hey Xiaoshi, remember my voice', name=None, loc=None); say(vs, 'Tom', name=None, loc=None); say(vs, 'I agree', name=None, loc=None)
+    for i in range(3): b = say(vs, f'sentence {i} from tom himself, long enough to count', name=None, loc=None, emb=near(tom))
+    chk('voice enrolment: when nobody could be named or placed at the consent, the voice that holds together is enough and it completes', b.get('action') == 'voice enrolled' and 'Tom' in vs.voiceprints.people and float(np.array(vs.voiceprints.people['Tom']['emb']) @ tom) > 0.9, b.get('action'))
+    vs = mk(); say(vs, 'Hey Xiaoshi, remember my voice', name=None, loc=None); say(vs, 'Tom', name=None, loc=None); say(vs, 'I agree', name=None, loc=None); say(vs, 'a first sentence from tom, long enough to count', name=None, loc=None, emb=near(tom))
+    a = say(vs, 'a long sentence from somebody with another voice entirely', name=None, loc=None, emb=other)
+    chk('voice enrolment: with nothing else to go by another voice is still turned away (the sentences have to agree with each other)', 'another voice ignored' in str(a.get('action')) and len(vs._venrol['embs']) == 1, a.get('action'))
+    Tp = lambda i, cls='adult': type('Tp', (), dict(id=i, who=None, cls=cls))()
+    outs = {}
+    for label, kw in (('named Leo', dict(name='Leo')), ('a voice id', dict(name=None, anon='voice#1')), ('a track of his own', dict(name=None, track=Tp(5, 'child'))), ('nothing known', dict(name=None))):
+        vs = mk(); say(vs, 'Hey Xiaoshi, remember my voice'); say(vs, 'I agree')
+        a = say(vs, 'a long sentence from the child who stands right next to tom', emb=other, loc=(1.4, 1.0), role='child', **kw); outs[label] = ('another voice ignored' in str(a.get('action')), len(vs._venrol['embs']))
+    chk('voice enrolment: somebody standing within 0.8 m is not the person who asked (named otherwise, a voice id, a track of his own, or unknown)', all(v == (True, 0) for v in outs.values()), outs)
+    vs = mk(); say(vs, 'Hey Xiaoshi, remember my voice'); say(vs, 'I agree')
+    for i in range(3): b = say(vs, f'sentence {i} the child says right next to tom, long enough', name=None, emb=near(other), loc=(1.4, 1.0), role='child')
+    chk('voice enrolment: the child at his side saying all three sentences does not become "Tom"', not vs.voiceprints.people and vs._venrol is not None, list(vs.voiceprints.people))
+    def tom_unseen_track(first_emb, sample_emb, sample_track, sample_loc):
+        v = mk(); say(v, 'Hey Xiaoshi, remember my voice', name=None, loc=(1.0, 1.0), emb=first_emb, track=Tp(7)); say(v, 'Tom', name=None, loc=(1.0, 1.0), track=Tp(7)); say(v, 'I agree', name=None, loc=(1.0, 1.0), track=Tp(7))
+        for i in range(3): say(v, f'sentence {i} long enough to count for the voiceprint', name=None, loc=sample_loc, emb=near(sample_emb), track=Tp(sample_track))
+        return list(v.voiceprints.people)
+    chk('voice enrolment: the same person whose track was made anew (same place, the voice of his request) is still himself; a neighbour with another voice, or with no voice to compare, is not',
+        tom_unseen_track(tom, tom, 9, (1.2, 1.1)) == ['Tom'] and tom_unseen_track(tom, tom, 7, (1.2, 1.1)) == ['Tom'] and tom_unseen_track(tom, other, 9, (1.4, 1.0)) == [] and tom_unseen_track(None, other, 9, (1.4, 1.0)) == [], '')
+    # the day: a calendar clock (injected) or the clock of the household's time zone
+    class Day:
+        def __init__(self): self.n = 0; self.anon = [1]
+        def end_of_day(self): self.n += 1; self.anon = []
+    d = [100]; vs = new(today=lambda: d[0]); vs.voiceprints = Day(); vs.tick(); vs.advance(30.0); vs.tick(); n0 = vs.voiceprints.n; d[0] = 101; vs.advance(5.0); vs.tick(); vs.advance(5.0); vs.tick()
+    chk('the day is the calendar day when a calendar clock is given: strangers are forgotten once, when it changes (not on the robot\'s own seconds)', n0 == 0 and vs.voiceprints.n == 1, (n0, vs.voiceprints.n))
+    vs = new(); vs.profiles = PR.Profiles(tz_offset_h=8.0); vs.voiceprints = Day(); vs._t = 3600.0 * 15; vs.tick(); vs.advance(3600.0 * 8.5); vs.tick(); n_utc_midnight = vs.voiceprints.n    # 15:00 UTC -> 23:30 UTC = 07:30 local next day
+    vs = new(); vs.profiles = PR.Profiles(tz_offset_h=8.0); vs.voiceprints = Day(); vs._t = 3600.0 * 15.5; vs.tick(); vs.advance(3600.0 * 1.0); vs.tick(); n_local_midnight = vs.voiceprints.n   # 15:30 UTC -> 16:30 UTC = 00:30 local
+    vs = new(); vs.profiles = PR.Profiles(tz_offset_h=8.0); vs.voiceprints = Day(); vs._t = 3600.0 * 22; vs.tick(); vs.advance(3600.0 * 3.0); vs.tick(); n_utc_midnight_only = vs.voiceprints.n    # 22:00 UTC -> 01:00 UTC next day = 06:00 -> 09:00 local, the same local day
+    chk('the day is the household\'s: with UTC+8 strangers go at 16:00 UTC (local midnight), not at 00:00 UTC', n_local_midnight == 1 and n_utc_midnight_only == 0 and n_utc_midnight == 1, (n_local_midnight, n_utc_midnight_only, n_utc_midnight))
+    vs = mk(); vs.voiceprints.anon.append(dict(id='voice#1', c=tom, n=1)); vs._t = 86400.0 * 3 - 20.0; vs.tick(); vs.advance(30.0); vs.tick()
+    chk('with the real voiceprint store, the stranger\'s voice id is gone after midnight and the next stranger starts again at voice#1', not vs.voiceprints.anon and vs.voiceprints.n_anon == 0, (len(vs.voiceprints.anon), vs.voiceprints.n_anon))
     vs = new(); a = sayt(vs, 'Hey Xiaoshi, go and charge', Tk(7)); b = sayt(vs, 'yes', Tk(9)); c = sayt(vs, 'yes', Tk(7))
     chk('a motion command on direction alone (an unnamed grown-up in view) is asked back, and only that person can say yes', a.get('action') == 'confirm' and not str(b.get('action')).startswith('charge') and c.get('via') == 'confirmed' and vs.actions[-1][0] == 'charge', (a.get('action'), b.get('action'), c.get('action')))
+    def asked_then(ask_loc, ans_track, ans_loc, **kw):
+        v = new(); a = sayt(v, 'Hey Xiaoshi, go and charge', Tk(7), loc=ask_loc); b = sayt(v, 'yes', ans_track, loc=ans_loc, **kw); return a.get('action'), b.get('action'), bool(v.actions and v.actions[-1][0] == 'charge')
+    r_same, r_new_near, r_new_far, r_new_noloc = asked_then((1.0, 1.0), Tk(7), (1.0, 1.0)), asked_then((1.0, 1.0), Tk(9), (1.3, 1.2)), asked_then((1.0, 1.0), Tk(9), (3.0, 1.0)), asked_then(None, Tk(9), None)
+    chk('the yes of the person who was asked still counts when the tracker made a new track of them (same place); somebody elsewhere, or with no place to compare, does not', r_same[2] and r_new_near[2] and not r_new_far[2] and not r_new_noloc[2], (r_same, r_new_near, r_new_far, r_new_noloc))
+    vs = new(); sayt(vs, 'Hey Xiaoshi, go and charge', Tk(7), loc=(1.0, 1.0)); a = sayt(vs, 'tidy up the toys', Tk(9), loc=(1.3, 1.2))
+    chk('that does not let anything else past the conversation\'s own key: another sentence from the new track is still not for the robot', 'not the person I was talking to' in str(a.get('action')) and not vs.actions, (a.get('action'), vs.actions))
+    vs = new(); sayt(vs, 'Hey Xiaoshi, go and charge', Tk(7), loc=(1.0, 1.0)); vs.advance(2.0); a = vs.hear('yes', ident=dict(source='unseen', name=None, role='unknown', loc=None, anon='voice#1'))
+    chk('a yes from somebody out of view is not the answer of the person in view who was asked', not vs.actions, (a.get('action'), vs.actions))
     vs = new(); a = sayt(vs, 'Hey Xiaoshi, go and charge', Tk(3, who='Emma'), name='Emma'); vs = new(); b = sayt(vs, 'Hey Xiaoshi, tidy up the toys', Tk(7))
     chk('a named grown-up is not asked back, and neither is what a child may ask for', a.get('action') == 'charge' and b.get('action') == 'tidy', (a.get('action'), b.get('action')))
     return res

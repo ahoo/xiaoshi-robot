@@ -1383,6 +1383,163 @@
    "name": "English: free text is not spoken to a child",
    "ok": true,
    "detail": "reask"
+  },
+  {
+   "name": "voice enrolment: a stranger speaking first is ignored and the print is Tom's",
+   "ok": true,
+   "detail": [
+    "voice enrolment: another voice ignored",
+    "voice enrolled"
+   ]
+  },
+  {
+   "name": "voice enrolment: the television is not enrolled",
+   "ok": true,
+   "detail": "ignored: from a device"
+  },
+  {
+   "name": "voice enrolment for somebody else: the grown-up's own voice is not taken, and the role stored is the lower one",
+   "ok": true,
+   "detail": [
+    "voice enrolment: another voice ignored",
+    [
+     "Mia"
+    ]
+   ]
+  },
+  {
+   "name": "strangers' voices are forgotten when the day changes, the profiles fade",
+   "ok": true,
+   "detail": [
+    1,
+    0
+   ]
+  },
+  {
+   "name": "voice enrolment: when nobody could be named or placed at the consent, the voice that holds together is enough and it completes",
+   "ok": true,
+   "detail": "voice enrolled"
+  },
+  {
+   "name": "voice enrolment: with nothing else to go by another voice is still turned away (the sentences have to agree with each other)",
+   "ok": true,
+   "detail": "voice enrolment: another voice ignored"
+  },
+  {
+   "name": "voice enrolment: somebody standing within 0.8 m is not the person who asked (named otherwise, a voice id, a track of his own, or unknown)",
+   "ok": true,
+   "detail": {
+    "named Leo": [
+     true,
+     0
+    ],
+    "a voice id": [
+     true,
+     0
+    ],
+    "a track of his own": [
+     true,
+     0
+    ],
+    "nothing known": [
+     true,
+     0
+    ]
+   }
+  },
+  {
+   "name": "voice enrolment: the child at his side saying all three sentences does not become \"Tom\"",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "voice enrolment: the same person whose track was made anew (same place, the voice of his request) is still himself; a neighbour with another voice, or with no voice to compare, is not",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the day is the calendar day when a calendar clock is given: strangers are forgotten once, when it changes (not on the robot's own seconds)",
+   "ok": true,
+   "detail": [
+    0,
+    1
+   ]
+  },
+  {
+   "name": "the day is the household's: with UTC+8 strangers go at 16:00 UTC (local midnight), not at 00:00 UTC",
+   "ok": true,
+   "detail": [
+    1,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "with the real voiceprint store, the stranger's voice id is gone after midnight and the next stranger starts again at voice#1",
+   "ok": true,
+   "detail": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "a motion command on direction alone (an unnamed grown-up in view) is asked back, and only that person can say yes",
+   "ok": true,
+   "detail": [
+    "confirm",
+    "ignored: not the person I was talking to",
+    "charge"
+   ]
+  },
+  {
+   "name": "the yes of the person who was asked still counts when the tracker made a new track of them (same place); somebody elsewhere, or with no place to compare, does not",
+   "ok": true,
+   "detail": [
+    [
+     "confirm",
+     "charge",
+     true
+    ],
+    [
+     "confirm",
+     "charge",
+     true
+    ],
+    [
+     "confirm",
+     "ignored: not the person I was talking to",
+     false
+    ],
+    [
+     "confirm",
+     "ignored: not the person I was talking to",
+     false
+    ]
+   ]
+  },
+  {
+   "name": "that does not let anything else past the conversation's own key: another sentence from the new track is still not for the robot",
+   "ok": true,
+   "detail": [
+    "ignored: not the person I was talking to",
+    []
+   ]
+  },
+  {
+   "name": "a yes from somebody out of view is not the answer of the person in view who was asked",
+   "ok": true,
+   "detail": [
+    "ignored: not the person I was talking to",
+    []
+   ]
+  },
+  {
+   "name": "a named grown-up is not asked back, and neither is what a child may ask for",
+   "ok": true,
+   "detail": [
+    "charge",
+    "tidy"
+   ]
   }
  ],
  "examples": [
@@ -1496,6 +1653,6 @@
    "reply": "I only process what you say after I hear \"Xiaoshi Xiaoshi\" or \"Hey Xiaoshi\". I do not store recordings and I do not send sound anywhere. To make me stop listening completely, press the mute button on my body."
   }
  ],
- "ms_per_parse_en": 12.4,
- "ms_per_parse_zh": 19.4
+ "ms_per_parse_en": 23.2,
+ "ms_per_parse_zh": 34.1
 }

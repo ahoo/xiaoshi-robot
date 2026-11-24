@@ -24,6 +24,8 @@ import os
 import numpy as np
 import scipy.fft as sfft
 
+from store import LOG_MAX, dump_json, load_log
+
 FS = 16000
 WIN, HOP, NFFT, NMEL, NMFCC = 400, 160, 512, 40, 30
 MIN_SPEECH_S = 1.2                 # less speech than this and the robot says 'not sure' rather than guess
@@ -123,8 +125,10 @@ class Voiceprints:
         c = model.cal if model.cal is not None else np.array([2.0, 1.4, -0.2, 1.0, 2.2, 1.1])
         self.cal = c; self.Z_ACCEPT = float(c[4]); self.Z_MARGIN = 0.8; self.Z_UNKNOWN = float(c[5])           # accept where one wrong person in a hundred would pass
         if path and os.path.exists(path):
-            try: self.people = json.load(open(path))['people']
-            except (OSError, ValueError, KeyError): pass
+            try:
+                with open(path) as f: d = json.load(f)
+                self.people = d['people']; self.log = load_log(d)                                   # the log of the sessions before: 'forget' scrubs those names too
+            except (OSError, ValueError, KeyError, TypeError): pass
 
     # ---- enrolment, with consent
     def enrol(self, name, role, embs, consent_by, t=0.0, langs=()):
@@ -147,7 +151,8 @@ class Voiceprints:
         n = len(self.people); self.people = {}; self.anon = []; self.log = [e for e in self.log if not any(isinstance(v, str) for v in e[2:])]; self.log.append((round(t, 1), 'forget_all', n)); self.save(); return n
 
     def save(self):
-        if self.path: json.dump(dict(people=self.people, log=self.log), open(self.path, 'w'), ensure_ascii=False)
+        self.log = self.log[-LOG_MAX:]
+        if self.path: dump_json(self.path, dict(people=self.people, log=self.log))
 
     def role(self, name): return self.people.get(name, {}).get('role')
 

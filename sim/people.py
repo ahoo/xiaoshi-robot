@@ -32,6 +32,7 @@ import numpy as np
 from scipy import ndimage
 
 import perturb
+from store import LOG_MAX, dump_json, load_log
 
 # ---------------------------------------------------------------------------------------------------------------- the simulated people
 SPECS = {
@@ -554,8 +555,10 @@ class Registry:
     def __init__(self, path=None):
         self.path = path; self.people = {}; self.log = []
         if path and os.path.exists(path):
-            try: self.people = json.load(open(path))['people']
-            except (OSError, ValueError, KeyError): pass
+            try:
+                with open(path) as f: d = json.load(f)
+                self.people = d['people']; self.log = load_log(d)                                   # the log of the sessions before: 'forget' scrubs those names too
+            except (OSError, ValueError, KeyError, TypeError): pass
 
     def enrol(self, name, role, samples, consent_by, t=0.0):
         """samples: feature vectors (frontal looks). consent_by: the name of the grown-up who agreed (a child cannot consent for a child)."""
@@ -586,7 +589,8 @@ class Registry:
 
     def role(self, name): return self.people.get(name, {}).get('role')
     def save(self):
-        if self.path: json.dump(dict(people=self.people, log=self.log), open(self.path, 'w'), ensure_ascii=False)
+        self.log = self.log[-LOG_MAX:]
+        if self.path: dump_json(self.path, dict(people=self.people, log=self.log))
     def report(self): return [dict(name=n, role=p['role'], looks=p['n'], consent_by=p['consent_by'], stored='feature vector only') for n, p in self.people.items()]
 
 

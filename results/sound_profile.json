@@ -544,6 +544,86 @@
    "detail": null
   },
   {
+   "name": "profiles: the log of the session before is kept, and \"forget Mia\" takes her name out of it (in memory and on disk) and leaves Tom's record",
+   "ok": true,
+   "detail": [
+    2,
+    [
+     [
+      0.0,
+      "enrol",
+      "Tom"
+     ],
+     [
+      0.0,
+      "forget",
+      null
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "voiceprints: the log of the session before is kept, and \"forget Mia\" takes her name out of it (in memory and on disk) and leaves Tom's record",
+   "ok": true,
+   "detail": [
+    2,
+    [
+     [
+      0.0,
+      "enrol",
+      "Tom"
+     ],
+     [
+      0.0,
+      "forget",
+      null
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "face registry: the log of the session before is kept, and \"forget Mia\" takes her name out of it (in memory and on disk) and leaves Tom's record",
+   "ok": true,
+   "detail": [
+    2,
+    [
+     [
+      0.0,
+      "enrol",
+      "Tom"
+     ],
+     [
+      0.0,
+      "forget",
+      null
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "a save that fails half-way leaves the old file as it was, and no temporary file behind (a power cut must not turn a store into an empty one)",
+   "ok": true,
+   "detail": "Object of type object is not JSON serializable"
+  },
+  {
+   "name": "a file made readable by its owner only stays so when it is written again (a voiceprint file is biometric)",
+   "ok": true,
+   "detail": "0o600"
+  },
+  {
+   "name": "the log is cut at its oldest end (2000 entries)",
+   "ok": true,
+   "detail": 2000
+  },
+  {
+   "name": "profiles: decay writes the file when the fading starts or something changed (a counter to fade), not every hour with nothing in it",
+   "ok": true,
+   "detail": [
+    1,
+    2
+   ]
+  },
+  {
    "name": "habit counts fade (half-life 30 days: 60 days quarter them)",
    "ok": true,
    "detail": 0.25
@@ -563,5 +643,5 @@
    "zh": "Mia（小孩）。语言：中文 49%、英文 26%、中英混合 25%，还不够判断。小孩的资料我只留名字、语言，以及能不能认出他/她。保存的内容：几个计数器、一个声纹向量、一个人脸特征向量。没有录音、没有文字记录、没有照片。说“忘掉Mia”可以全部删除。"
   }
  },
- "seconds": 4
+ "seconds": 5
 }

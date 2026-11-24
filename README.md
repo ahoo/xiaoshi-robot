@@ -53,6 +53,7 @@
 | `sim/wakeword.py` | 唤醒词和停止词在声音上直接听（第十六轮）：`SherpaWake`（sherpa-onnx 流式关键词识别，中英双语 3 M 参数；词用文字写进去；冷却时间；机器人自己说话时只压唤醒词不压停止词）、`keyword_lines`、`evaluate`（在你自己的录音上扫阈值，量命中和每小时误唤醒）、`fetch_model` |
 | `sim/test_llm.py`、`sim/test_wake.py`、`sim/test_armcam.py` | 第十六轮的测试：大模型接口 145 项（真 SDK 加假网络）；唤醒词 16 项（真模型加真录音）；手臂相机的位姿、认人、起身（相机重量扫描）、麦克风装低了的声源方向 |
 | `sim/profiles.py` | 人物画像：只存计数（语言、时段、房间、常叫它做的事、自己的东西），孩子最少，能看（中英文卡片）、能删、衰减 |
+| `sim/store.py` | 人脸、声纹、画像三个库共用的两件事：文件整份写入（先写临时文件再换，断电不留半份）、读回日志（“忘掉”也清掉前几次启动留下的名字，最多 2000 条） |
 | `sim/sound_lab.py`、`sim/test_sound.py`、`sim/test_lang.py`、`sim/test_assoc.py`、`sim/test_day2.py` | 第十五轮台架：声源方向、阵列误差、声纹；中英文听懂；声音和人对上号、画像；整机的第二天 → `results/sound_*.json`、`results/lang.json` |
 | `sim/test_home.py` | 第十四轮台架：`scan`、`inventory`、`people_static`、`safety`、`identity`、`voice`、`day`、`export` → `results/home_*.json` |
 | `sim/test_modes.py` | 模式、充电座、遥控、导航、摔倒的台架 → `results/modes_*.json` |
@@ -140,6 +141,7 @@ from wakeword import SherpaWake                  # pip install sherpa-onnx sente
 
 vs = VoiceSystem(sup=sup, home=home, ppl=ppl, asr=TextASR(), llm=Gateway(make_provider('deepseek', model='…')))   # asr: 真识别器写下的字原样交进来；各家的密钥在各自的环境变量里；孩子和认不出的人的话不会发出去
 # 别的接法：make_provider('claude') / ('ollama', model='…') / ('openai-compatible', base_url='…', model='…')；from_env()（读 XIAOSHI_LLM）；from_config('llm.json')；Gateway([本机, 云]) 串联
+# VoiceSystem(…, today=lambda: datetime.date.today().toordinal())   # 家里的日历日（跟着系统时区）：陌生人的匿名声音在家里的午夜清掉；不给就按仿真的钟算
 kws = SherpaWake()                               # 常开，在机器人本机上跑
 while True:
     for e in kws.feed(mic_chunk):                # mic_chunk: 波束形成之后的 16 kHz 单声道，一小块一小块地喂

@@ -272,6 +272,26 @@ def bench_profile(n=40):
     import people as PPL
     fr = tempfile.mktemp(suffix='.json'); rg = PPL.Registry(fr); smp = [np.ones(24) / math.sqrt(24)] * 5; rg.enrol('Tom', 'adult', smp, 'owner'); rg.enrol('Mia', 'child', smp, 'Tom'); rg.forget('Tom'); chk('face registry: after "forget Tom" the file does not contain Tom', 'Tom' not in open(fr).read(), json.load(open(fr)).get('log'))
     rg.forget_all(); chk('face registry: after "forget everyone" no name is left in the file', not any(n in open(fr).read() for n in ('Tom', 'Mia')), None)
+    # the stores keep their log from one session to the next, 'forget' scrubs it, a file is written whole or not at all, decay writes only what changed
+    def across_sessions(label, make, enrol_tom, enrol_mia):
+        fn = tempfile.mktemp(suffix='.json'); s1 = make(fn); enrol_tom(s1); enrol_mia(s1); s2 = make(fn); loaded = len(s2.log); s2.forget('Mia')
+        ok = loaded == 2 and 'Mia' not in json.dumps(s2.log) and 'Mia' not in open(fn).read() and 'Tom' in open(fn).read() and sum(1 for e in s2.log if e[1] == 'enrol') == 1
+        chk(f'{label}: the log of the session before is kept, and "forget Mia" takes her name out of it (in memory and on disk) and leaves Tom\'s record', ok, (loaded, s2.log))
+    across_sessions('profiles', lambda fn: PR.Profiles(fn), lambda s_: s_.enrol('Tom', 'adult', 'owner', 0.0), lambda s_: s_.enrol('Mia', 'child', 'Tom', 0.0))
+    across_sessions('voiceprints', lambda fn: SP.Voiceprints(mdl, fn), lambda s_: s_.enrol('Tom', 'adult', [e6] * 3, 'owner'), lambda s_: s_.enrol('Mia', 'child', [e6] * 3, 'Tom'))
+    across_sessions('face registry', lambda fn: PPL.Registry(fn), lambda s_: s_.enrol('Tom', 'adult', smp, 'owner'), lambda s_: s_.enrol('Mia', 'child', smp, 'Tom'))
+    fa = tempfile.mktemp(suffix='.json'); pa = PR.Profiles(fa); pa.enrol('Tom', 'adult', 'owner', 0.0); before = open(fa).read(); pa.people['x'] = object()
+    try: pa.save(); err = None
+    except TypeError as e_: err = e_
+    pa.people.pop('x'); chk('a save that fails half-way leaves the old file as it was, and no temporary file behind (a power cut must not turn a store into an empty one)', err is not None and open(fa).read() == before and not os.path.exists(fa + '.tmp') and len(PR.Profiles(fa).people) == 1, str(err))
+    fm = tempfile.mktemp(suffix='.json'); pm = PR.Profiles(fm); pm.enrol('Tom', 'adult', 'owner', 0.0); os.chmod(fm, 0o600); pm.enrol('Mia', 'child', 'Tom', 0.0)
+    chk('a file made readable by its owner only stays so when it is written again (a voiceprint file is biometric)', oct(os.stat(fm).st_mode & 0o777) == '0o600', oct(os.stat(fm).st_mode & 0o777))
+    import store as STO
+    pl = PR.Profiles(); pl.log = [(float(i), 'x', None) for i in range(STO.LOG_MAX + 5)]; pl.save(); chk(f'the log is cut at its oldest end ({STO.LOG_MAX} entries)', len(pl.log) == STO.LOG_MAX and pl.log[0][0] == 5.0, len(pl.log))
+    fz = tempfile.mktemp(suffix='.json'); pz = PR.Profiles(fz); pz.enrol('Mia', 'child', 'Tom', 0.0); pz.enrol('Tom', 'adult', 'owner', 0.0); writes = []; _orig = pz.save; pz.save = lambda: (writes.append(1), _orig())[1]
+    for k in range(6): pz.decay(3600.0 * (k + 1))
+    idle = len(writes); pz.observe_presence('Tom', 3600.0 * 8 + 5, 'kitchen'); pz.decay(3600.0 * 8 + 10); busy = len(writes)
+    chk('profiles: decay writes the file when the fading starts or something changed (a counter to fade), not every hour with nothing in it', idle == 1 and busy == 2, (idle, busy))
     _, pr2 = household(9, days=2); before = sum(pr2.people['Tom']['hours']); pr2.decay(2 * 86400 + 60 * 86400); after = sum(pr2.people['Tom']['hours']); chk('habit counts fade (half-life 30 days: 60 days quarter them)', 0.2 < after / before < 0.3, round(after / before, 3))
     res['invariants'] = checks
     for c in checks: print('  ', 'PASS' if c['ok'] else 'FAIL', c['name'], '' if c['ok'] else c['detail'])

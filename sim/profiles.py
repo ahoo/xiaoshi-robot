@@ -17,6 +17,8 @@ made-up family, and its only purpose is to check the logic (does the language pr
 import json
 import os
 
+from store import LOG_MAX, dump_json, load_log
+
 DAY = 86400.0
 HALF_LIFE_DAYS = 30.0
 PURGE_DAYS = 120.0
@@ -37,8 +39,10 @@ class Profiles:
         """tz_offset_h: hours the household's clock is ahead of the clock that times are given in (UTC for a real clock; 0 in the simulator)."""
         self.path = path; self.half = half_life_days; self.people = {}; self.log = []; self._t_decay = None; self.tz = tz_offset_h
         if path and os.path.exists(path):
-            try: d = json.load(open(path)); self.people = d['people']; self._t_decay = d.get('t_decay')                    # where the fading had got to: a restart must not fade everything again from the epoch
-            except (OSError, ValueError, KeyError): pass
+            try:
+                with open(path) as f: d = json.load(f)
+                self.people = d['people']; self._t_decay = d.get('t_decay'); self.log = load_log(d)                    # where the fading had got to (a restart must not fade everything again from the epoch); the log of the sessions before
+            except (OSError, ValueError, KeyError, TypeError): pass
 
     # ---------------------------------------------------------------- creating and deleting (the consent record is in the registries; here only that it exists)
     def enrol(self, name, role, consent_by, t=0.0, voice=False, face=False, aliases=(), habits=None):
@@ -79,7 +83,8 @@ class Profiles:
         p['lang_set'] = lang; self.save(); return True
 
     def save(self):
-        if self.path: json.dump(dict(people=self.people, log=self.log, t_decay=self._t_decay), open(self.path, 'w'), ensure_ascii=False)
+        self.log = self.log[-LOG_MAX:]
+        if self.path: dump_json(self.path, dict(people=self.people, log=self.log, t_decay=self._t_decay))
 
     # ---------------------------------------------------------------- learning (only about people who were enrolled)
     def observe_utterance(self, name, lang, intent=None, t=0.0, item=None):
@@ -109,19 +114,21 @@ class Profiles:
 
     def decay(self, t):
         """Counts fade with a half-life (the first call only sets where the fading starts); the hours, rooms and intents of a person not seen or heard for PURGE_DAYS are cleared altogether
-        (the languages and the things they said were theirs stay: those are not habits)."""
-        if self._t_decay is None: self._t_decay = t; self.save()
+        (the languages and the things they said were theirs stay: those are not habits). The file is written only when something in it changed: a household with no habit counters
+        does not have its file rewritten every hour."""
+        changed = False
+        if self._t_decay is None: self._t_decay = t; changed = True
         dt = (t - self._t_decay) / DAY
         if dt > 0:
             f = 0.5 ** (dt / self.half); self._t_decay = t
             for p in self.people.values():
-                if p.get('hours'): p['hours'] = [h * f for h in p['hours']]
+                if p.get('hours') and any(p['hours']): p['hours'] = [h * f for h in p['hours']]; changed = True
                 for d in ('zones', 'intents'):
-                    if p.get(d): p[d] = {k: v * f for k, v in p[d].items() if v * f > 0.05}
+                    if p.get(d): p[d] = {k: v * f for k, v in p[d].items() if v * f > 0.05}; changed = True
         for n, p in self.people.items():
             if p.get('habits') and t - p.get('last_t', t) > PURGE_DAYS * DAY and (any(p.get('hours') or []) or p.get('zones') or p.get('intents')):
-                p['hours'] = [0.0] * 24; p['zones'] = {}; p['intents'] = {}; self.log.append((round(t, 1), 'habits_purged', None))
-        self.save()
+                p['hours'] = [0.0] * 24; p['zones'] = {}; p['intents'] = {}; self.log.append((round(t, 1), 'habits_purged', None)); changed = True
+        if changed: self.save()
 
     # ---------------------------------------------------------------- what is known
     def lang_pref(self, name):

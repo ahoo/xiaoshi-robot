@@ -35,6 +35,9 @@ WAKE = '小拾小拾'            # four syllables on purpose: 小拾 alone sound
 WAKE_ALT = '你好小拾'
 SESSION_S = 8.0               # after the robot answers, a follow-up needs no wake word for this long
 PENDING_S = 12.0              # an open question waits this long for its answer
+VOICE_MIN_S = 1.5             # s of speech a sentence needs before its voice vector counts as a witness of who spoke
+VOICE_SAME_COS = 0.45         # two sentences of one person have at least this cosine between their voice vectors (the bar between the three sentences of an enrolment)
+NEAR_M = 0.8                  # m: a person the tracker made a new track of stands where the old track was, within this
 
 # ---------------------------------------------------------------------------------------------------------------- pinyin and fuzzy matching
 _INIT = (('zh', 'z'), ('ch', 'c'), ('sh', 's'))
@@ -434,8 +437,10 @@ MODE_CN = dict(IDLE='待命', TASK='收玩具', NAV='自己走动', SCAN='扫描
 class VoiceSystem:
     """Wake word -> recogniser -> understanding -> permission -> (question | confirmation | action) -> spoken answer. `hear()` takes the words a person means to say, the simulated recogniser
     writes them down with errors. sup/home/ppl are the robot's parts; without them the actions are only recorded (self.actions), which is how the language side is tested alone."""
-    def __init__(self, sup=None, home=None, ppl=None, asr=None, llm=None, seed=0, setup_mode=False, keep_transcripts=False):
-        self.sup, self.home, self.ppl = sup, home, ppl; self.nlu = NLU(); self.asr = asr or SimASR(0.04, seed); self.llm = llm
+    def __init__(self, sup=None, home=None, ppl=None, asr=None, llm=None, seed=0, setup_mode=False, keep_transcripts=False, today=None):
+        """today: a function that gives the household's calendar day as a whole number that changes at local midnight (on the robot: `lambda: datetime.date.today().toordinal()`, which follows the
+        operating system's time zone). Without it the day is counted from now() and the profiles' time-zone offset: right for the simulator, whose clock starts at local midnight."""
+        self.sup, self.home, self.ppl = sup, home, ppl; self._today = today; self.nlu = NLU(); self.asr = asr or SimASR(0.04, seed); self.llm = llm
         self._t = 0.0; self.session_until = -1.0; self.pending = None; self.ctx = dict(item=None, place=None, person=None)
         self.tts = []; self.log = []; self.actions = []; self.muted = False; self.resume_cmd = None; self.setup_mode = setup_mode; self.keep_transcripts = keep_transcripts
         if ppl is not None and getattr(ppl, 'guard', None) is not None: ppl.guard.speak = lambda text: self.speak(text, lang=self._ambient_lang())          # what the guard says goes through the same mouth
@@ -527,6 +532,42 @@ class VoiceSystem:
         if ident.get('source') == 'unseen': return ident.get('name') or ident.get('anon') or 'someone out of view'
         return ident.get('name') or ident.get('anon') or (('track', ident['track'].id) if ident.get('track') is not None and hasattr(ident['track'], 'id') else None)
 
+    @staticmethod
+    def _ref(ident):
+        """What it takes to recognise a speaker again: the name, the anonymous voice id, the track, where they stand, and their voice (a vector, when the sentence was long enough to give one)."""
+        if not ident: return {}
+        tr = ident.get('track'); e = ident.get('emb')
+        return dict(name=ident.get('name'), anon=ident.get('anon'), track=getattr(tr, 'id', None) if tr is not None else None, loc=ident.get('loc'),
+                    emb=np.asarray(e, float) if e is not None and ident.get('speech_s', 0.0) >= VOICE_MIN_S else None)
+
+    @staticmethod
+    def _same_person(ref, ident, emb_ref=None, place_alone=False):
+        """Is whoever speaks now (`ident`) the person `ref` was taken of? True or False; None when `ref` holds nothing to compare with (the first speaker could not be told from anybody).
+        Who they are decides first: two names, two anonymous voice ids, or one track. Then the voice, when both sentences were long enough to have one: another voice is another person.
+        Then where they stand: the tracker makes a new track of somebody who was hidden for a moment and he stands where the old one did, but so does a neighbour, so a place only counts
+        together with the same voice (`place_alone`: an answer like 'yes' is too short to have a voice and the place is all there is; not for somebody the robot knew by name)."""
+        r = ref or {}
+        if not any(r.get(k) is not None for k in ('name', 'anon', 'track', 'loc', 'emb')) and emb_ref is None: return None
+        i = ident or {}; tr = i.get('track'); t1 = getattr(tr, 'id', None) if tr is not None else None
+        if r.get('name') and i.get('name'): return r['name'] == i['name']
+        if r.get('anon') and i.get('anon') and not r.get('name') and not i.get('name'): return r['anon'] == i['anon']
+        if r.get('track') is not None and t1 is not None and r['track'] == t1: return True
+        e0 = emb_ref if emb_ref is not None else r.get('emb'); e1 = i.get('emb') if i.get('emb') is not None and i.get('speech_s', 0.0) >= VOICE_MIN_S else None
+        voice = None if e0 is None or e1 is None else bool(float(np.dot(e0, e1) / (np.linalg.norm(e0) * np.linalg.norm(e1) + 1e-12)) >= VOICE_SAME_COS)
+        if voice is False: return False
+        l0, l1 = r.get('loc'), i.get('loc')
+        near = l0 is not None and l1 is not None and math.hypot(l0[0] - l1[0], l0[1] - l1[1]) < NEAR_M
+        if voice and not any(r.get(k) is not None for k in ('name', 'anon', 'track', 'loc')): return True                  # nothing but the voice is known about the first speaker: a voice that holds together is all there is
+        return bool(near and (voice or (place_alone and not r.get('name'))))
+
+    def _asked_person_answers(self, text, ident):
+        """A plain yes or no to the question the robot has open, from the person it was put to although the tracker has made a new track of them since (the same place): the track id is no longer
+        what the conversation knows them by, so the check of who may answer (in _answer) decides. Nothing else gets past the conversation's own key this way."""
+        pd = self.pending
+        if pd is None or pd.get('kind') != 'confirm' or not pd.get('ref') or self.now() > pd['until']: return False
+        if self.nlu.parse(text.strip() if self.nlu._english(text) else clean(text))['intent'] not in ('yes', 'no'): return False
+        return self._same_person(pd['ref'], ident, place_alone=True) is True
+
     def _after(self, rec, who, ident):
         """What follows an utterance: the profile learns the language (and the habit) of a person it was allowed to remember; the conversation belongs to whoever woke the robot."""
         act = rec.get('action') or ''
@@ -553,7 +594,7 @@ class VoiceSystem:
             self.stats['ignored'] += 1; rec.update(action='ignored: from a device'); self.log.append(rec); return rec
         if not woke and not live:
             self.stats['ignored'] += 1; rec.update(action='ignored: no wake word'); self.log.append(rec); return rec
-        if not woke and ident is not None and self.session_key is not None and (ident.get('source') == 'ambiguous' or (self._key(ident) is not None and self._key(ident) != self.session_key)):   # somebody else joins in, or nobody can say who: not for the robot
+        if not woke and ident is not None and self.session_key is not None and (ident.get('source') == 'ambiguous' or (self._key(ident) is not None and self._key(ident) != self.session_key)) and not self._asked_person_answers(text, ident):   # somebody else joins in, or nobody can say who: not for the robot
             self.stats['ignored'] += 1; rec.update(action='ignored: not the person I was talking to'); self.log.append(rec); return rec
         if woke: rec['woke'] = True
         body = self.nlu.strip_wake(text) if woke else (text.strip() if self.nlu._english(text) else clean(text))
@@ -603,7 +644,7 @@ class VoiceSystem:
             ask = dict(item=('要哪一个东西？', 'Which one do you mean?'), place=('要去哪里？', 'Where should I go?'), newname=('想叫它什么名字？', 'What would you like to call it?'))[missing[0]]
             self.pending = dict(kind='slot', intent=intent, slots=slots, slot=missing[0], role=role, until=self.now() + PENDING_S); rec.update(action='ask', reply=self.speak(ask)); return
         if intent in MOTION and (conf < 0.7 or via_llm is not None or self._thin_authority(intent, role)):                 # not sure enough to move (a model's guess never is), or not sure enough who is asking: ask first
-            self.stats['confirm'] += 1; self.pending = dict(kind='confirm', intent=intent, slots=slots, role=role, until=self.now() + PENDING_S, key=self._key(self._ident))
+            self.stats['confirm'] += 1; self.pending = dict(kind='confirm', intent=intent, slots=slots, role=role, until=self.now() + PENDING_S, ref=self._ref(self._ident))
             rec.update(action='confirm', reply=self.speak((f'你是要我{self._intent_cn(intent, slots)}吗？', f'Do you want me to {self._intent_en(intent, slots)}?'))); return
         self._execute(intent, slots, role, rec)
 
@@ -652,7 +693,7 @@ class VoiceSystem:
             rec.update(intent=out['intent'], via='llm'); slots = dict(out.get('slots') or {})
             if not self._allowed(out['intent'], role, rec): return True
             if out['intent'] in MOTION or out['intent'] in SENSITIVE:           # a model's guess is never enough to move or to store anything about a person: ask
-                self.stats['confirm'] += 1; self.pending = dict(kind='confirm', intent=out['intent'], slots=slots, role=role, until=self.now() + PENDING_S, key=self._key(self._ident))
+                self.stats['confirm'] += 1; self.pending = dict(kind='confirm', intent=out['intent'], slots=slots, role=role, until=self.now() + PENDING_S, ref=self._ref(self._ident))
                 rec.update(action='confirm', reply=self.speak((f'你是要我{self._intent_cn(out["intent"], slots)}吗？', f'Do you want me to {self._intent_en(out["intent"], slots)}?'))); return True
             self._execute(out['intent'], slots, role, rec); return True
         if 'say' in out and isinstance(out['say'], str) and role in ('owner', 'adult') and len(out['say']) <= 80:
@@ -666,7 +707,7 @@ class VoiceSystem:
     # ---- answers to an open question
     def _answer(self, body, role, aconf, speaker, rec):
         pd = self.pending; p = self.nlu.parse(body); yes = p['intent'] == 'yes'; no = p['intent'] == 'no'; now = self.now(); k = pd['kind']
-        if k == 'confirm' and (yes or no) and pd.get('key') is not None and self._ident is not None and self._key(self._ident) != pd['key']:      # somebody else's yes or no does not count
+        if k == 'confirm' and (yes or no) and pd.get('ref') and self._ident is not None and self._same_person(pd['ref'], self._ident, place_alone=True) is False:      # somebody else's yes or no does not count (the track id is not enough: the tracker makes a new one after an occlusion)
             rec.update(action='ignored: not the person who was asked'); return True
         if k == 'confirm':
             if no: self.pending = None; rec.update(intent='no', action='cancelled', reply=self.speak(('好的，不做了', "OK, never mind."))); return True
@@ -713,7 +754,7 @@ class VoiceSystem:
         if self_enrol: kind = 'adult' if role in ('owner', 'adult') else 'child'
         else:
             reg = self.ppl.registry if self.ppl is not None else None; kind = (reg.role(who) if reg is not None else None) or 'child'                                  # when nobody knows, the lower role: a wrong 'adult' would be a privilege
-        self._venrol = dict(name=who, role=kind, by=None, embs=[], need=3, t0=self.now(), collect=False, langs=[], own=self_enrol, key=None, loc=None)
+        self._venrol = dict(name=who, role=kind, by=None, embs=[], need=3, t0=self.now(), collect=False, langs=[], own=self_enrol, ref_req=self._ref(self._ident), ref_consent=None)       # who asked, and (later) who agreed
         if not who: self.pending = dict(kind='venrol_name', role=role, until=self.now() + PENDING_S); rec.update(action='ask', reply=self.speak(('好的。请问你叫什么名字？', 'OK. What is your name?'))); return
         self._ask_voice_consent(rec, role)
 
@@ -726,17 +767,21 @@ class VoiceSystem:
         V = self._venrol
         if now - V['t0'] > 60.0:
             self._venrol = None; rec.update(action='voice enrolment timed out', reply=self.speak(('时间太久了，声音没记成，下次再试', "That took too long, so I didn't save the voice. Let's try again later."))); return rec
-        if ident is None or ident.get('emb') is None or ident.get('speech_s', 0.0) < 1.5: return None             # not usable: carry on as an ordinary utterance
+        if ident is None or ident.get('emb') is None or ident.get('speech_s', 0.0) < VOICE_MIN_S: return None             # not usable: carry on as an ordinary utterance
         if ident.get('source') in ('ambiguous', 'device'): rec.update(action='voice enrolment: not sure who spoke, ignored'); return rec
-        k = self._key(ident); lc = ident.get('loc'); vk = ident.get('voice') or {}
-        mine = bool(k is not None and k == V['key']) or bool(lc is not None and V['loc'] is not None and math.hypot(lc[0] - V['loc'][0], lc[1] - V['loc'][1]) < 0.8)        # the person who gave the consent
-        if mine != V['own'] or (not V['own'] and vk.get('status') == 'known' and vk.get('name') != V['name']):                                                       # a stranger, a child or the television must not become 'Tom'
+        vk = ident.get('voice') or {}; e = np.asarray(ident['emb'], float)
+        mean = None
+        if V['embs']: mean = np.mean(V['embs'], 0)
+        if V['own']:       # 'my voice': it has to be the one who asked, the same person the three sentences through. Nothing known about whoever asked (no name, voice id, track, place): the voice itself has to hold together (below)
+            bad = self._same_person(V['ref_req'], ident, emb_ref=mean) is False or (V['role'] == 'adult' and (ident.get('role') == 'child' or getattr(ident.get('track'), 'cls', None) == 'child'))
+        else:              # somebody else's voice: not the grown-up who asked, not the one who agreed
+            bad = any(self._same_person(r, ident) is True for r in (V['ref_req'], V['ref_consent']))
+        bad = bad or (vk.get('status') == 'known' and vk.get('name') not in (None, V['name']))                    # a stranger, a child, somebody enrolled under another name or the television must not become 'Tom'
+        if bad:
             rec.update(action='voice enrolment: another voice ignored'); return rec
-        import numpy as _np
-        e = _np.asarray(ident['emb'], float)
-        if V['embs']:
-            m = _np.mean(V['embs'], 0); m = m / (_np.linalg.norm(m) + 1e-12)
-            if float(e @ m) < 0.45: rec.update(action='voice enrolment: another voice ignored'); return rec                 # somebody else spoke in between
+        if mean is not None:
+            m = mean / (np.linalg.norm(mean) + 1e-12)
+            if float(e @ m) < VOICE_SAME_COS: rec.update(action='voice enrolment: another voice ignored'); return rec                 # somebody else spoke in between
         V['embs'].append(e); V['langs'].append(self._lk or 'zh'); n = len(V['embs']); rec.update(action='collecting voice', n=n)
         if n < V['need']: rec['reply'] = self.speak((f'好，再说{V["need"] - n}句。', f'Good. {V["need"] - n} more, please.')); return rec
         try:
@@ -756,7 +801,7 @@ class VoiceSystem:
             if no or not yes: self.pending = None; self._venrol = None; rec.update(action='cancelled', reply=self.speak(('好的，那就不记了', "OK, I won't remember it."))); return True
             if role not in ('owner', 'adult'): rec.update(action='denied', reply=self.speak(('需要大人说同意才可以哦', 'A grown-up has to say yes first.'))); self.stats['denied'] += 1; return True
             self.pending = None; self._venrol['by'] = self._who or ('owner' if role == 'owner' else f'guest adult @ {now:.0f}s'); self._venrol['collect'] = True; self._venrol['t0'] = now
-            self._venrol['key'] = self._key(self._ident); self._venrol['loc'] = (self._ident or {}).get('loc')                 # who gave the consent, and where they stand: the voice has to be theirs (or, for somebody else's voice, not theirs)
+            self._venrol['ref_consent'] = self._ref(self._ident)                                  # who agreed, and where they stand: for 'my voice' the voice has to be the one who asked, for somebody else's voice it must not be the one who asked or agreed
             rec.update(action='enrolling voice', reply=self.speak(('好。请随便说三句话，中文英文都可以，每句话长一点。', 'OK. Please say three sentences, in Chinese or English, as you like. Make them a bit long.'))); return True
         if k == 'forget_voice_ok':
             self.pending = None
@@ -827,7 +872,7 @@ class VoiceSystem:
         """Per control tick (the supervisor calls it): finish an enrolment once there are enough frontal looks; drop an expired question; let the profiles fade; forget the strangers' voices at midnight."""
         now = self.now()
         if self.profiles is not None and now - self._decay_t >= 3600.0: self._decay_t = now; self.profiles.decay(now)
-        day = int((now + 3600.0 * getattr(self.profiles, 'tz', 0.0)) // 86400)
+        day = self._today() if self._today is not None else int((now + 3600.0 * getattr(self.profiles, 'tz', 0.0)) // 86400)
         if self._day is not None and day != self._day and self.voiceprints is not None: self.voiceprints.end_of_day()
         self._day = day
         if self._retry is not None and now >= self._retry['t_ready']:
