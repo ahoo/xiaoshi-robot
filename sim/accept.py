@@ -73,19 +73,19 @@ JOBS = {
     'server': ('python test_modes.py server', 1),
     'nav': ('python test_modes.py nav 6', 3),
     'scan': ('python test_home.py scan 1 2 3', 9),
-    'inventory': ('python test_home.py inventory 1 2 3', 10),
-    'people': ('CAM=forearm_up python test_home.py people_static 150', 4),
-    'pairs': ('python test_home.py pairs', 3),
+    'inventory': ('python test_home.py inventory 1 2 3 4 5 6', 8),
+    'people': ('PROCS=4 CAM=forearm_up python test_home.py people_static 150', 4),
+    'pairs': ('PROCS=4 python test_home.py pairs', 3),
     'safety': ('CAM=forearm_up python test_home.py safety 1', 10),
     'identity': ('python test_home.py identity', 1),
-    'faces': ('CAMS=forearm_up python test_armcam.py faces 60', 2),
+    'faces': ('PROCS=4 CAMS=forearm_up python test_armcam.py faces 60', 2),
     'voice': ('python test_home.py voice', 2),
     'lang': ('python test_lang.py', 5),
     'day': ('python test_home.py day 3', 5),
     'wake': ('python test_wake.py', 1),
-    'ssl': ('python test_sound.py ssl 30', 6),
+    'ssl': ('python test_sound.py ssl 100', 20),
     'voiceprint': ('python test_sound.py voiceprint', 4),
-    'assoc': ('python test_assoc.py assoc 60', 5),
+    'assoc': ('python test_assoc.py assoc 200', 17),
     'day2': ('python accept_day2.py 5 6 7', 10),
     'profile': ('python test_assoc.py profile', 1),
     'pose': ('CAMS=forearm_up python test_armcam.py pose', 1),
@@ -222,7 +222,7 @@ def d1(R):
     return [C('覆盖（最差的一个布局）', f'{rec:.3f}（{len(runs)} 个布局）', '≥ 0.93', rec >= 0.93), C('精度（最差的一个布局）', f'{pre:.3f}', '≥ 0.99', pre >= 0.99), C('碰撞', f'{col} 次', '0', col == 0)]
 
 
-@item('D2', '物件记录：换了场景还认得是同一件，拿走的标“不见了”', '扫描记下东西；然后挪两件、拿走一件、加一件新的，再扫一遍，3 个布局', '没动的和挪过的认出 ≥ 90%，新来的记成新的 ≥ 90%，拿走的标出 ≥ 75%；认错成别的 0，凭空多出来的 0', ['inventory'], 'standard',
+@item('D2', '物件记录：换了场景还认得是同一件，拿走的标“不见了”', '扫描记下东西；然后挪两件、拿走一件、加一件新的，再扫一遍，6 个布局', '没动的和挪过的认出 ≥ 90%，新来的记成新的 ≥ 90%，拿走的标出 ≥ 75%；认错成别的 0，凭空多出来的 0', ['inventory'], 'standard',
       '真物体的外观变化、光照；种类是靠颜色和尺寸猜的，不是识别模型')
 def d2(R):
     d = R('home_inventory'); t = d['totals']; f = lambda k: t[k][0] / t[k][1] if t[k][1] else 1.0
@@ -245,7 +245,9 @@ def e1(R):
       '**前臂相机没有单独测这一项**；间隔 10 cm 时两个人常被合并成一个目标，孩子分不出来（只是没有判成大人）')
 def e2(R):
     s = R('home_people_pairs')['summary']; bad = {k: v['pair_called']['adult'] for k, v in s.items() if isinstance(v, dict) and 'pair_called' in v}
-    return [C('合并的一对被判成大人', f'{sum(bad.values())} 次（{len(bad)} 种间隔）', '0', sum(bad.values()) == 0)]
+    rows = [v for v in s.values() if isinstance(v, dict) and 'n' in v]; n = sum(v['n'] for v in rows); miss = sum(v['child_called_adult_or_missing'] for v in rows); merged = sum(v['merged_into_one'] for v in rows)
+    return [C('合并成一条轨迹的一对被判成大人', f'{sum(bad.values())} 次（共 {merged} 次合并，{len(bad)} 种站法、{n} 次试验）', '0', sum(bad.values()) == 0),
+            C('孩子没被找到或被当成大人（只记录，已知弱点，见 status.md 第十四轮）', f'{miss}/{n}（{100 * miss / n:.0f}%）', '只记录', True)]
 
 
 @item('E3', '人走近时刹得住：人和机器人同场干活', '5 种场景（没人、大人走过、孩子冲过来、幼儿在筐边、一家三口），安全层开，前臂相机，机器人照常捡', '碰到人 0 次；凡是有人走到离机器人 0.6 m 以内的场景，安全层至少停过一次；5 件都送到；碰撞 0', ['safety'], 'standard',
@@ -324,7 +326,7 @@ def g2(R):
     return [C('登记的人被认成别人', f'{100 * v["wrong_person"]:.1f}%', '≤ 1%', v['wrong_person'] <= 0.01), C('访客被叫成家人', f'{100 * v["guest_named_as_member"]:.1f}%', '≤ 3%', v['guest_named_as_member'] <= 0.03), C('等错误率', f'{100 * v["eer"]:.1f}%', '≤ 12%', v['eer'] <= 0.12)]
 
 
-@item('G3', '声音和人对上号，权限借不走', '60 个随机房间：登记的人、访客、视野外的人、电视开着、电视喊唤醒词、电视放主人的录音', '访客和电视（喊唤醒词、放主人录音）拿到“主人”权限 0 次；视野外的人被算到视野里某个人头上的 ≤ 5%，其中拿到“主人”的 ≤ 2%', ['assoc'], 'standard',
+@item('G3', '声音和人对上号，权限借不走', '200 个随机房间：登记的人、访客、视野外的人、电视开着、电视喊唤醒词、电视放主人的录音', '访客和电视（喊唤醒词、放主人录音）拿到“主人”权限 0 次；视野外的人被算到视野里某个人头上的 ≤ 5%，其中拿到“主人”的 ≤ 2%', ['assoc'], 'standard',
       '电视和访客是仿真里编出来的；声纹被电视里的录音骗过 40%，所以权限不靠声纹（验收表第 57、58 项）')
 def g3(R):
     d = R('sound_assoc'); o = d['out_of_view_speakers_attributed_to_a_visible_person']; owner = o['roles'].get('owner', 0) / max(o['n_out_of_view'], 1)
@@ -399,7 +401,7 @@ def dashboard_rows(report):
     for it in ITEMS:
         v = report['items'].get(it['id'], dict(verdict='NODATA', lines=[], why='还没跑'))
         items.append(dict(id=it['id'], group=GROUPS[it['group']], title=it['title'], verdict=word[v['verdict']], measured='；'.join(f'{c["label"]} {c["measured"]}' for c in v['lines'][:3]) or v.get('why', ''),
-                          criterion=it['criterion'], scenario=it['scenario'], not_shown=it['not_shown'], real='第 ' + '、'.join(str(n) for n in REAL.get(it['id'], [])) + ' 项', command='；'.join(JOBS[j][0] for j in it['jobs']), source=v.get('mode', '—') + (' ' + v['when'] if v.get('when') else '')))
+                          criterion=it['criterion'], scenario=it['scenario'], not_shown=it['not_shown'], known=(KNOWN.get(it['id'], '') if v['verdict'] != 'PASS' else ''), real='第 ' + '、'.join(str(n) for n in REAL.get(it['id'], [])) + ' 项', command='；'.join(JOBS[j][0] for j in it['jobs']), source=v.get('mode', '—') + (' ' + v['when'] if v.get('when') else '')))
         for c in v['lines']: lines.append(dict(item=it['id'], line=c['label'], measured=c['measured'], need=c['need'], ok='✓' if c['ok'] else '✗'))
     return items, lines
 
@@ -452,6 +454,11 @@ REAL = {
 
 # What was found out about an item that did not pass (only shown while it does not pass). Written by hand, after looking into it.
 KNOWN = {
+    'E2': ('4 个进程跑（种子 300–303，每种站法 32 次，共 256 次），其中 48 次孩子和大人合并成一条轨迹，2 次被判成大人。第十四轮存的那一遍只有种子 300、301（每种站法 16 次），那两个种子里这一项是 0 次。'
+           '① 并排站、间隔 10 cm 的一次：这条轨迹只有 2 帧，其中 1 帧标成“一群”、1 帧没有，旧规则要“过半”才算“不确定”，平手就按高度和肩宽（0.44–0.48 m，超过“坐着的大人”的 0.37 m）判成了大人。'
+           '这是规则的缺口，已经改了（`people.py` 一行：平手也算“不确定”，只在这种平手时结论变，往“当小孩”的方向变），这个种子重跑已是“不确定”。'
+           '② 并排站、间隔 25 cm 的一次：其实没有合并，这条轨迹就是大人自己（宽 0.48 m、高 1.73 m），孩子没被找到，台架把“只剩一条轨迹”都算成了“合并”。'
+           '“孩子挨着大人站时被漏掉或被当成大人”是第十四轮就写明的已知弱点（只用深度图分不开，真正的办法是 RGB 的人体检测模型，在路线图上），这一项的第二行把它的比例记下来。'),
     'B1': ('4 号布局里第 2 件是毛绒玩具：抓取时夹爪合到底，固定指垫被楔进玩具的躯干和头之间（头的偏转铰链被顶到 0.79 rad，超出它的限位 ±0.60 rad；躯干和头各顶着指垫约 20 N，指垫陷进去 7.5 和 11.8 mm），松手后指垫仍卡在里面。'
            '控制器自带的“抖 3 次、按到筐底 2 次”没有把它弄下来；我另外试的 10 种动作（手腕转 45°/90°/180°、按在筐底再转、夹爪反复开合、腕关节抖动、在筐底拖、快速抬起、整只手翻过来）也都没有，所以控制器按设计停机求助。'
            '同样的代码、同样的种子，每次都在 149.8 s 停在这里；第十六轮的 12 个布局试验里这个布局也是唯一失败的（11/12）。'

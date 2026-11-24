@@ -455,7 +455,7 @@ class PersonDetector:
                 if t - k.t < 1.5: k.x, k.y = k.predict(t)[0], k.predict(t)[1]
         self.tracks = [k for k in self.tracks if t - k.t - min(self.blind_total - getattr(k, 'b0', self.blind_total), 6.0) < 3.0]      # time the camera was not looking is not held against a track (up to 6 s)
         for k in self.tracks:
-            h, lb = k.height; k.cls = 'unsure' if sum(k.grp) * 2 > len(k.grp) else classify(h, k.width, lb); k.dist = math.hypot(k.x - pose[0], k.y - pose[1])
+            h, lb = k.height; k.cls = 'unsure' if any(k.grp) and sum(k.grp) * 2 >= len(k.grp) else classify(h, k.width, lb); k.dist = math.hypot(k.x - pose[0], k.y - pose[1])
 
     def confirmed(self, min_hits=2): return [k for k in self.tracks if k.hits >= min_hits]
 

@@ -452,37 +452,44 @@
     }
    ],
    "why": "",
-   "jobs": {},
-   "source": "读 results/ 里已有的结果",
-   "mode": "已有结果",
-   "when": "2026-11-24 15:27"
+   "jobs": {
+    "scan": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 312,
+     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/scan.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-24 17:35"
   },
   "D2": {
-   "verdict": "PASS",
+   "verdict": "FAIL",
    "lines": [
     {
      "label": "没动的认出",
-     "measured": "12/12（100%）",
-     "need": "≥ 90%",
-     "ok": true
-    },
-    {
-     "label": "挪过的认出是同一件",
-     "measured": "12/12（100%）",
-     "need": "≥ 90%",
-     "ok": true
-    },
-    {
-     "label": "新来的记成新的",
      "measured": "6/6（100%）",
      "need": "≥ 90%",
      "ok": true
     },
     {
-     "label": "拿走的标“不见了”",
-     "measured": "5/6（83%）",
-     "need": "≥ 75%",
+     "label": "挪过的认出是同一件",
+     "measured": "6/6（100%）",
+     "need": "≥ 90%",
      "ok": true
+    },
+    {
+     "label": "新来的记成新的",
+     "measured": "3/3（100%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "拿走的标“不见了”",
+     "measured": "2/3（67%）",
+     "need": "≥ 75%",
+     "ok": false
     },
     {
      "label": "认错成别的",
@@ -498,17 +505,24 @@
     }
    ],
    "why": "",
-   "jobs": {},
-   "source": "读 results/ 里已有的结果",
-   "mode": "已有结果",
-   "when": "2026-11-24 15:27"
+   "jobs": {
+    "inventory": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 234,
+     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/inventory.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-24 17:39"
   },
   "E1": {
    "verdict": "PASS",
    "lines": [
     {
      "label": "1–2.5 m 检出",
-     "measured": "97%（96 次）",
+     "measured": "97%（102 次）",
      "need": "≥ 90%",
      "ok": true
     },
@@ -520,13 +534,13 @@
     },
     {
      "label": "站着的孩子：判成孩子或拿不准",
-     "measured": "59/59（其中拿不准 8）",
+     "measured": "58/58（其中拿不准 5）",
      "need": "全部",
      "ok": true
     },
     {
      "label": "站着的孩子：明确判成孩子",
-     "measured": "86%",
+     "measured": "91%",
      "need": "≥ 80%",
      "ok": true
     },
@@ -538,32 +552,46 @@
     },
     {
      "label": "空房间的假目标",
-     "measured": "0/50 帧",
+     "measured": "0/48 帧",
      "need": "0",
      "ok": true
     }
    ],
    "why": "",
-   "jobs": {},
-   "source": "读 results/ 里已有的结果",
-   "mode": "已有结果",
-   "when": "2026-11-24 15:27"
+   "jobs": {
+    "people": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 61,
+     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/people.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-24 17:40"
   },
   "E2": {
-   "verdict": "PASS",
+   "verdict": "FAIL",
    "lines": [
     {
      "label": "合并的一对被判成大人",
-     "measured": "0 次（8 种间隔）",
+     "measured": "2 次（8 种间隔）",
      "need": "0",
-     "ok": true
+     "ok": false
     }
    ],
    "why": "",
-   "jobs": {},
-   "source": "读 results/ 里已有的结果",
-   "mode": "已有结果",
-   "when": "2026-11-24 15:27"
+   "jobs": {
+    "pairs": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 94,
+     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/pairs.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-24 17:41"
   },
   "E3": {
    "verdict": "PASS",
