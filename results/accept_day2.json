@@ -1,0 +1,202 @@
+{
+ "runs": [
+  {
+   "seed": 5,
+   "passed": 13,
+   "n": 14,
+   "checks": [
+    {
+     "name": "the television is found from its sound alone",
+     "ok": true
+    },
+    {
+     "name": "Tom, in view, is recognised as a person with the owner role and answered in Chinese",
+     "ok": true
+    },
+    {
+     "name": "Emma, out of view, is answered in English and is never given the owner role",
+     "ok": true
+    },
+    {
+     "name": "the television saying the robot's name does not start a scan",
+     "ok": true
+    },
+    {
+     "name": "a voice alone (Emma out of view) cannot make the robot forget somebody",
+     "ok": true
+    },
+    {
+     "name": "a stranger out of view cannot send the robot to charge",
+     "ok": true
+    },
+    {
+     "name": "a child in view is given the child role and is answered",
+     "ok": true
+    },
+    {
+     "name": "a recording of the owner played by the television cannot make the robot forget the family",
+     "ok": true
+    },
+    {
+     "name": "Tom (owner, in view) is shown the profile of the child, in English, with only what is kept",
+     "ok": true
+    },
+    {
+     "name": "\"come here\" from the owner in view is understood and the robot heads for him",
+     "ok": true
+    },
+    {
+     "name": "a follow-up from somebody else is not taken as part of Tom's conversation",
+     "ok": false
+    },
+    {
+     "name": "Tom (owner, in view) starts the tidy-up job in English",
+     "ok": true
+    },
+    {
+     "name": "the English stop word stops the robot while it drives",
+     "ok": true
+    },
+    {
+     "name": "the language Tom asked for is kept in his profile",
+     "ok": true
+    }
+   ],
+   "collisions": 0,
+   "sim_s": 167,
+   "wall_s": 233
+  },
+  {
+   "seed": 6,
+   "passed": 9,
+   "n": 14,
+   "checks": [
+    {
+     "name": "the television is found from its sound alone",
+     "ok": false
+    },
+    {
+     "name": "Tom, in view, is recognised as a person with the owner role and answered in Chinese",
+     "ok": false
+    },
+    {
+     "name": "Emma, out of view, is answered in English and is never given the owner role",
+     "ok": true
+    },
+    {
+     "name": "the television saying the robot's name does not start a scan",
+     "ok": true
+    },
+    {
+     "name": "a voice alone (Emma out of view) cannot make the robot forget somebody",
+     "ok": true
+    },
+    {
+     "name": "a stranger out of view cannot send the robot to charge",
+     "ok": true
+    },
+    {
+     "name": "a child in view is given the child role and is answered",
+     "ok": true
+    },
+    {
+     "name": "a recording of the owner played by the television cannot make the robot forget the family",
+     "ok": true
+    },
+    {
+     "name": "Tom (owner, in view) is shown the profile of the child, in English, with only what is kept",
+     "ok": false
+    },
+    {
+     "name": "\"come here\" from the owner in view is understood and the robot heads for him",
+     "ok": false
+    },
+    {
+     "name": "a follow-up from somebody else is not taken as part of Tom's conversation",
+     "ok": true
+    },
+    {
+     "name": "Tom (owner, in view) starts the tidy-up job in English",
+     "ok": false
+    },
+    {
+     "name": "the English stop word stops the robot while it drives",
+     "ok": true
+    },
+    {
+     "name": "the language Tom asked for is kept in his profile",
+     "ok": true
+    }
+   ],
+   "collisions": 0,
+   "sim_s": 188,
+   "wall_s": 257
+  },
+  {
+   "seed": 7,
+   "passed": 12,
+   "n": 14,
+   "checks": [
+    {
+     "name": "the television is found from its sound alone",
+     "ok": false
+    },
+    {
+     "name": "Tom, in view, is recognised as a person with the owner role and answered in Chinese",
+     "ok": true
+    },
+    {
+     "name": "Emma, out of view, is answered in English and is never given the owner role",
+     "ok": true
+    },
+    {
+     "name": "the television saying the robot's name does not start a scan",
+     "ok": true
+    },
+    {
+     "name": "a voice alone (Emma out of view) cannot make the robot forget somebody",
+     "ok": true
+    },
+    {
+     "name": "a stranger out of view cannot send the robot to charge",
+     "ok": true
+    },
+    {
+     "name": "a child in view is given the child role and is answered",
+     "ok": true
+    },
+    {
+     "name": "a recording of the owner played by the television cannot make the robot forget the family",
+     "ok": true
+    },
+    {
+     "name": "Tom (owner, in view) is shown the profile of the child, in English, with only what is kept",
+     "ok": true
+    },
+    {
+     "name": "\"come here\" from the owner in view is understood and the robot heads for him",
+     "ok": true
+    },
+    {
+     "name": "a follow-up from somebody else is not taken as part of Tom's conversation",
+     "ok": true
+    },
+    {
+     "name": "Tom (owner, in view) starts the tidy-up job in English",
+     "ok": false
+    },
+    {
+     "name": "the English stop word stops the robot while it drives",
+     "ok": true
+    },
+    {
+     "name": "the language Tom asked for is kept in his profile",
+     "ok": true
+    }
+   ],
+   "collisions": 0,
+   "sim_s": 167,
+   "wall_s": 234
+  }
+ ]
+}

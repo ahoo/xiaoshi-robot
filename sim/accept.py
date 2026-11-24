@@ -59,34 +59,34 @@ def pct(a, b): return f'{a}/{b}（{100 * a / b:.0f}%）' if b else '0/0'
 # name -> (command run in the sim directory, minutes it takes on four cores). Items name the commands whose results they judge; a command shared by several items runs once.
 JOBS = {
     'base': ('python test_base.py', 1),
-    'grasp': ('python test_grasp.py 10', 8),
-    'job_standard': ('python accept_job.py standard 6', 14),
-    'job_hard': ('python accept_job.py near_walls,clutter,materials,bare_jaws 3', 22),
-    'clear': ('python run_clear.py ab 4 both', 15),
-    'righting_std': ('RIGHTING_LIB=righting_maneuvers_armcam.json RIGHTING_OUT=righting_camera_searched python test_armcam.py righting_camera 24', 4),
-    'righting_harsh': ('RIGHTING_HARSH=1 RIGHTING_LIB=righting_maneuvers_armcam.json RIGHTING_OUT=righting_camera_searched_harsh python test_armcam.py righting_camera 24', 4),
-    'righting_sweep': ('SWEEP_CAM=forearm_up python test_righting.py', 3),
-    'fall_room': ('FALL_CAM=forearm_up python test_modes.py fall 16', 16),
+    'grasp': ('python test_grasp.py 10', 10),
+    'job_standard': ('python accept_job.py standard 6', 12),
+    'job_hard': ('python accept_job.py near_walls,clutter,materials,bare_jaws 3', 25),
+    'clear': ('python run_clear.py ab 4 both', 19),
+    'righting_std': ('RIGHTING_LIB=righting_maneuvers_armcam.json RIGHTING_OUT=righting_camera_searched python test_armcam.py righting_camera 24', 2),
+    'righting_harsh': ('RIGHTING_HARSH=1 RIGHTING_LIB=righting_maneuvers_armcam.json RIGHTING_OUT=righting_camera_searched_harsh python test_armcam.py righting_camera 24', 2),
+    'righting_sweep': ('SWEEP_CAM=forearm_up python test_righting.py', 1),
+    'fall_room': ('FALL_CAM=forearm_up python test_modes.py fall 16', 8),
     'dock': ('python test_modes.py dock 10', 2),
     'lowbatt': ('python test_modes.py lowbatt 2', 12),
-    'teleop': ('python test_modes.py teleop', 4),
+    'teleop': ('python test_modes.py teleop', 11),
     'server': ('python test_modes.py server', 1),
     'nav': ('python test_modes.py nav 6', 3),
-    'scan': ('python test_home.py scan 1 2 3', 9),
+    'scan': ('python test_home.py scan 1 2 3', 6),
     'inventory': ('python test_home.py inventory 1 2 3 4 5 6', 8),
-    'people': ('PROCS=4 CAM=forearm_up python test_home.py people_static 150', 4),
-    'pairs': ('PROCS=4 python test_home.py pairs', 3),
-    'safety': ('CAM=forearm_up python test_home.py safety 1', 10),
+    'people': ('PROCS=4 CAM=forearm_up python test_home.py people_static 150', 1),
+    'pairs': ('PROCS=4 python test_home.py pairs', 2),
+    'safety': ('CAM=forearm_up python test_home.py safety 1', 15),
     'identity': ('python test_home.py identity', 1),
-    'faces': ('PROCS=4 CAMS=forearm_up python test_armcam.py faces 60', 2),
+    'faces': ('PROCS=4 CAMS=forearm_up python test_armcam.py faces 60', 1),
     'voice': ('python test_home.py voice', 2),
-    'lang': ('python test_lang.py', 5),
-    'day': ('python test_home.py day 3', 5),
+    'lang': ('python test_lang.py', 4),
+    'day': ('python test_home.py day 3', 11),
     'wake': ('python test_wake.py', 1),
-    'ssl': ('python test_sound.py ssl 100', 20),
-    'voiceprint': ('python test_sound.py voiceprint', 4),
-    'assoc': ('python test_assoc.py assoc 200', 17),
-    'day2': ('python accept_day2.py 5 6 7', 10),
+    'ssl': ('python test_sound.py ssl 100', 4),
+    'voiceprint': ('python test_sound.py voiceprint', 5),
+    'assoc': ('python test_assoc.py assoc 200', 5),
+    'day2': ('python accept_day2.py 5 6 7', 4),
     'profile': ('python test_assoc.py profile', 1),
     'pose': ('CAMS=forearm_up python test_armcam.py pose', 1),
     'llm': ('python test_llm.py', 1),
@@ -241,23 +241,33 @@ def e1(R):
             C('孩子被判成大人（所有姿势）', f'{s["child_called_adult"]} 次', '0', s['child_called_adult'] == 0), C('空房间的假目标', f'{s["false_tracks_empty_room"]["with_a_track"]}/{s["false_tracks_empty_room"]["frames"]} 帧', '0', s['false_tracks_empty_room']['with_a_track'] == 0)]
 
 
-@item('E2', '孩子挨着大人站时，不会被当成大人而放松', '孩子和大人并排或一前一后，间隔 10、25、45、70 cm，各 16 次（立杆相机）', '任何间隔下，挨着的两个人都不会被一起判成“大人”（拿不准按小孩处理）', ['pairs'], 'standard',
-      '**前臂相机没有单独测这一项**；间隔 10 cm 时两个人常被合并成一个目标，孩子分不出来（只是没有判成大人）')
+@item('E2', '孩子挨着大人站时，不会被当成大人而放松', '孩子和大人并排或一前一后，间隔 10、25、45、70 cm，各 32 次共 256 次（立杆相机，随机位置，看 2 秒）', '检出这一对的试验里，孩子被找到并按小孩办、或合并在一块里按小孩办的 ≥ 90%（拿不准按小孩处理）；孩子被判成大人 0 次', ['pairs'], 'standard',
+      '**前臂相机没有单独测这一项**；一前一后站、间隔很小时孩子被大人挡住，一台相机本来就看不到；只用深度图分不开挨着的两个人（真正的办法是 RGB 的人体检测，在路线图上）')
 def e2(R):
-    s = R('home_people_pairs')['summary']; bad = {k: v['pair_called']['adult'] for k, v in s.items() if isinstance(v, dict) and 'pair_called' in v}
-    rows = [v for v in s.values() if isinstance(v, dict) and 'n' in v]; n = sum(v['n'] for v in rows); miss = sum(v['child_called_adult_or_missing'] for v in rows); merged = sum(v['merged_into_one'] for v in rows)
-    return [C('合并成一条轨迹的一对被判成大人', f'{sum(bad.values())} 次（共 {merged} 次合并，{len(bad)} 种站法、{n} 次试验）', '0', sum(bad.values()) == 0),
-            C('孩子没被找到或被当成大人（只记录，已知弱点，见 status.md 第十四轮）', f'{miss}/{n}（{100 * miss / n:.0f}%）', '只记录', True)]
+    d = R('home_people_pairs'); rows = d['rows']; seen = [r for r in rows if r['adult_found'] or r['child_found']]         # trials in which the detector found somebody where the two people stand
+    def covered(r):
+        if r['child_found']: return r['child_cls'] in ('child', 'unsure')                    # found on its own: treated as a child
+        return r['adult_cls'] in ('child', 'unsure')                                         # merged with the grown-up into one block that is treated as a child
+    ok = sum(1 for r in seen if covered(r)); called_adult = sum(1 for r in seen if r['child_found'] and r['child_cls'] == 'adult')
+    only_adult = sum(1 for r in seen if not r['child_found'] and r['adult_found'] and r['adult_cls'] == 'adult'); none = len(rows) - len(seen)
+    return [C('检出这一对的试验里，孩子被找到并按小孩办、或合并在一块里按小孩办', f'{ok}/{len(seen)}（{100 * ok / max(len(seen), 1):.0f}%）', '≥ 90%', len(seen) > 0 and ok / len(seen) >= 0.9),
+            C('孩子被判成大人', f'{called_adult} 次', '0', called_adult == 0),
+            C('只剩一条“大人”的轨迹、孩子没找到（只记录）', f'{only_adult} 次', '只记录', True),
+            C('这两个人身边什么都没检出的试验（只记录；只放一个大人的对照也只有 67% 检出，见 pairs_control.py）', f'{none}/{len(rows)}（{100 * none / len(rows):.0f}%）', '只记录', True)]
 
 
 @item('E3', '人走近时刹得住：人和机器人同场干活', '5 种场景（没人、大人走过、孩子冲过来、幼儿在筐边、一家三口），安全层开，前臂相机，机器人照常捡', '碰到人 0 次；凡是有人走到离机器人 0.6 m 以内的场景，安全层至少停过一次；5 件都送到；碰撞 0', ['safety'], 'standard',
       '真的人不会按剧本走；真的刹车距离和手臂的惯性；手臂伸下去时相机看地板（约 12% 的时间看不到人）')
 def e3(R):
-    runs = R('home_people_safety_forearm_up')['runs']; touches = sum(sum(r.get('contacts', [])) for r in runs); gaps = [min(r['min_gap_cm']) for r in runs if r.get('min_gap_cm')]
+    every = R('home_people_safety_forearm_up')['runs']; runs = [r for r in every if r.get('guard', True)]; off = [r for r in every if not r.get('guard', True)]       # the bench also runs each scene with the safety layer off, as a control
+    touches = sum(sum(r.get('contacts', [])) for r in runs); gaps = [min(r['min_gap_cm']) for r in runs if r.get('min_gap_cm')]
     near = [r for r in runs if r.get('min_gap_cm') and min(r['min_gap_cm']) < 60]; silent = [r['scenario'] for r in near if not r.get('halts')]
-    return [C('碰到人', f'{touches} 次', '0', touches == 0), C('有人走到 0.6 m 以内的场景，安全层停过', f'{len(near) - len(silent)}/{len(near)}（' + '、'.join(f'{r["scenario"]} 停 {r["halts"]} 次' for r in near) + '）', '全部', not silent),
-            C('离人最近（只记录：孩子冲过来时人自己会跑到很近）', f'{min(gaps):.1f} cm' if gaps else '没有人', '只记录', True), C('送达', f'{sum(r["delivered"] for r in runs)}/{sum(r["total"] for r in runs)}', '全部', all(r['delivered'] == r['total'] for r in runs)),
-            C('碰撞', f'{sum(r["collisions"] for r in runs)} 次', '0', sum(r['collisions'] for r in runs) == 0)]
+    gaps_off = [min(r['min_gap_cm']) for r in off if r.get('min_gap_cm')]
+    out = [C('碰到人（安全层开）', f'{touches} 次', '0', touches == 0), C('有人走到 0.6 m 以内的场景，安全层停过', f'{len(near) - len(silent)}/{len(near)}（' + '、'.join(f'{r["scenario"]} 停 {r["halts"]} 次' for r in near) + '）', '全部', not silent),
+           C('离人最近（只记录：孩子冲过来时人自己会跑到很近）', f'{min(gaps):.1f} cm' if gaps else '没有人', '只记录', True), C('送达', f'{sum(r["delivered"] for r in runs)}/{sum(r["total"] for r in runs)}', '全部', all(r['delivered'] == r['total'] for r in runs)),
+           C('碰撞', f'{sum(r["collisions"] for r in runs)} 次', '0', sum(r['collisions'] for r in runs) == 0)]
+    if gaps_off: out.insert(3, C('对照：同样的场景关掉安全层，离人最近（只记录）', f'{min(gaps_off):.1f} cm', '只记录', True))
+    return out
 
 
 @item('E4', '认人：登记要同意，认对，没登记的不会被叫出名字', '登记要大人同意、至少 5 次正脸；登记的人 1–3 m 外叫名字；没登记的孩子、亲戚的孩子；说“忘掉”以后查登记簿', '没有同意或看得太少不能登记；叫对 ≥ 95%、叫错 0；没登记的从不被叫出名字；忘掉以后登记簿里没有', ['identity', 'faces'], 'quick',
@@ -401,7 +411,7 @@ def dashboard_rows(report):
     for it in ITEMS:
         v = report['items'].get(it['id'], dict(verdict='NODATA', lines=[], why='还没跑'))
         items.append(dict(id=it['id'], group=GROUPS[it['group']], title=it['title'], verdict=word[v['verdict']], measured='；'.join(f'{c["label"]} {c["measured"]}' for c in v['lines'][:3]) or v.get('why', ''),
-                          criterion=it['criterion'], scenario=it['scenario'], not_shown=it['not_shown'], known=(KNOWN.get(it['id'], '') if v['verdict'] != 'PASS' else ''), real='第 ' + '、'.join(str(n) for n in REAL.get(it['id'], [])) + ' 项', command='；'.join(JOBS[j][0] for j in it['jobs']), source=v.get('mode', '—') + (' ' + v['when'] if v.get('when') else '')))
+                          criterion=it['criterion'], scenario=it['scenario'], not_shown=it['not_shown'], known=(KNOWN.get(it['id'], '') if v['verdict'] != 'PASS' else ''), caveat=CAVEAT.get(it['id'], ''), real='第 ' + '、'.join(str(n) for n in REAL.get(it['id'], [])) + ' 项', command='；'.join(JOBS[j][0] for j in it['jobs']), source=v.get('mode', '—') + (' ' + v['when'] if v.get('when') else '')))
         for c in v['lines']: lines.append(dict(item=it['id'], line=c['label'], measured=c['measured'], need=c['need'], ok='✓' if c['ok'] else '✗'))
     return items, lines
 
@@ -452,13 +462,31 @@ REAL = {
 }
 
 
+# Things to know about an item whatever its verdict (a pass is not the same as room to spare). Written by hand, from the numbers of the last run.
+CAVEAT = {
+    'G3': ('第一遍读的是存下的结果（旧代码），电视放主人的录音拿“主人”权限是 0%；重跑 200 个房间时有 2 个房间（17 号、145 号）拿到了：电视没学会（92% 的房间学会了，这 2 个在没学会的 8% 里），电视的方向和那个“主人”在视野里的方向差 36–37°（方向估计的 σ 是 14°，约 2.6σ），声纹被录音骗成“是他”，'
+           '融合把这个声音算给了视野里的那个人，而“主人”的条件里没有单独检查“人在声音的方向上”。已改（`assoc.py` 一行：“主人”还要求这个人在声音方向的 2σ 以内，否则只给“大人”），这两个房间不再拿到主人，其余统计一个数都没变。'
+           '要注意：① 声纹被电视里的录音骗过 43%，现在只是没让它拿到“主人”这一级，“大人”那一级拿到 7%（防重放只防住了权限，没有活体检测）；② 电视没学会、又正好在主人的方向上时，录音和真人靠方向分不开，这 200 个房间里没出现，但原理上还在。'),
+    'A2': '通过线 85%，实测 89%，余量 4 个百分点；最差的一种是 L 形积木，6/10。',
+    'B2': '难材质一条是 16/18（89%），通过线 85%，余量不大；其余三种条件都是 15/15。',
+    'C1': '相机还会压在地上：向左侧倒时压地力中位数 9 N、最大 77 N（向右侧倒 17 / 32 N）；要加保护挡条（任务 #35，还没做）。起身动作库只适配这一个 75 g 的前臂相机，换相机要重搜。',
+    'C2': '倒下的 15 次里起来 14 次（93%），通过线 90%：余量就是 1 次。',
+    'C6': '到达的最大偏差 14.1 cm，通过线 15 cm。',
+    'D1': '覆盖最差的那个布局是 0.948，通过线 0.93。',
+    'D2': '拿走的东西标出 5/6（83%），通过线 75%。没标出的那一件（2 号布局拿走的香蕉）第二次扫描没有回头看那个位置，记录里仍是“在地上”，要问“还有什么没核实”才会被提到。第一遍验收只用了 3 个布局，这一条是 2/3 = 67%，没通过；75% 的线在 3 个样本上一个就差 33 个百分点，所以改成了 README 里本来就写的 6 个布局。',
+    'E1': '孩子明确判成“孩子”的有 91%（通过线 80%），其余是“拿不准”（安全层按小孩办）；近处（1–1.5 m）前臂相机偶尔看不到头顶，身高只算下限。',
+    'E3': '离人最近 13.8 cm（孩子冲过来时人自己会跑到很近；安全层开着，没有碰到）。同样的场景关掉安全层，最近 9.8 cm（一家三口），所以安全层确实多留了距离，但 13.8 cm 不算宽松。',
+    'F2': '三条都贴着线：夹杂听懂 71.9%（通过线 70%）、夹杂说错成别的意图 9.4%（通过线 10%）、中文 4% 错字时听懂 94.4%（通过线 93%）。英文停止词在吵和带口音时只有六到八成（status.md 第十五轮），这一项没有量。',
+    'G2': '访客被叫成家人 1.6%（通过线 3%），等错误率 9.1%（通过线 12%）；声纹只当弱证据，不单独放权限。',
+    'E2': ('第一遍验收这一项是通过的（合并成一块的一对被判成大人 0 次，用的是第十四轮存的 16 次/站法）；用 4 个进程重跑（256 次）后没通过：有 2 次被判成大人，一次是规则的缺口（一条只有 2 帧的轨迹，1 帧标成“一群”、1 帧没有，旧规则要“过半”才算“不确定”，平手就按高度和肩宽判成了大人；'
+           '已改，`people.py` 一行，平手也算“不确定”，往“当小孩”的方向变），另一次其实没有合并，只是孩子没被找到、剩下大人自己一条轨迹。看到第二次，我发现原来的标准量得太窄，改成现在这两条：检出的试验里孩子被覆盖的比例，和孩子被判成大人的次数。'
+           '要注意：① 孩子站在大人旁边 25–45 cm、没被单独找到、只剩大人一条轨迹的有几次（见实测里“只记录”那一行），这是第十四轮就写明的纯深度检测的弱点，真正的办法是 RGB 的人体检测模型（路线图）；'
+           '② 这个台架里一半以上位置在家具旁边、机器人站位随机、只看 2 秒，所以“什么都没检出”的试验有 29%；同样的 256 个位置只放一个大人，也只有 67% 检出（`sim/pairs_control.py`），所以这是台架的性质，不是“一对人”的问题，单个人的检出看 E1。'),
+}
+
+
 # What was found out about an item that did not pass (only shown while it does not pass). Written by hand, after looking into it.
 KNOWN = {
-    'E2': ('4 个进程跑（种子 300–303，每种站法 32 次，共 256 次），其中 48 次孩子和大人合并成一条轨迹，2 次被判成大人。第十四轮存的那一遍只有种子 300、301（每种站法 16 次），那两个种子里这一项是 0 次。'
-           '① 并排站、间隔 10 cm 的一次：这条轨迹只有 2 帧，其中 1 帧标成“一群”、1 帧没有，旧规则要“过半”才算“不确定”，平手就按高度和肩宽（0.44–0.48 m，超过“坐着的大人”的 0.37 m）判成了大人。'
-           '这是规则的缺口，已经改了（`people.py` 一行：平手也算“不确定”，只在这种平手时结论变，往“当小孩”的方向变），这个种子重跑已是“不确定”。'
-           '② 并排站、间隔 25 cm 的一次：其实没有合并，这条轨迹就是大人自己（宽 0.48 m、高 1.73 m），孩子没被找到，台架把“只剩一条轨迹”都算成了“合并”。'
-           '“孩子挨着大人站时被漏掉或被当成大人”是第十四轮就写明的已知弱点（只用深度图分不开，真正的办法是 RGB 的人体检测模型，在路线图上），这一项的第二行把它的比例记下来。'),
     'B1': ('4 号布局里第 2 件是毛绒玩具：抓取时夹爪合到底，固定指垫被楔进玩具的躯干和头之间（头的偏转铰链被顶到 0.79 rad，超出它的限位 ±0.60 rad；躯干和头各顶着指垫约 20 N，指垫陷进去 7.5 和 11.8 mm），松手后指垫仍卡在里面。'
            '控制器自带的“抖 3 次、按到筐底 2 次”没有把它弄下来；我另外试的 10 种动作（手腕转 45°/90°/180°、按在筐底再转、夹爪反复开合、腕关节抖动、在筐底拖、快速抬起、整只手翻过来）也都没有，所以控制器按设计停机求助。'
            '同样的代码、同样的种子，每次都在 149.8 s 停在这里；第十六轮的 12 个布局试验里这个布局也是唯一失败的（11/12）。'
@@ -472,8 +500,8 @@ def render_markdown(report):
     L = []; items = report['items']; npass = sum(1 for v in items.values() if v['verdict'] == 'PASS'); nfail = sum(1 for v in items.values() if v['verdict'] == 'FAIL'); nnd = sum(1 for v in items.values() if v['verdict'] in ('NODATA', 'ERROR'))
     L += ['# 仿真功能验收', '', '这份验收回答一个问题：**在仿真里，机器人要有的每一项功能，各自做到了没有。** 每一项有一个场景、一条写死的通过标准、一条命令；结论是自动算出来的。',
           '物料等这份验收满意了再备（实物验收见 [`validation.md`](validation.md)，那是买了硬件以后做的）。', '', '## 怎么跑', '', '```bash', 'cd sim', 'python accept.py --list                    # 有哪些项、各自的标准和命令、大概多久',
-          'python accept.py --report                  # 用 results/ 里已有的结果下结论（几秒钟，什么都不跑）', 'python accept.py --run quick                # 重跑每项几分钟的那些（约半小时，4 核），在临时副本里跑，不动 results/',
-          'python accept.py --run standard             # 重跑全部（几个小时，4 核）', 'python accept.py --run quick --only C3,F5  # 只跑指定的几项', '```', '',
+          'python accept.py --report                  # 用 results/ 里已有的结果下结论（几秒钟，什么都不跑）', 'python accept.py --run quick                # 重跑每项几分钟的那些（约 40 分钟，4 核），在临时副本里跑，不动 results/',
+          'python accept.py --run standard             # 重跑全部（约 3 小时，4 核）', 'python accept.py --run quick --only C3,F5  # 只跑指定的几项', '```', '',
           '`--run` 会在临时目录里放一份仓库的副本再跑，所以 `results/` 里已有的结果不会被改；跑完把结论和数字写进 `results/acceptance_sim.json` 和这个文件（只有验收自己用的 `accept_job.json`、`accept_day2.json` 会留在 `results/` 里，这样 `--report` 才有东西可判）。标准写在 `sim/accept.py` 的 `ITEMS` 里，改一个数字，结论就跟着变。', '']
     modes = sorted({v.get('mode', '—') for v in items.values()}); whens = sorted({v['when'] for v in items.values() if v.get('when')})
     where = report['source'] if len(modes) <= 1 else '各项的来源不同，见每项的“来源”列：' + '、'.join(modes)
@@ -495,7 +523,9 @@ def render_markdown(report):
         L.append('')
     L += ['## 每一项做了什么、标准是什么、仿真证明不了什么', '']
     for it in ITEMS:
-        L += [f'### {it["id"]} {it["title"]}', '', f'- **场景**：{it["scenario"]}', f'- **标准**：{it["criterion"]}', f'- **命令**（约 {sum(JOBS[j][1] for j in it["jobs"])} 分钟，{"quick" if it["tier"] == "quick" else "standard"}）：' + '；'.join(f'`{JOBS[j][0]}`' for j in it['jobs']), f'- **仿真证明不了的**：{it["not_shown"]}', f'- **实物验收表里对应的**（[`validation.md`](validation.md)）：第 ' + '、'.join(str(n) for n in REAL.get(it['id'], [])) + ' 项', '']
+        L += [f'### {it["id"]} {it["title"]}', '', f'- **场景**：{it["scenario"]}', f'- **标准**：{it["criterion"]}', f'- **命令**（约 {sum(JOBS[j][1] for j in it["jobs"])} 分钟，{"quick" if it["tier"] == "quick" else "standard"}）：' + '；'.join(f'`{JOBS[j][0]}`' for j in it['jobs']), f'- **仿真证明不了的**：{it["not_shown"]}']
+        if it['id'] in CAVEAT: L.append(f'- **要注意**：{CAVEAT[it["id"]]}')
+        L += [f'- **实物验收表里对应的**（[`validation.md`](validation.md)）：第 ' + '、'.join(str(n) for n in REAL.get(it['id'], [])) + ' 项', '']
     L += ['## 通过这份验收，说明什么、不说明什么', '',
           '**说明**：我们自己写的那部分（控制、感知、建图、对话、权限、隐私、模式切换、起身、充电、安全层）在仿真里按上面的标准做对了，而且每次改代码都能一条命令重新验。', '',
           '**不说明**：真机上也这样。仿真里声音是合成的、人脸识别是替身、深度相机和舵机是模型、大模型没有对真服务测过、物体和房间是简化的。验收表（[`validation.md`](validation.md)）里买了硬件以后要逐项量的，这里都标在“仿真证明不了的”里；其中风险最大的几项是：起身（实物最冒险）、真人脸模型和真声纹模型的准确率、唤醒词的命中率和误唤醒、透明瓶在真深度图上的信号。', '']
@@ -506,6 +536,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--list', action='store_true'); ap.add_argument('--report', action='store_true'); ap.add_argument('--run', choices=('quick', 'standard')); ap.add_argument('--only'); ap.add_argument('--procs', type=int, default=4)
     ap.add_argument('--render', action='store_true', help='write docs/acceptance_sim.md again from results/acceptance_sim.json (nothing is judged or run)'); ap.add_argument('--rows', help='write the rows of the report as JSON files (items.json, lines.json) into this directory, for a dashboard')
+    ap.add_argument('--results-dir', help='with --report: judge from the result files in this directory (a sandbox kept by --keep, or a copy of one) instead of ../results; use it to judge again a run whose check had a mistake, without running anything again')
     ap.add_argument('--keep', help='run in this directory and keep it (default: a temporary directory that is removed)'); ap.add_argument('--no-write', action='store_true', help='do not write results/acceptance_sim.json and docs/acceptance_sim.md')
     a = ap.parse_args(); only = set(a.only.split(',')) if a.only else None
     sel = [it for it in ITEMS if only is None or it['id'] in only]
@@ -537,7 +568,7 @@ def main():
         print(f'在 {w} 里跑 {len(todo)} 项（{len(jobs)} 条命令，约 {sum(JOBS[j][1] for j in jobs)} 分钟）', flush=True)
         stamp = lambda: {f: os.path.getmtime(os.path.join(w, 'results', f)) for f in os.listdir(os.path.join(w, 'results')) if f.endswith('.json')}; before = stamp(); done = {}
     else:
-        todo = sel; R = Results(os.path.join(ROOT, 'results')); source = '读 results/ 里已有的结果'; w = None; done = {}; before = {}
+        todo = sel; R = Results(a.results_dir or os.path.join(ROOT, 'results')); source = f'读 {a.results_dir} 里的结果（一次重跑留下的）' if a.results_dir else '读 results/ 里已有的结果'; w = None; done = {}; before = {}
 
     def save():
         report = dict(when=when, source=source, code=code, items={it['id']: items.get(it['id'], dict(verdict='NODATA', lines=[], why='还没跑')) for it in ITEMS})
@@ -553,7 +584,7 @@ def main():
             v = judge(R, it, fresh)
             if not a.no_write: keep_owned(w)
         else: v = judge(R, it)
-        v['jobs'] = {j: done[j] for j in it['jobs'] if j in done}; v['source'] = source; v['mode'] = f'重跑 {a.run}' if a.run else '已有结果'; v['when'] = time.strftime('%Y-%m-%d %H:%M') if a.run else ''; items[it['id']] = v
+        v['jobs'] = {j: done[j] for j in it['jobs'] if j in done}; v['source'] = source; v['mode'] = f'重跑 {a.run}' if a.run else ('重跑的结果，重新判' if a.results_dir else '已有结果'); v['when'] = time.strftime('%Y-%m-%d %H:%M') if a.run else ''; items[it['id']] = v
         print(f'{"✅" if v["verdict"] == "PASS" else "❌" if v["verdict"] == "FAIL" else "⚠️" if v["verdict"] == "ERROR" else "⚪"} {it["id"]:3} {it["title"]}')
         for c in v['lines']: print(f'      {"✓" if c["ok"] else "✗"} {c["label"]}：{c["measured"]}（要求 {c["need"]}）')
         if v['verdict'] in ('NODATA', 'ERROR'): print('      ' + v['why'])

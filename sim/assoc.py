@@ -111,7 +111,9 @@ class Associator:
         if out['source'] == 'person' and trk is not None:
             face = bool(trk.who)
             if face and r == 'adult':                                                                 # a face the robot knows, in the direction of the voice ...
-                if sure and trk.who in llr and llr[trk.who] >= 0.0: return 'owner'                    # ... and a voice that does not say it is somebody else (no voice evidence at all - too short a sentence - is not enough)
+                aligned = abs(wrap(az - self.bearing(pose, trk.x, trk.y))) < 2 * sigma                  # ... standing where the sound came from, to the accuracy of the direction finder (a recording from a television somewhere else, whose
+                                                                                                         # voice matches a person who happens to be in view, is explained by that person only if the direction is allowed to be far off)
+                if sure and aligned and trk.who in llr and llr[trk.who] >= 0.0: return 'owner'        # ... and a voice that does not say it is somebody else (no voice evidence at all - too short a sentence - is not enough)
                 return 'adult' if sure else 'unknown'
             if face and r == 'child': return 'child'
             if trk.cls == 'adult': return 'adult' if sure else 'unknown'                              # a grown-up in view that the robot cannot name
