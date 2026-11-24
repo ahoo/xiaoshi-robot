@@ -12,6 +12,7 @@ one there and the verdict follows. A verdict says what the SIMULATOR showed, wit
 """
 import argparse
 import datetime
+import inspect
 import json
 import math
 import os
@@ -36,12 +37,14 @@ class Results:
     def __init__(self, path): self.path = path; self._cache = {}; self.read = set()
 
     def __call__(self, name):
+        """The file's content as it is now: read again if a command has rewritten it since (accept_job.json is written by two commands, one after the other)."""
         self.read.add(name)
-        if name not in self._cache:
-            fn = os.path.join(self.path, f'{name}.json')
-            if not os.path.exists(fn): raise NoData(f'没有 {name}.json')
-            with open(fn) as f: self._cache[name] = json.load(f)
-        return self._cache[name]
+        fn = os.path.join(self.path, f'{name}.json')
+        if not os.path.exists(fn): raise NoData(f'没有 {name}.json')
+        mtime = os.path.getmtime(fn)
+        if name not in self._cache or self._cache[name][0] != mtime:
+            with open(fn) as f: self._cache[name] = (mtime, json.load(f))
+        return self._cache[name][1]
 
 
 def C(label, measured, need, ok):
@@ -390,6 +393,27 @@ def git_state():
     except OSError: return '?'
 
 
+def dashboard_rows(report):
+    """The report as two lists of rows for a dashboard: one row per item, one per line of a criterion."""
+    word = dict(PASS='通过', FAIL='没通过', NODATA='没有数据', ERROR='没跑成'); items = []; lines = []
+    for it in ITEMS:
+        v = report['items'].get(it['id'], dict(verdict='NODATA', lines=[], why='还没跑'))
+        items.append(dict(id=it['id'], group=GROUPS[it['group']], title=it['title'], verdict=word[v['verdict']], measured='；'.join(f'{c["label"]} {c["measured"]}' for c in v['lines'][:3]) or v.get('why', ''),
+                          criterion=it['criterion'], scenario=it['scenario'], not_shown=it['not_shown'], command='；'.join(JOBS[j][0] for j in it['jobs']), source=v.get('mode', '—') + (' ' + v['when'] if v.get('when') else '')))
+        for c in v['lines']: lines.append(dict(item=it['id'], line=c['label'], measured=c['measured'], need=c['need'], ok='✓' if c['ok'] else '✗'))
+    return items, lines
+
+
+OWNED = ('accept_job.json', 'accept_day2.json')       # result files only the acceptance writes: they are kept in ../results, so that --report has something to judge later
+
+
+def keep_owned(w):
+    """Copy the result files that only the acceptance uses from the sandbox to ../results (only if the run made them newer)."""
+    for f in OWNED:
+        src, dst = os.path.join(w, 'results', f), os.path.join(ROOT, 'results', f)
+        if os.path.exists(src) and (not os.path.exists(dst) or os.path.getmtime(src) > os.path.getmtime(dst)): shutil.copy2(src, dst)
+
+
 def make_sandbox(keep_dir=None):
     """A copy of the repository to run in, so that the results in ../results stay as they are: sim and results copied, third_party linked."""
     w = keep_dir or tempfile.mkdtemp(prefix='xiaoshi_accept_')
@@ -416,6 +440,16 @@ def run_jobs(names, w, procs):
     return out
 
 
+# What was found out about an item that did not pass (only shown while it does not pass). Written by hand, after looking into it.
+KNOWN = {
+    'B1': ('4 号布局里第 2 件是毛绒玩具：抓取时夹爪合到底，固定指垫被楔进玩具的躯干和头之间（头的铰链到了限位，两边各顶着约 20 N，指垫陷进去 7.5 和 11.8 mm），松手后指垫仍卡在里面。'
+           '控制器自带的“抖 3 次、按到筐底 2 次”没有把它弄下来；我另外试的 10 种动作（手腕转 45°/90°/180°、按在筐底再转、夹爪反复开合、腕关节抖动、在筐底拖、快速抬起、整只手翻过来）也都没有，所以控制器按设计停机求助。'
+           '同样的代码、同样的种子，每次都在 149.8 s 停在这里；第十六轮的 12 个布局试验里这个布局也是唯一失败的（11/12）。'
+           '单独拿毛绒玩具和袜子各做 40 次“抓起来放进筐里”（夹力 1.0 和 0.8 N·m）一次都没卡住，所以这是少见的几何组合，不是普遍问题；但一旦发生，整套任务就停在那里。'
+           '注意仿真里的毛绒玩具是几块刚性球加弹簧铰链，指垫“楔进去”的方式在真玩具上不一定会出现。这一项没有改控制器；把最后一下夹力从 1.0 降到 0.4/0.6/0.8 N·m，这个布局都能 5/5，但这只是一次观察，不当作修复。'),
+}
+
+
 def render_markdown(report):
     """docs/acceptance_sim.md: how to run it, the criteria, the verdicts."""
     L = []; items = report['items']; npass = sum(1 for v in items.values() if v['verdict'] == 'PASS'); nfail = sum(1 for v in items.values() if v['verdict'] == 'FAIL'); nnd = sum(1 for v in items.values() if v['verdict'] in ('NODATA', 'ERROR'))
@@ -423,13 +457,16 @@ def render_markdown(report):
           '物料等这份验收满意了再备（实物验收见 [`validation.md`](validation.md)，那是买了硬件以后做的）。', '', '## 怎么跑', '', '```bash', 'cd sim', 'python accept.py --list                    # 有哪些项、各自的标准和命令、大概多久',
           'python accept.py --report                  # 用 results/ 里已有的结果下结论（几秒钟，什么都不跑）', 'python accept.py --run quick                # 重跑每项几分钟的那些（约半小时，4 核），在临时副本里跑，不动 results/',
           'python accept.py --run standard             # 重跑全部（几个小时，4 核）', 'python accept.py --run quick --only C3,F5  # 只跑指定的几项', '```', '',
-          '`--run` 会在临时目录里放一份仓库的副本再跑，所以 `results/` 里已有的结果不会被改；跑完把结论和数字写进 `results/acceptance_sim.json` 和这个文件。标准写在 `sim/accept.py` 的 `ITEMS` 里，改一个数字，结论就跟着变。', '']
-    L += [f'## 最近一次：{report["when"]}（{report["source"]}，代码 {report["code"]}）', '', f'**{npass} 项通过，{nfail} 项没通过，{nnd} 项没有数据或没跑成**（共 {len(items)} 项）。', '']
+          '`--run` 会在临时目录里放一份仓库的副本再跑，所以 `results/` 里已有的结果不会被改；跑完把结论和数字写进 `results/acceptance_sim.json` 和这个文件（只有验收自己用的 `accept_job.json`、`accept_day2.json` 会留在 `results/` 里，这样 `--report` 才有东西可判）。标准写在 `sim/accept.py` 的 `ITEMS` 里，改一个数字，结论就跟着变。', '']
+    modes = sorted({v.get('mode', '—') for v in items.values()}); whens = sorted({v['when'] for v in items.values() if v.get('when')})
+    where = report['source'] if len(modes) <= 1 else '各项的来源不同，见每项的“来源”列：' + '、'.join(modes)
+    L += [f'## 最近一次：{whens[-1] if whens else report["when"]}（{where}，代码 {report["code"]}）', '', f'**{npass} 项通过，{nfail} 项没通过，{nnd} 项没有数据或没跑成**（共 {len(items)} 项）。', '']
     bad = [(i, v) for i, v in items.items() if v['verdict'] != 'PASS']
     if bad:
         L += ['### 没通过或没有数据的', '']
         for i, v in bad:
             it = next(x for x in ITEMS if x['id'] == i); L.append(f'- **{i} {it["title"]}**：' + ('没有数据或没跑成（' + v['why'] + '）' if v['verdict'] in ('NODATA', 'ERROR') else '；'.join(f'{c["label"]} {c["measured"]}（要求 {c["need"]}）' for c in v['lines'] if not c['ok'])))
+            if i in KNOWN: L.append(f'  - **查过了**：{KNOWN[i]}')
         L.append('')
     sym = dict(PASS='✅ 通过', FAIL='❌ 没通过', NODATA='⚪ 没有数据', ERROR='⚠️ 没跑成')
     for g, gname in GROUPS.items():
@@ -451,10 +488,24 @@ def render_markdown(report):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--list', action='store_true'); ap.add_argument('--report', action='store_true'); ap.add_argument('--run', choices=('quick', 'standard')); ap.add_argument('--only'); ap.add_argument('--procs', type=int, default=4)
+    ap.add_argument('--render', action='store_true', help='write docs/acceptance_sim.md again from results/acceptance_sim.json (nothing is judged or run)'); ap.add_argument('--rows', help='write the rows of the report as JSON files (items.json, lines.json) into this directory, for a dashboard')
     ap.add_argument('--keep', help='run in this directory and keep it (default: a temporary directory that is removed)'); ap.add_argument('--no-write', action='store_true', help='do not write results/acceptance_sim.json and docs/acceptance_sim.md')
     a = ap.parse_args(); only = set(a.only.split(',')) if a.only else None
     sel = [it for it in ITEMS if only is None or it['id'] in only]
     if only and len(sel) != len(only): sys.exit('没有这些项：' + ','.join(sorted(only - {it['id'] for it in ITEMS})))
+    if a.render or a.rows:
+        rep = json.load(open(os.path.join(ROOT, 'results', 'acceptance_sim.json')))
+        if a.render:
+            with open(os.path.join(ROOT, 'docs', 'acceptance_sim.md'), 'w') as f: f.write(render_markdown(rep))
+            print('写了 docs/acceptance_sim.md')
+        if a.rows:
+            os.makedirs(a.rows, exist_ok=True); items, lines = dashboard_rows(rep)
+            meta = [dict(label='accept.py: dashboard_rows', value=inspect.getsource(dashboard_rows), type='code', lang='python'), dict(label='Input', value='results/acceptance_sim.json（accept.py --report / --run 写的）'),
+                    dict(label='Command', value='cd sim && python accept.py --rows <dir>', type='code', lang='bash'), dict(label='Report from', value=f'{rep.get("code", "?")}，{rep.get("when", "?")}')]
+            for n, d in (('items', items), ('lines', lines)):
+                with open(os.path.join(a.rows, f'{n}.json'), 'w') as f: json.dump(dict(rows=d, meta=meta), f, ensure_ascii=False)
+            print(f'写了 {a.rows}/items.json（{len(items)} 行）和 lines.json（{len(lines)} 行）')
+        return
     if a.list or not (a.report or a.run):
         for it in ITEMS: print(f'{it["id"]:3} [{it["tier"]:8}] {it["title"]}\n      标准：{it["criterion"]}\n      命令：' + '；'.join(JOBS[j][0] for j in it['jobs']) + f'（约 {sum(JOBS[j][1] for j in it["jobs"])} 分钟）')
         return
@@ -483,6 +534,7 @@ def main():
             new = [j for j in it['jobs'] if j not in done]; done.update(run_jobs(new, w, a.procs))
             after = stamp(); fresh = {f[:-5] for f, t in after.items() if t > before.get(f, 0)}
             v = judge(R, it, fresh)
+            if not a.no_write: keep_owned(w)
         else: v = judge(R, it)
         v['jobs'] = {j: done[j] for j in it['jobs'] if j in done}; v['source'] = source; v['mode'] = f'重跑 {a.run}' if a.run else '已有结果'; v['when'] = time.strftime('%Y-%m-%d %H:%M') if a.run else ''; items[it['id']] = v
         print(f'{"✅" if v["verdict"] == "PASS" else "❌" if v["verdict"] == "FAIL" else "⚠️" if v["verdict"] == "ERROR" else "⚪"} {it["id"]:3} {it["title"]}')

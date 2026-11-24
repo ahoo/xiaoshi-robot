@@ -1,6 +1,6 @@
 {
- "when": "2026-11-24 15:27",
- "source": "重跑（quick）",
+ "when": "2026-11-24 16:03",
+ "source": "重跑（standard）",
  "code": "0ecb182+未提交的改动",
  "items": {
   "A1": {
@@ -49,7 +49,7 @@
    "lines": [
     {
      "label": "总成功率",
-     "measured": "72/80（90%）",
+     "measured": "71/80（89%）",
      "need": "≥ 85%",
      "ok": true
     },
@@ -61,28 +61,74 @@
     }
    ],
    "why": "",
-   "jobs": {},
-   "source": "读 results/ 里已有的结果",
-   "mode": "已有结果",
-   "when": "2026-11-24 15:27"
+   "jobs": {
+    "grasp": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 568,
+     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/grasp.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-24 16:12"
   },
   "B1": {
-   "verdict": "NODATA",
-   "lines": [],
-   "why": "没有 accept_job.json",
-   "jobs": {},
-   "source": "读 results/ 里已有的结果",
-   "mode": "已有结果",
-   "when": "2026-11-24 15:27"
+   "verdict": "FAIL",
+   "lines": [
+    {
+     "label": "全部送达的布局",
+     "measured": "5/6（83%）",
+     "need": "≥ 80%",
+     "ok": true
+    },
+    {
+     "label": "送达的件数",
+     "measured": "26/30（87%）",
+     "need": "≥ 90%",
+     "ok": false
+    },
+    {
+     "label": "一局里最多碰撞",
+     "measured": "0 次",
+     "need": "≤ 1",
+     "ok": true
+    },
+    {
+     "label": "故障停机",
+     "measured": "4号布局：payload stuck",
+     "need": "没有",
+     "ok": false
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "job_standard": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 682,
+     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/job_standard.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-24 16:24"
   },
   "B2": {
-   "verdict": "NODATA",
+   "verdict": "ERROR",
    "lines": [],
-   "why": "没有 accept_job.json",
-   "jobs": {},
-   "source": "读 results/ 里已有的结果",
-   "mode": "已有结果",
-   "when": "2026-11-24 15:27"
+   "why": "accept_job.json 里没有这几种条件的试验",
+   "jobs": {
+    "job_hard": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 1470,
+     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/job_hard.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-24 16:48"
   },
   "B3": {
    "verdict": "PASS",
@@ -101,10 +147,17 @@
     }
    ],
    "why": "",
-   "jobs": {},
-   "source": "读 results/ 里已有的结果",
-   "mode": "已有结果",
-   "when": "2026-11-24 15:27"
+   "jobs": {
+    "clear": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 1104,
+     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/clear.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-24 17:07"
   },
   "C1": {
    "verdict": "PASS",
