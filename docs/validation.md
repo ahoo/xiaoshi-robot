@@ -1,5 +1,7 @@
 # 实物验收方案
 
+**买了硬件以后做这份；买之前先在仿真里做功能验收：[`acceptance_sim.md`](acceptance_sim.md)（`cd sim && python accept.py --run quick`）。**
+
 按顺序做，前一项不过先别做后一项。「仿真值」来自 `results/` 里的这一轮试验，由 `web/build_page.py` 自动填入。
 
 | # | 测什么 | 怎么测 | 仿真值 | 通过 |

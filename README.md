@@ -10,8 +10,9 @@
 
 第十六轮把**相机从头部立杆挪到了机械臂上**（装在前臂上、向上翻到仰 32.5°，行进姿势下就朝前向上看，不用抬手臂，不要立杆；仿真里找人、分大人孩子、认人（替身识别器）、人和机器人同场干活都和立杆差不多，代价是手臂干活时约 12% 的时间看不到人，以及**相机会影响起身**（75 g 装上去，原来存着的起身动作向左侧倒就起不来了；已带着相机重搜，新场景上起身 23–24/24，机器人有前臂相机时自动用新动作；但侧倒时相机会压在地上，要加保护挡条；整机摔倒试验里还抓到并修了起身模式里一个等不完的等待，没有相机也会遇到），见 [`docs/status.md`](docs/status.md)）；接上了**大模型 API**（`sim/llm.py`，**不限哪一家**：Claude、任何 OpenAI 兼容的服务——DeepSeek、通义、Kimi、智谱、OpenAI、Azure……以及家里电脑上的 Ollama / LM Studio / vLLM，还能几个串起来；默认关，只发唤醒词之后这一句话的文字，孩子和认不出的人的话不发，动作仍要先口头确认；真服务没有测过）；唤醒词和停止词改成**在声音上直接听**（`sim/wakeword.py`，sherpa-onnx 的中英双语关键词模型，词用文字写进去；真录音上验证了流程，**真人喊“小拾小拾”有多灵没有测**）。
 
+- **先在仿真里做功能验收**：[`docs/acceptance_sim.md`](docs/acceptance_sim.md)（29 项功能，每项一个场景、一条通过标准；`cd sim && python accept.py --run quick`，约半小时，逐项给出通过/没通过和数字）。买物料等这份验收满意了再说
 - 当前状态和已知限制：[`docs/status.md`](docs/status.md)；下一步计划：[`docs/roadmap.md`](docs/roadmap.md)
-- 试验结果和实物验收表：[`docs/validation.md`](docs/validation.md)
+- 试验结果和实物验收表（买了硬件以后做）：[`docs/validation.md`](docs/validation.md)
 - 要买的东西：[`docs/bom.md`](docs/bom.md)
 - 原始数据：[`results/`](results/)（每次试验的结果和事件日志）
 
@@ -19,6 +20,7 @@
 
 | 路径 | 内容 |
 |---|---|
+| `sim/accept.py`、`accept_job.py`、`accept_day2.py` | **仿真功能验收**：29 项功能的注册表（场景、通过标准、命令、仿真证明不了什么），`--report` 读已有结果下结论，`--run quick/standard` 在临时副本里重跑并下结论，写 `results/acceptance_sim.json` 和 `docs/acceptance_sim.md` |
 | `sim/model.py` | 整机物理模型：带滚子的全向轮、底盘、SO-101、房间。硬件参数集中在顶部的 `P` |
 | `sim/objects.py` | 物体库：方块、小球、玩具车、香蕉、L 形积木、随机形状的石头、袜子（软）、毛绒玩具（软）。每次出场尺寸和重量随机 |
 | `sim/robot.py` | 驱动层接口：底盘速度、关节目标、雷达、里程计 |

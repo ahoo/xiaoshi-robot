@@ -709,7 +709,7 @@ def main():
     frag = title + '\n<script>document.documentElement.lang = "zh-CN";</script>\n' + frag.replace(title, '', 1).lstrip()
     open(os.path.join(HERE, 'dist', 'artifact.html'), 'w', encoding='utf8').write(frag)
 
-    md = ['# 实物验收方案', '', '按顺序做，前一项不过先别做后一项。「仿真值」来自 `results/` 里的这一轮试验，由 `web/build_page.py` 自动填入。', '',
+    md = ['# 实物验收方案', '', '**买了硬件以后做这份；买之前先在仿真里做功能验收：[`acceptance_sim.md`](acceptance_sim.md)（`cd sim && python accept.py --run quick`）。**', '', '按顺序做，前一项不过先别做后一项。「仿真值」来自 `results/` 里的这一轮试验，由 `web/build_page.py` 自动填入。', '',
           '| # | 测什么 | 怎么测 | 仿真值 | 通过 |', '|---|---|---|---|---|']
     md += [f'| {i + 1} | {a} | {b} | {c} | {d} |'.replace('<code>', '`').replace('</code>', '`').replace('<b>', '**').replace('</b>', '**') for i, (a, b, c, d) in enumerate(valid)]
     md += [f'| {n} | {a} | {b_} | {c} | {d} |' for n, a, b_, c, d in home_round_rows(len(valid))]          # round 14: only in the document, not on the published page
