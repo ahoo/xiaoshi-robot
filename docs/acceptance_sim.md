@@ -14,16 +14,15 @@ python accept.py --run standard             # 重跑全部（几个小时，4 �
 python accept.py --run quick --only C3,F5  # 只跑指定的几项
 ```
 
-`--run` 会在临时目录里放一份仓库的副本再跑，所以 `results/` 里已有的结果不会被改；跑完把结论和数字写进 `results/acceptance_sim.json` 和这个文件（只有验收自己用的 `accept_job.json`、`accept_day2.json` 会留在 `results/` 里，这样 `--report` 才有东西可判）。标准写在 `sim/accept.py` 的 `ITEMS` 里，改一个数字，结论就跟着变。
+`--run` 会在临时目录里放一份仓库的副本再跑，所以 `results/` 里已有的结果不会被改；跑完把结论和数字写进 `results/acceptance_sim.json` 和这个文件。标准写在 `sim/accept.py` 的 `ITEMS` 里，改一个数字，结论就跟着变。
 
-## 最近一次：2026-11-24 17:07（各项的来源不同，见每项的“来源”列：已有结果、重跑 quick、重跑 standard，代码 0ecb182+未提交的改动）
+## 最近一次：2026-11-24 16:03（重跑（standard），代码 0ecb182+未提交的改动）
 
 **26 项通过，1 项没通过，2 项没有数据或没跑成**（共 29 项）。
 
 ### 没通过或没有数据的
 
 - **B1 整套任务：4×3 m 的房间里 5 件东西送进筐里**：送达的件数 26/30（87%）（要求 ≥ 90%）；故障停机 4号布局：payload stuck（要求 没有）
-  - **查过了**：4 号布局里第 2 件是毛绒玩具：抓取时夹爪合到底，固定指垫被楔进玩具的躯干和头之间（头的铰链到了限位，两边各顶着约 20 N，指垫陷进去 7.5 和 11.8 mm），松手后指垫仍卡在里面。控制器自带的“抖 3 次、按到筐底 2 次”没有把它弄下来；我另外试的 10 种动作（手腕转 45°/90°/180°、按在筐底再转、夹爪反复开合、腕关节抖动、在筐底拖、快速抬起、整只手翻过来）也都没有，所以控制器按设计停机求助。同样的代码、同样的种子，每次都在 149.8 s 停在这里；第十六轮的 12 个布局试验里这个布局也是唯一失败的（11/12）。单独拿毛绒玩具和袜子各做 40 次“抓起来放进筐里”（夹力 1.0 和 0.8 N·m）一次都没卡住，所以这是少见的几何组合，不是普遍问题；但一旦发生，整套任务就停在那里。注意仿真里的毛绒玩具是几块刚性球加弹簧铰链，指垫“楔进去”的方式在真玩具上不一定会出现。这一项没有改控制器；把最后一下夹力从 1.0 降到 0.4/0.6/0.8 N·m，这个布局都能 5/5，但这只是一次观察，不当作修复。
 - **B2 难条件：贴边、扎堆、黑色和反光的东西（含透明瓶）、不贴胶带的夹爪**：没有数据或没跑成（accept_job.json 里没有这几种条件的试验）
 - **G4 整机的第二天：电视、厨房里的声音、访客、录音、孩子（3 个种子）**：没有数据或没跑成（没有 accept_day2.json）
 
@@ -46,7 +45,7 @@ python accept.py --run quick --only C3,F5  # 只跑指定的几项
 
 | 项 | 功能 | 结论 | 实测（标准） | 命令 | 来源 |
 |---|---|---|---|---|---|
-| C1 | 站着被推倒，自己起来（装着前臂相机） | ✅ 通过 | ✓ 标准扰动：向左侧倒：23/24（相机压地力中位 9 N，最大 77 N）（≥ 22/24）<br>✓ 标准扰动：向右侧倒：24/24（相机压地力中位 17 N，最大 32 N）（≥ 22/24）<br>✓ 标准扰动：前倾：23/24（相机压地力中位 0 N，最大 0 N）（≥ 22/24）<br>✓ 苛刻扰动：向左侧倒：24/24（相机压地力中位 9 N，最大 17 N）（≥ 19/24）<br>✓ 苛刻扰动：向右侧倒：24/24（相机压地力中位 18 N，最大 31 N）（≥ 19/24）<br>✓ 苛刻扰动：前倾：21/24（相机压地力中位 0 N，最大 38 N）（≥ 19/24）<br>✓ 28 次推倒：倒下 23 次，起来 23 次（倒下的全部起来） | `RIGHTING_LIB=righting_maneuvers_armcam.json RIGHTING_OUT=righting_camera_searched python test_armcam.py righting_camera 24`<br>`RIGHTING_HARSH=1 RIGHTING_LIB=righting_maneuvers_armcam.json RIGHTING_OUT=righting_camera_searched_harsh python test_armcam.py righting_camera 24`<br>`SWEEP_CAM=forearm_up python test_righting.py` | 已有结果<br>2026-11-24 15:27 |
+| C1 | 站着被推倒，自己起来（装着前臂相机） | ✅ 通过 | ✓ 标准扰动：向左侧倒：23/24（相机压地力中位 9 N，最大 77 N）（≥ 22/24）<br>✓ 标准扰动：向右侧倒：24/24（相机压地力中位 17 N，最大 32 N）（≥ 22/24）<br>✓ 标准扰动：前倾：23/24（相机压地力中位 0 N，最大 0 N）（≥ 22/24）<br>✓ 苛刻扰动：向左侧倒：24/24（相机压地力中位 9 N，最大 17 N）（≥ 19/24）<br>✓ 苛刻扰动：向右侧倒：24/24（相机压地力中位 18 N，最大 31 N）（≥ 19/24）<br>✓ 苛刻扰动：前倾：21/24（相机压地力中位 0 N，最大 38 N）（≥ 19/24）<br>✓ 28 次推倒：倒下 23 次，起来 23 次（倒下的全部起来） | `RIGHTING_LIB=righting_maneuvers_armcam.json RIGHTING_OUT=righting_camera_searched python test_armcam.py righting_camera 24`<br>`RIGHTING_HARSH=1 RIGHTING_LIB=righting_maneuvers_armcam.json RIGHTING_OUT=righting_camera_searched_harsh python test_armcam.py righting_camera 24`<br>`SWEEP_CAM=forearm_up python test_righting.py` | 重跑 standard<br>2026-11-24 17:11 |
 | C2 | 房间里摔倒后起来，并找回自己在哪里（装着前臂相机） | ✅ 通过 | ✓ 倒下后起来：14/15（93%）（≥ 90%）<br>✓ 找回位置误差中位数：1.7 cm（≤ 3 cm）<br>✓ 找回的位置错了（> 20 cm）：0 次（0） | `FALL_CAM=forearm_up python test_modes.py fall 16` | 已有结果<br>2026-11-24 15:27 |
 | C3 | 没电了自己回充电座对接 | ✅ 通过 | ✓ 对上：10/10（100%）（全部）<br>✓ 第一次就对上：10/10（100%）（≥ 9/10）<br>✓ 碰撞：0 次（0） | `python test_modes.py dock 10` | 重跑 quick<br>2026-11-24 15:29 |
 | C4 | 电量低时：放好手里的、去充电、回来接着干完 | ✅ 通过 | ✓ 带低电量的局：去充电：4/4（100%）（全部）<br>✓ 全部局：5 件送完：6/6（100%）（全部）<br>✓ 故障：0 局（0） | `python test_modes.py lowbatt 2` | 已有结果<br>2026-11-24 15:27 |
