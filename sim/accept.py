@@ -505,7 +505,9 @@ def render_markdown(report):
           '`--run` 会在临时目录里放一份仓库的副本再跑，所以 `results/` 里已有的结果不会被改；跑完把结论和数字写进 `results/acceptance_sim.json` 和这个文件（只有验收自己用的 `accept_job.json`、`accept_day2.json` 会留在 `results/` 里，这样 `--report` 才有东西可判）。标准写在 `sim/accept.py` 的 `ITEMS` 里，改一个数字，结论就跟着变。', '']
     modes = sorted({v.get('mode', '—') for v in items.values()}); whens = sorted({v['when'] for v in items.values() if v.get('when')})
     where = report['source'] if len(modes) <= 1 else '各项的来源不同，见每项的“来源”列：' + '、'.join(modes)
-    L += [f'## 最近一次：{whens[-1] if whens else report["when"]}（{where}，代码 {report["code"]}）', '', f'**{npass} 项通过，{nfail} 项没通过，{nnd} 项没有数据或没跑成**（共 {len(items)} 项）。', '']
+    L += [f'## 最近一次：{whens[-1] if whens else report["when"]}（{where}，代码 {report["code"]}）', '']
+    if report.get('note'): L += [report['note'], '']
+    L += [f'**{npass} 项通过，{nfail} 项没通过，{nnd} 项没有数据或没跑成**（共 {len(items)} 项）。', '']
     bad = [(i, v) for i, v in items.items() if v['verdict'] != 'PASS']
     if bad:
         L += ['### 没通过或没有数据的', '']
