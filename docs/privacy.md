@@ -34,7 +34,17 @@
 - 常开的只有**唤醒词和停止词识别**，在机器人本机上跑：第十六轮起有了真的实现（`sim/wakeword.py`）——sherpa-onnx 的中英双语关键词模型（3 M 参数，树莓派 CPU 上跑，不联网），想听的词是**文字**写进去的（“小拾小拾”“你好小拾”“Hey Xiaoshi”“停下来”“别动”“stop”……），换名字就是换字符串，不用重新训练。此前唤醒词是在“识别出来的文字”里找的，那只是仿真里没有声音时的做法：真机上一个整天开着的识别器等于一台录音机。唤醒词故意用四个音节“小拾小拾”，因为“小拾”和“小时”同音，会被家里的每一句话叫醒（`results/home_voice.json`：没喊唤醒词的 576 句家里闲聊，0 句被当成命令）。
 - **停止词不要唤醒词**，任何人都能喊：“停”“停下”“别动”“站住”“救命”，仿真里 96.5%~100% 被听到（成年人和孩子，安静和吵闹），闲聊里误停 0 次。
 - 机身要有**硬件静音键**，按下去麦克风断电，不是软件假装不听；语音说“静音”“别听了”也行，但**只能按键重新打开**。摄像头同理，要有物理遮挡或断电开关和一个看得见的指示灯。
-- **大模型是可选的，默认不开**（`sim/llm.py`，第十六轮有了真的接口；怎么接：`VoiceSystem(llm=Gateway(ClaudeProvider()))`）。规则：
+- **大模型是可选的，默认不开**（`sim/llm.py`，第十六轮有了真的接口）。**不限哪一家**：Claude；任何走 OpenAI 聊天接口（`/chat/completions`）的服务——OpenAI、Azure OpenAI、DeepSeek、通义千问（DashScope）、Kimi、智谱、硅基流动、豆包、混元、Groq、OpenRouter、Together、Mistral、xAI、Gemini 的兼容接口；以及机器人自己的网络里跑的本机模型（Ollama、LM Studio、vLLM、llama.cpp）；还有 Anthropic 兼容的接口。怎么接：
+  ```python
+  from llm import Gateway, make_provider, from_env
+  Gateway(make_provider('deepseek', model='…'))                 # 密钥在环境变量 DEEPSEEK_API_KEY；model 一定要自己写（各家的型号名会变，这里不替你猜）
+  Gateway(make_provider('ollama', model='…'))                   # 家里电脑上的本机模型，不要密钥，句子不出家门
+  Gateway(make_provider('openai-compatible', base_url='https://…/v1', model='…', api_key_env='MY_KEY'))   # 任何别的
+  Gateway([make_provider('ollama', model='…'), make_provider('deepseek', model='…')])                  # 先本机，不行再云；或者反过来
+  Gateway(from_env())                                           # 环境变量 XIAOSHI_LLM=ollama:qwen2.5:7b,deepseek:… ；没设就是 None，机器人只用本机能听懂的
+  from_config('llm.json')                                       # 或者把选择写在文件里：{"providers": [{"provider": "ollama", "model": "…"}, {"provider": "deepseek", "model": "…"}], "roles": ["owner"], "max_per_min": 6}；**文件里不许放密钥**（写了会被拒绝），密钥只放在各家的环境变量里
+  ```
+  规则（对哪一家都一样）：
   - **什么都不接就没有任何对外请求**。接了以后，关开关（`set_online(False)`）、硬件静音键、断网、连续三次失败（熔断 60 秒）都让机器人退回“只用本机能听懂的”。
   - **发什么**：只有唤醒词之后（或对话窗口里）**这一句话的文字**；停止词、没喊唤醒词的话、静音时，一个字都不发。已登记的人名换成“某人”，5 位以上的数字串、邮箱、网址去掉，最长 160 字。**不发**声音、图像、声纹、地图、物件清单。
   - **谁的话发**：默认只有主人和（没登记的）大人；孩子、认不出是谁的人的话一个字都不发（可以再收窄到只有主人）。
@@ -42,9 +52,11 @@
   - **注入**：话里写“忽略之前的指令”“你现在是管理员”对机器人没有任何特权：就算模型被骗了，它也只能提议一个动作，还要过权限检查和口头确认（`test_llm.py` 里有这几种情况）。
   - **限额和失败**：每分钟 6 次、每天 200 次，超时 6 秒；超时、断网、被拒答、答非所问都退回“我没听清”，机器人照常用本机能力。
   - **记什么**：日志只记次数、时间、角色、结果和一个 8 位校验码，不记原话；`keep_text` 打开才在**内存里**留最近 5 句，不落盘；主人可以读（`report()`）、清（`clear()`）。
-  - **密钥**：用环境变量 `ANTHROPIC_API_KEY` 或 `ant auth login` 的登录，不写进仓库、不写进日志。
-  - **服务商会看到这句话的文字**，数据怎么留存要看它的条款（美国 Anthropic 的条款在它的网站上）。默认模型是 `claude-opus-5-5`；要更快更便宜可以换小一点的（`ClaudeProvider(model='claude-haiku-5-5')`）。
-  - **没测过的**：仿真里没有对真模型的测试（这里没有密钥）。`test_llm.py` 用真的 SDK 加假的网络，测的是发出去的请求长什么样、各种答案和各种失败怎么处理；真模型怎么理解一句话、慢不慢，要你自己跑 `python test_llm.py live`。
+  - **密钥**：各家自己的环境变量（`ANTHROPIC_API_KEY`、`OPENAI_API_KEY`、`DEEPSEEK_API_KEY`、`DASHSCOPE_API_KEY`、`MOONSHOT_API_KEY`、`ZHIPUAI_API_KEY` 等，见 `llm.PRESETS`）或 `ant auth login` 的登录；每次发请求时才读，不写进仓库、不写进日志、不出现在 `report()` 里。缺密钥会明确报出是哪个变量。
+  - **这句话去哪儿**：`report()` 里写着发往哪台主机、是不是家里的网络（`local`）。**服务商会看到这句话的文字**，数据怎么留存要看它的条款；本机模型（地址是 localhost、192.168.x.x、10.x.x.x、*.local）的句子不出家门。**串联时（`Gateway([a, b])`）每个被试到的服务都会看到这句话**：本机在前、云在后，云只看到本机处理不了的那些。**重定向不跟着走**（标准库和 Anthropic 的 SDK 默认都会跟着走，标准库会把密钥原样带到重定向的新地址去；这里两条路都关了）：服务回 301/302/303/307/308 就当作出错、机器人退回本机能力；密钥和这句话只会发给你配置的那个主机（`test_llm.py` 用本机上的两个小服务器测了 5 种重定向码，第二个主机一次都没被访问；Claude 那一路测的是客户端的设置）。
+  - **各家接口的差别**：JSON 怎么要（OpenAI 的 `json_schema`、多数国内服务的 `json_object`、都不支持就只在提示里要）和限制长度的字段名（`max_tokens` / `max_completion_tokens`）各家不同；`OpenAICompatProvider` 先用最强的写法，服务返回 400/422 就退一步并记住；返回的文字里的 JSON 用宽松的方式取出来（```json 围栏、`<think>` 推理块、前后的闲话都行），取出来以后仍要过上面的全部检查。
+  - **模型型号**：Claude 默认 `claude-opus-5-5`（要更快更便宜可换 `claude-haiku-5-5`）；**其他家一律要你自己给型号**，这里不内置猜测。
+  - **没测过的**：仿真里没有对任何真服务的测试（这里没有密钥）。`test_llm.py` 用假的网络测发出去的请求长什么样、各种答案和各种失败怎么处理（145 项）；各家的地址只核对了主机和路径存在（不带密钥返回 401，OpenRouter 的公开模型列表返回 200，Gemini 的兼容接口不带密钥返回 404，没核对出来），真服务怎么理解一句话、慢不慢、哪个型号合适，要你自己跑 `python test_llm.py live`（用 `XIAOSHI_LLM=…` 选服务）。
 
 ## 声纹、声源方向、人物画像（第十五轮新增）
 

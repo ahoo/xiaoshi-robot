@@ -93,10 +93,11 @@ def _wheel_xml(i, ang_deg):
     return '\n'.join(s)
 
 
-def _arm_parts(arm_cam=None):
+def _arm_parts(arm_cam=None, arm_cam_collide=False):
     """Read the official SO-101 MJCF and return (defaults, assets, body, actuators) as XML strings,
     with the gripper collision replaced by primitive pads (a convex hull of the jaw mesh fills the grip gap).
-    arm_cam: a key of ARM_CAMS: a camera (and its 75 g) is added to that link."""
+    arm_cam: a key of ARM_CAMS: a camera (and its 75 g) is added to that link. arm_cam_collide: the camera's box also collides with the floor and the world (not with the robot's own parts), which
+    is how the self-righting search finds out whether the camera is pressed against the ground (off by default: for the ordinary benches the camera is drawn only and nothing touches it)."""
     root = ET.parse(os.path.join(SO101_DIR, 'so101_new_calib.xml')).getroot()
     defaults = ''.join(ET.tostring(d, encoding='unicode') for dd in root.findall('default') for d in dd)
     assets = ''.join(ET.tostring(a, encoding='unicode') for a in root.find('asset'))
@@ -132,6 +133,9 @@ def _arm_parts(arm_cam=None):
         za = np.cross(c['xyaxes'][:3], c['xyaxes'][3:])                                                                          # behind the lens; drawn only, no collision
         ET.SubElement(cb, 'geom', dict(type='box', size='0.045 0.0125 0.0125', pos=' '.join(f'{0.0125 * v:.5f}' for v in za), xyaxes=' '.join(str(v) for v in c['xyaxes']),
                                        contype='0', conaffinity='0', group='2', rgba='0.1 0.1 0.12 1', mass='0'))
+        if arm_cam_collide:
+            ET.SubElement(cb, 'geom', dict(name='armcam_col', type='box', size='0.045 0.0125 0.0125', pos=' '.join(f'{0.0125 * v:.5f}' for v in za), xyaxes=' '.join(str(v) for v in c['xyaxes']),
+                                           contype='2', conaffinity='1', group='3', rgba='0.5 0.5 0.5 0.3', mass='0', friction='0.6 0.005 0.0001'))
     acts = []
     for a in root.find('actuator'):
         lim = P['gripper_torque'] if a.get('name') == 'gripper' else P['servo_stall']
@@ -147,12 +151,12 @@ def _attrs(s):
     return out
 
 
-def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET, dock=False, people=(), head_cam=False, arm_cam=None):
+def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET, dock=False, people=(), head_cam=False, arm_cam=None, arm_cam_collide=False):
     """objects: list of (kind, x, y, yaw, spec) with spec from objects.sample(). Returns MJCF text. World frame: x right, y 'down' the room plan, z up.
     people: keys of people.SPECS (mocap humans a script moves, body names p0_*, p1_*, ...). head_cam: a depth camera on a 0.5 m mast, tilted 28 degrees up
     (the mast is drawn but has no mass or collision; people.HeadCam reads it). arm_cam: a key of ARM_CAMS, a camera on the arm instead (people.ArmCam reads it; use one of the two, not both).
     All are off by default and then the model is exactly what it was."""
-    defaults, assets, arm_body, arm_acts = _arm_parts(arm_cam)
+    defaults, assets, arm_body, arm_acts = _arm_parts(arm_cam, arm_cam_collide)
     R = P['wheel_radius']
     lx, ly, lz = P['lidar_pos']
     furn = []

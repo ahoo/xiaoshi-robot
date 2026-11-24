@@ -117,7 +117,7 @@ def run_episode(seed, clearance=0.30, verbose=False, on_step=None, pad_friction=
 
 
 def run_supervised(seed, clearance=0.30, verbose=False, dock=False, soc0=None, cfg=None, script=None, t_end=None, start='task', materials=False, clutter=False,
-                   on_step=None, perturbation=None, robot_pose=None, objects=None, boxes=None, until=None, right=True, est_bias=None, people=None, setup=None):
+                   on_step=None, perturbation=None, robot_pose=None, objects=None, boxes=None, until=None, right=True, est_bias=None, people=None, setup=None, robot_kw=None):
     """The same room and job as run_episode, but under modes.Supervisor: a battery (soc0 = state of charge at the start; None = no battery model),
     a charging dock (dock=True: the robot starts docked unless robot_pose says otherwise), modes, falls, an operator (`script(sup)` is called every tick).
     start: 'task' (start the fetch job), 'idle' (wait for the script).
@@ -132,7 +132,7 @@ def run_supervised(seed, clearance=0.30, verbose=False, dock=False, soc0=None, c
     pose = robot_pose or (DOCK_POSE if dock else HOME)
     cam = (people or {}).get('cam', 'mast')                                # 'mast' (the round-14 head camera) or a camera on the arm (model.ARM_CAMS): 'forearm', 'periscope'
     pk = {} if not people else dict(people=list(people['names']), **(dict(head_cam=True) if cam == 'mast' else dict(arm_cam=cam)))
-    robot = Robot(objects, seed=seed, extra_boxes=boxes or [], dock=dock, robot_pose=pose, **pk)
+    robot = Robot(objects, seed=seed, extra_boxes=boxes or [], dock=dock, robot_pose=pose, **pk, **(robot_kw or {}))       # robot_kw: more of the model's options, e.g. dict(arm_cam='forearm_up', arm_cam_collide=True)
     agent = Agent(robot, seed=seed, verbose=verbose)
     bat = Battery(soc0, rng=np.random.default_rng(seed + 99), est_bias=est_bias) if soc0 is not None else None
     sup = Supervisor(robot, agent, bat, cfg)

@@ -290,7 +290,8 @@ def _fall_one(args):
             st['tick'] = inject_fall(r, kind, strength); st['pose'] = [round(v, 2) for v in r.true_pose()]; st['held'] = bool(sup.a.held); st['state'] = sup.a.state
         if st['tick'] is not None: st['tick']()
     pose = None if in_task else free_pose(rng, 0.30)
-    res, sup = run_supervised(seed, objects=objects, boxes=boxes, soc0=None, perturbation=dict(lidar_model=lidar) if lidar else None, script=script, t_end=t_fall + (110.0 if not in_task else 560.0),
+    cam = os.environ.get('FALL_CAM'); rkw = dict(arm_cam=cam, arm_cam_collide=True) if cam else None                 # FALL_CAM=forearm_up: with the camera on the forearm, its weight and its box
+    res, sup = run_supervised(seed, objects=objects, boxes=boxes, soc0=None, perturbation=dict(lidar_model=lidar) if lidar else None, script=script, t_end=t_fall + (110.0 if not in_task else 560.0), robot_kw=rkw,
                               robot_pose=pose, until=(lambda s: s.stats['falls'] > 0 and s.mode in ('IDLE', 'FAULT', 'TASK') and s.stats['righted'] + s.stats['right_failed'] > 0 and s.r.t > t_fall + 8) if not in_task else (lambda s: s.task_done or s.fault))
     ev = [e[2] for e in sup.events if e[1] in ('RIGHT', 'FAULT')]
     reloc = getattr(sup, 'relocalized', [])
@@ -303,13 +304,14 @@ def _fall_one(args):
 def bench_fall(n=16, procs=2, lidar='ld19cal'):
     """n knock-overs at random poses in the furnished room (no objects), directions and strengths cycled; then 4 whole jobs with a fall in the middle."""
     kinds = ['roll_l', 'roll_r', 'pitch_f', 'pitch_b']; strengths = [1.0, 1.4, 1.8, 2.2]
-    jobs = [(s, kinds[(s - 1) % 4], strengths[((s - 1) // 4) % 4], 100.0 + 4.0 * s, False, lidar) for s in range(1, n + 1)]      # after the first 100 s: the map is mostly built
+    off = int(os.environ.get('FALL_SEED0', 0))                                                                  # FALL_SEED0=16 with n=32: the seeds 17..48, which no earlier run used
+    jobs = [(s, kinds[(s - 1) % 4], strengths[((s - 1) // 4) % 4], 100.0 + 4.0 * s, False, lidar) for s in range(1 + off, n + 1 + off)]      # after the first 100 s: the map is mostly built
     with mp.Pool(procs, maxtasksperchild=1) as p: recs = p.map(_fall_one, jobs)
     for r in recs: print({k: v for k, v in r.items() if k != 'events'})
     down = [r for r in recs if r['falls'] > 0]
     print(f'knocked down {len(down)}/{len(recs)}; got up {sum(r["righted"] > 0 for r in down)}; faults {[r["fault"] for r in down if r["fault"]]}; '
           f'pose after getting up: median error {np.median([x[0] for r in down for x in r["reloc_err"]]) * 100 if any(r["reloc_err"] for r in down) else None} cm')
-    _save('fall', dict(runs=recs, lidar=lidar))
+    cam = os.environ.get('FALL_CAM'); _save('fall' + (f'_{cam}' if cam else '') + (f'_s{off + 1}' if off else ''), dict(runs=recs, lidar=lidar, camera=cam, first_seed=off + 1))
 
 
 def bench_fall_job(procs=2, lidar='ld19cal'):
@@ -317,7 +319,7 @@ def bench_fall_job(procs=2, lidar='ld19cal'):
     jobs = [(s, k, 1.6, t, True, lidar) for s, (k, t) in enumerate([('roll_l', 90.0), ('pitch_f', 120.0), ('roll_r', 160.0), ('roll_l', 220.0)], 1)]
     with mp.Pool(procs, maxtasksperchild=1) as p: recs = p.map(_fall_one, jobs)
     for r in recs: print({k: v for k, v in r.items() if k != 'events'}); print('   ', r['events'][:8])
-    _save('fall_job', dict(runs=recs, lidar=lidar))
+    cam = os.environ.get('FALL_CAM'); _save('fall_job' if not cam else f'fall_job_{cam}', dict(runs=recs, lidar=lidar, camera=cam))
 
 
 # --------------------------------------------------------------------------------------------- TCP server

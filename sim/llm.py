@@ -1,4 +1,4 @@
-"""A language model on the other end of an API for the voice (round 16): what the robot lets it see, what it lets it do, and a real backend (Claude, through the official SDK).
+"""A language model on the other end of an API for the voice (round 16): what the robot lets it see, what it lets it do, and the backends for it (Claude, any OpenAI-compatible service or local server).
 
 The robot understands a fixed set of requests on its own (voice.py: phrase matching in Chinese and English, no network). A model is only for what that does not understand: "the room is
 a mess" is a request to tidy up; "what shall we have for dinner" is a chat. It is a helper behind a gate, never in control:
@@ -12,14 +12,25 @@ a mess" is a request to tidy up; "what shall we have for dinner" is a chat. It i
     and, because a model's guess is never enough to move, a spoken question first. Requests to remember, forget, mute or change language are never taken from a model: say those yourself;
   * a rate limit, a short timeout, a circuit breaker after repeated failures, and a log (counts, not words, unless `keep_text`) the owner can read and clear.
 
-Backends: `ClaudeProvider` (the Anthropic SDK; the key comes from ANTHROPIC_API_KEY or an `ant auth login` profile, never from this repository) and `ScriptedProvider` for tests.
-Nothing in this file has been run against the live API from this repository's tests; `python test_llm.py live` does that when a key is set. A provider for another service is a class with
-one method, `complete(system, text, lang) -> dict | None`.
+Backends (a provider is any object with `complete(system, text, lang) -> dict | None`; `make_provider(name, ...)` and `from_env()` build them from a name):
+  * `ClaudeProvider`          Anthropic's Messages API through the official SDK (key from ANTHROPIC_API_KEY or an `ant auth login` profile). With `base_url=` and `structured=False` it also
+                              talks to services that offer an Anthropic-compatible endpoint.
+  * `OpenAICompatProvider`    the OpenAI chat-completions interface, which most services and local servers speak: OpenAI, Azure OpenAI, DeepSeek, Qwen (DashScope), Moonshot/Kimi, Zhipu, SiliconFlow,
+                              Doubao, Hunyuan, Groq, OpenRouter, Together, Mistral, xAI, Gemini's compatible endpoint, and on the robot's own network Ollama, LM Studio, vLLM, llama.cpp (`PRESETS`).
+                              Plain HTTPS from the standard library (no SDK to install); the key comes from the environment variable of the service, never from this repository.
+  * `ChainProvider`           several in turn (a local model first, a cloud one if it fails, or the other way round).
+  * `ScriptedProvider`        canned answers for tests.
+No key, no base URL and no model name is built in as a secret or a guess: a service's model names change, so `model` is always yours to give (the examples in the documents are only examples).
+Nothing in this file has been run against a live service from this repository's tests (there is no key here); `python test_llm.py live` does that when one is set. What the services' interfaces
+accept (JSON mode, the name of the token-limit field) differs; the OpenAI-compatible provider tries the richest form first and falls back when the service refuses it.
 """
 import hashlib
+import ipaddress
 import json
+import os
 import re
 import time
+import urllib.parse
 
 from voice import LLMBackend, MIN_ROLE, NEVER_FROM_LLM
 
@@ -67,34 +78,308 @@ def clean_reply(s, limit=80):
     return re.sub(r'\s+', ' ', s).strip()[:limit]
 
 
+class ProviderConfigError(ValueError):
+    """A provider that cannot be built as asked: no model name, no key, no base URL, a name nobody knows."""
+
+
+class ProviderError(RuntimeError):
+    """The service answered with an error status (401 bad key, 429 rate limit, 5xx ...)."""
+    def __init__(self, status, body): super().__init__(f'HTTP {status}: {str(body)[:160]}'); self.status = status
+
+
+def extract_json(text):
+    """The first JSON object in a model's text: plain, in a ```json fence, after a reasoning block (<think>...</think>), or between chatter. None if there is none (or the answer is cut off in its thinking)."""
+    if not isinstance(text, str): return None
+    low = text.lower()
+    if '<think>' in low and '</think>' not in low: return None                              # the answer ran out inside its reasoning
+    t = re.sub(r'<think>.*?</think>', '', text, flags=re.S | re.I)
+    cands = [m.strip() for m in re.findall(r'```(?:json)?\s*(.*?)```', t, flags=re.S | re.I)] + [t.strip()]
+    for c in cands:
+        try: v = json.loads(c)
+        except ValueError: v = _first_object(c)
+        if isinstance(v, dict): return v
+    return None
+
+
+def _first_object(s):
+    i = s.find('{')
+    while i != -1:
+        depth = 0; in_str = False; esc = False
+        for j in range(i, len(s)):
+            ch = s[j]
+            if in_str:
+                if esc: esc = False
+                elif ch == '\\': esc = True
+                elif ch == '"': in_str = False
+            elif ch == '"': in_str = True
+            elif ch == '{': depth += 1
+            elif ch == '}':
+                depth -= 1
+                if depth == 0:
+                    try:
+                        v = json.loads(s[i:j + 1])
+                        if isinstance(v, dict): return v
+                    except ValueError: pass
+                    break
+        i = s.find('{', i + 1)
+    return None
+
+
+def is_local_url(url):
+    """Does this address stay on the robot or on the home network (localhost, 192.168.x.x, 10.x.x.x, *.local)? Then the sentence does not leave the house."""
+    host = urllib.parse.urlparse(url).hostname or ''
+    if host == 'localhost' or host.endswith('.local'): return True
+    try: ip = ipaddress.ip_address(host)
+    except ValueError: return False
+    return ip.is_private or ip.is_loopback or ip.is_link_local
+
+
+def describe(p):
+    """What the owner may be told about a provider: its kind, model and the host it talks to (and whether that is on the home network)."""
+    if hasattr(p, 'describe'): return p.describe()
+    return dict(name=type(p).__name__, model=getattr(p, 'model', None), host=None, local=None)
+
+
 class ClaudeProvider:
     """The Anthropic Messages API through the official SDK. `complete` returns the model's JSON (a dict with the fields of SCHEMA) or None (refused, cut off, not JSON, any error).
     Opus 5.5 is the default model and always thinks; `effort='low'` keeps the answer to a sentence fast. A smaller model (`model='claude-haiku-5-5'`) is a choice for latency and price that
     is yours to make. `fallbacks=True` asks the API to re-run a request that a safety classifier declined on another model, inside the same call (beta `server-side-fallback-2026-07-01`).
-    `client` can be given (tests give one with a fake transport); otherwise it is built on first use, so importing this file needs no SDK and no key."""
-    def __init__(self, model='claude-opus-5-5', effort='low', timeout=6.0, max_tokens=2048, fallbacks=True, client=None):
+    `client` can be given (tests give one with a fake transport); otherwise it is built on first use, so importing this file needs no SDK and no key.
+    `base_url` / `api_key` point it at another service that speaks the Anthropic Messages interface; such a service does not know the structured-output and fallback features, so give
+    `structured=False` (the JSON is then asked for in the prompt and read out of the text) and the model name it uses."""
+    def __init__(self, model='claude-opus-5-5', effort='low', timeout=6.0, max_tokens=2048, fallbacks=True, client=None, base_url=None, api_key=None, structured=True):
         self.model, self.effort, self.timeout, self.max_tokens, self.fallbacks = model, effort, timeout, max_tokens, fallbacks; self._client = client; self.last_request_id = None; self.usage = dict(input=0, output=0, calls=0)
+        self.base_url, self.api_key, self.structured = base_url, api_key, structured
 
     @property
     def client(self):
         if self._client is None:
             import anthropic                                                               # imported here: the rest of the robot does not need the SDK
-            self._client = anthropic.Anthropic(timeout=self.timeout, max_retries=1)
+            kw = dict(timeout=self.timeout, max_retries=1, http_client=anthropic.DefaultHttpxClient(follow_redirects=False))      # the SDK follows redirects unless told not to: the key and the sentence go to the configured host only
+            if self.base_url: kw['base_url'] = self.base_url
+            if self.api_key: kw['api_key'] = self.api_key
+            self._client = anthropic.Anthropic(**kw)
         return self._client
 
+    def describe(self):
+        url = self.base_url or 'https://api.anthropic.com'; return dict(name='claude' if not self.base_url else 'anthropic-compatible', model=self.model, host=urllib.parse.urlparse(url).hostname, local=is_local_url(url))
+
     def complete(self, system, text, lang='zh'):
-        kw = dict(model=self.model, max_tokens=self.max_tokens, system=system, messages=[dict(role='user', content=text)],
-                  output_config=dict(effort=self.effort, format=dict(type='json_schema', schema=SCHEMA)))
+        kw = dict(model=self.model, max_tokens=self.max_tokens, system=system, messages=[dict(role='user', content=text)])
+        if self.structured: kw['output_config'] = dict(effort=self.effort, format=dict(type='json_schema', schema=SCHEMA))
         c = self.client.with_options(timeout=self.timeout)
-        r = c.beta.messages.create(betas=['server-side-fallback-2026-07-01'], fallbacks='default', **kw) if self.fallbacks else c.messages.create(**kw)
+        r = c.beta.messages.create(betas=['server-side-fallback-2026-07-01'], fallbacks='default', **kw) if (self.fallbacks and self.structured) else c.messages.create(**kw)
         self.last_request_id = getattr(r, '_request_id', None); self.usage['calls'] += 1
         u = getattr(r, 'usage', None); self.usage['input'] += getattr(u, 'input_tokens', 0) or 0; self.usage['output'] += getattr(u, 'output_tokens', 0) or 0
         if r.stop_reason in ('refusal', 'max_tokens'): return None                         # declined or cut off: the robot carries on without a model
-        txt = next((b.text for b in r.content if b.type == 'text'), None)
-        if txt is None: return None
-        try: out = json.loads(txt)
+        txt = ''.join(b.text for b in r.content if b.type == 'text') or None
+        return extract_json(txt)
+
+
+def _urllib_transport(url, headers, body, timeout):
+    """POST with the standard library -> (status, text). An error status is returned, not raised, so that the reason in it can be read; no network or a timeout does raise.
+    A redirect is not followed (it comes back as its 301/302/... status, which is an error to the caller): the standard library would send the same headers, the key among them, to wherever the
+    answer points, and the sentence and the key are meant for the host that was configured and no other."""
+    import urllib.error
+    import urllib.request
+
+    class _Stay(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *args, **kw): return None
+
+    req = urllib.request.Request(url, data=body, headers=headers, method='POST')
+    try:
+        with urllib.request.build_opener(_Stay).open(req, timeout=timeout) as r: return r.status, r.read().decode('utf-8', 'replace')
+    except urllib.error.HTTPError as e: return e.code, e.read().decode('utf-8', 'replace')
+
+
+class OpenAICompatProvider:
+    """The OpenAI chat-completions interface (POST {base_url}/chat/completions with `messages`), which almost every service and local model server offers. Standard library only.
+    json_mode: how the JSON is asked for. 'json_schema' (OpenAI's structured outputs: the schema is enforced), 'json_object' (the model writes some JSON object; our own check does the rest),
+               'none' (only the prompt asks), or 'auto' (start with the richest and fall back when the service answers 400/422 about `response_format`; it remembers what worked).
+    max_tokens_param: 'max_tokens' or 'max_completion_tokens' (newer OpenAI models want the second); if the service refuses one it tries the other, once.
+    temperature: not sent unless given (several models only accept their default). extra_body: more fields to send as they are, e.g. to switch a reasoning model's thinking off.
+    auth: a Bearer token by default (`auth_header='api-key', auth_scheme=''` for Azure OpenAI); `query` is added to the URL (Azure's api-version). The key is read from `api_key` or from the
+    environment variable `api_key_env` at call time; `key_required=False` for a local server that has none. transport(url, headers, body, timeout) -> (status, text) is replaceable (tests do).
+    complete() returns the model's JSON object, or None when there is none (cut off, filtered, not JSON), and raises on no network, a timeout or an error status."""
+    ORDER = ('json_schema', 'json_object', 'none')
+
+    def __init__(self, base_url, model, api_key=None, api_key_env=None, key_required=True, timeout=8.0, json_mode='auto', max_tokens=512, max_tokens_param='max_tokens', temperature=None,
+                 extra_body=None, headers=None, auth_header='Authorization', auth_scheme='Bearer', query=None, path='/chat/completions', transport=None, name='openai-compatible', environ=None):
+        if not base_url: raise ProviderConfigError('base_url is needed')
+        if not model: raise ProviderConfigError('model is needed (the name the service gives it; they change, so none is built in)')
+        if json_mode not in ('auto',) + self.ORDER: raise ProviderConfigError(f'json_mode must be auto, json_schema, json_object or none, not {json_mode!r}')
+        self.base_url, self.model, self.api_key, self.api_key_env, self.key_required = base_url, model, api_key, api_key_env, key_required
+        self.timeout, self.max_tokens, self.max_tokens_param, self.temperature, self.extra_body = timeout, max_tokens, max_tokens_param, temperature, extra_body
+        self.headers, self.auth_header, self.auth_scheme, self.query, self.path, self.name = headers or {}, auth_header, auth_scheme, query, path, name
+        self.transport = transport or _urllib_transport; self._i = 0 if json_mode == 'auto' else self.ORDER.index(json_mode); self._tok_switched = False; self.environ = os.environ if environ is None else environ
+        self.usage = dict(input=0, output=0, calls=0); self.last_status = None
+
+    @property
+    def json_mode(self): return self.ORDER[self._i]
+
+    def key(self):
+        k = self.api_key or (self.environ.get(self.api_key_env) if self.api_key_env else None)
+        if not k and self.key_required: raise ProviderConfigError(f'no API key for {self.name}' + (f': set {self.api_key_env}' if self.api_key_env else ''))
+        return k
+
+    def describe(self): return dict(name=self.name, model=self.model, host=urllib.parse.urlparse(self.base_url).hostname, local=is_local_url(self.base_url), json_mode=self.json_mode)
+
+    def _url(self):
+        base = self.base_url.rstrip('/'); u = base if base.endswith(self.path) else base + self.path
+        return u + (('&' if '?' in u else '?') + urllib.parse.urlencode(self.query) if self.query else '')
+
+    def _headers(self):
+        h = {'Content-Type': 'application/json', 'Accept': 'application/json'}; k = self.key()
+        if k: h[self.auth_header] = f'{self.auth_scheme} {k}'.strip()
+        h.update(self.headers); return h
+
+    def _body(self, system, text):
+        b = dict(model=self.model, messages=[dict(role='system', content=system), dict(role='user', content=text)]); b[self.max_tokens_param] = self.max_tokens
+        if self.temperature is not None: b['temperature'] = self.temperature
+        mode = self.json_mode
+        if mode == 'json_schema': b['response_format'] = dict(type='json_schema', json_schema=dict(name='xiaoshi_request', strict=True, schema=SCHEMA))
+        elif mode == 'json_object': b['response_format'] = dict(type='json_object')
+        if self.extra_body: b.update(self.extra_body)
+        return b
+
+    def complete(self, system, text, lang='zh'):
+        for attempt in range(4):
+            status, txt = self.transport(self._url(), self._headers(), json.dumps(self._body(system, text), ensure_ascii=False).encode('utf-8'), self.timeout); self.last_status = status
+            if 200 <= status < 300: return self._parse(txt)
+            low = txt.lower()
+            if status in (400, 422) and attempt < 3:
+                if ('max_tokens' in low or 'max_completion_tokens' in low) and not self._tok_switched:                  # the other name for the token limit
+                    self._tok_switched = True; self.max_tokens_param = 'max_completion_tokens' if self.max_tokens_param == 'max_tokens' else 'max_tokens'; continue
+                if any(k in low for k in ('response_format', 'json_schema', 'json_object', 'structured')) and self._i < len(self.ORDER) - 1: self._i += 1; continue        # a plainer way to ask for JSON
+            raise ProviderError(status, txt)
+        raise ProviderError(self.last_status, 'no form of the request was accepted')
+
+    def _parse(self, txt):
+        try: data = json.loads(txt)
         except ValueError: return None
-        return out if isinstance(out, dict) else None
+        ch = (data.get('choices') or [None])[0] if isinstance(data, dict) else None
+        if not isinstance(ch, dict) or ch.get('finish_reason') in ('length', 'content_filter'): return None
+        u = data.get('usage') or {}; self.usage['calls'] += 1; self.usage['input'] += u.get('prompt_tokens', 0) or 0; self.usage['output'] += u.get('completion_tokens', 0) or 0
+        msg = ch.get('message') or {}
+        if msg.get('refusal'): return None
+        c = msg.get('content')
+        if isinstance(c, list): c = ''.join(p.get('text', '') for p in c if isinstance(p, dict))             # some services return the content as parts
+        return extract_json(c)
+
+
+class ChainProvider:
+    """Several providers in turn: the first that gives a usable answer wins; one that fails or has nothing to say hands the sentence on to the next. (The sentence goes to every provider that is
+    tried: a local one first and a cloud one after it means the cloud one only sees what the local one could not do.) Raises the last error only if every provider raised."""
+    def __init__(self, providers): self.providers = list(providers); self.last_used = None; self.model = None
+    def complete(self, system, text, lang='zh'):
+        err = None; none = False
+        for p in self.providers:
+            try: out = p.complete(system, text, lang)
+            except Exception as e: err = e; continue
+            if out is not None: self.last_used = p; return out
+            none = True
+        if err is not None and not none: raise err
+        return None
+    def describe(self): return dict(name='chain', providers=[describe(p) for p in self.providers])
+
+
+# the services that speak the OpenAI interface (base URL, the environment variable of the key, how to ask for JSON). Checked here only that the host and path answer (HTTP 401 without a key,
+# or 200 for OpenRouter's public list); not every one has been called with a key. A service may change its address; the documents of the service are the authority.
+PRESETS = {
+    'openai': dict(base_url='https://api.openai.com/v1', api_key_env='OPENAI_API_KEY', json_mode='json_schema', max_tokens_param='max_completion_tokens'),
+    'deepseek': dict(base_url='https://api.deepseek.com/v1', api_key_env='DEEPSEEK_API_KEY', json_mode='json_object'),
+    'qwen': dict(base_url='https://dashscope.aliyuncs.com/compatible-mode/v1', api_key_env='DASHSCOPE_API_KEY', json_mode='json_object'),
+    'qwen-intl': dict(base_url='https://dashscope-intl.aliyuncs.com/compatible-mode/v1', api_key_env='DASHSCOPE_API_KEY', json_mode='json_object'),
+    'moonshot': dict(base_url='https://api.moonshot.cn/v1', api_key_env='MOONSHOT_API_KEY', json_mode='json_object'),
+    'zhipu': dict(base_url='https://open.bigmodel.cn/api/paas/v4', api_key_env='ZHIPUAI_API_KEY', json_mode='json_object'),
+    'siliconflow': dict(base_url='https://api.siliconflow.cn/v1', api_key_env='SILICONFLOW_API_KEY', json_mode='json_object'),
+    'doubao': dict(base_url='https://ark.cn-beijing.volces.com/api/v3', api_key_env='ARK_API_KEY', json_mode='json_object'),                # the model is the id of your endpoint
+    'hunyuan': dict(base_url='https://api.hunyuan.cloud.tencent.com/v1', api_key_env='HUNYUAN_API_KEY', json_mode='auto'),
+    'groq': dict(base_url='https://api.groq.com/openai/v1', api_key_env='GROQ_API_KEY', json_mode='json_object'),
+    'openrouter': dict(base_url='https://openrouter.ai/api/v1', api_key_env='OPENROUTER_API_KEY', json_mode='auto'),
+    'together': dict(base_url='https://api.together.xyz/v1', api_key_env='TOGETHER_API_KEY', json_mode='auto'),
+    'mistral': dict(base_url='https://api.mistral.ai/v1', api_key_env='MISTRAL_API_KEY', json_mode='json_object'),
+    'xai': dict(base_url='https://api.x.ai/v1', api_key_env='XAI_API_KEY', json_mode='auto'),
+    'gemini': dict(base_url='https://generativelanguage.googleapis.com/v1beta/openai', api_key_env='GEMINI_API_KEY', json_mode='auto'),       # Google's OpenAI-compatible endpoint (not checked)
+    'ollama': dict(base_url='http://localhost:11434/v1', api_key_env=None, key_required=False, json_mode='auto'),
+    'lmstudio': dict(base_url='http://localhost:1234/v1', api_key_env=None, key_required=False, json_mode='auto'),
+    'vllm': dict(base_url='http://localhost:8000/v1', api_key_env='VLLM_API_KEY', key_required=False, json_mode='auto'),
+    'llamacpp': dict(base_url='http://localhost:8080/v1', api_key_env=None, key_required=False, json_mode='auto'),
+}
+KINDS = ('claude', 'anthropic-compatible', 'openai-compatible', 'azure')
+
+
+def make_provider(name, model=None, check_key=True, **kw):
+    """A provider from a name: 'claude'; a preset of PRESETS ('deepseek', 'qwen', 'ollama' ...); 'openai-compatible' with `base_url=` for any other server; 'anthropic-compatible' with `base_url=`;
+    'azure' with `resource=`, `model=` (the deployment) and `api_version=`. Other keywords go to the class (timeout, json_mode, extra_body, api_key, api_key_env ...). `model` is required except
+    for 'claude'. check_key: raise ProviderConfigError now, not at the first call, when the key is missing."""
+    n = name.strip().lower(); environ = kw.pop('environ', None)                       # where the key variables are looked up (default: the process's environment)
+    if n in ('claude', 'anthropic'):
+        return ClaudeProvider(**({'model': model} if model else {}), **kw)
+    if n == 'anthropic-compatible':
+        if not kw.get('base_url') or not model: raise ProviderConfigError('anthropic-compatible needs base_url and model')
+        return ClaudeProvider(model=model, structured=False, **kw)
+    if n == 'azure':
+        res, ver = kw.pop('resource', None), kw.pop('api_version', None)
+        if not (res and model and ver): raise ProviderConfigError('azure needs resource=, model= (the deployment name) and api_version=')
+        cfg = dict(base_url=f'https://{res}.openai.azure.com/openai/deployments/{model}', query={'api-version': ver}, auth_header='api-key', auth_scheme='', api_key_env='AZURE_OPENAI_API_KEY', max_tokens_param='max_completion_tokens', name='azure', environ=environ); cfg.update(kw)
+        p = OpenAICompatProvider(model=model, **cfg)
+    elif n in ('openai-compatible', 'custom'):
+        cfg = dict(kw)
+        if not cfg.get('base_url'): raise ProviderConfigError('openai-compatible needs base_url=')
+        p = OpenAICompatProvider(model=model, **{**cfg, 'name': cfg.get('name', 'openai-compatible'), 'environ': environ})
+    elif n in PRESETS:
+        cfg = dict(PRESETS[n]); cfg.update(kw)
+        if not model: raise ProviderConfigError(f'{n} needs a model name (see the service\'s documents)')
+        p = OpenAICompatProvider(model=model, name=n, environ=environ, **cfg)
+    else:
+        raise ProviderConfigError(f'unknown provider {name!r}; known: ' + ', '.join(sorted(list(PRESETS) + list(KINDS))))
+    if check_key: p.key()
+    return p
+
+
+def from_env(env=None, check_key=True):
+    """The provider (or a chain of them) that the environment asks for, else None (the robot then uses only what it understands itself).
+    XIAOSHI_LLM = 'provider' or 'provider:model', several separated by commas ('ollama:qwen2.5:7b,deepseek:deepseek-chat' = the local one first, then the cloud one).
+    XIAOSHI_LLM_BASE_URL, XIAOSHI_LLM_API_KEY apply when there is exactly one provider (else each service's own variable, e.g. DEEPSEEK_API_KEY, is used); XIAOSHI_LLM_TIMEOUT (seconds) to all;
+    XIAOSHI_LLM_JSON_MODE (auto, json_schema, json_object, none) to the OpenAI-compatible ones. Raises ProviderConfigError when what it asks for cannot be built."""
+    env = os.environ if env is None else env; spec = (env.get('XIAOSHI_LLM') or '').strip()
+    if not spec: return None
+    parts = [x.strip() for x in spec.split(',') if x.strip()]; provs = []
+    for part in parts:
+        name, _, model = part.partition(':'); kw = {}
+        if env.get('XIAOSHI_LLM_TIMEOUT'): kw['timeout'] = float(env['XIAOSHI_LLM_TIMEOUT'])
+        if len(parts) == 1:
+            if env.get('XIAOSHI_LLM_BASE_URL'): kw['base_url'] = env['XIAOSHI_LLM_BASE_URL']
+            if env.get('XIAOSHI_LLM_API_KEY'): kw['api_key'] = env['XIAOSHI_LLM_API_KEY']
+        if env.get('XIAOSHI_LLM_JSON_MODE') and name.strip().lower() not in ('claude', 'anthropic', 'anthropic-compatible'): kw['json_mode'] = env['XIAOSHI_LLM_JSON_MODE']
+        provs.append(make_provider(name, model or env.get('XIAOSHI_LLM_MODEL') or None, check_key=check_key, environ=env, **kw))
+    return provs[0] if len(provs) == 1 else ChainProvider(provs)
+
+
+GATEWAY_KEYS = ('enabled', 'roles', 'max_per_min', 'max_per_day', 'breaker', 'keep_text')
+
+
+def from_config(cfg, env=None, check_key=True):
+    """A Gateway from a settings file, so that the choice of service lives in a file and not in code: `cfg` is a dict or the path of a JSON file:
+        {"providers": [{"provider": "ollama", "model": "qwen2.5:7b"}, {"provider": "deepseek", "model": "...", "timeout": 6}],
+         "roles": ["owner"], "max_per_min": 6, "max_per_day": 200, "keep_text": false, "enabled": true}
+    One provider is used as it is, several are tried in turn (ChainProvider). Each provider entry is the arguments of make_provider (`provider` is its name). API KEYS ARE NOT TAKEN FROM THE FILE
+    (a `api_key` in it is refused): they stay in the environment variables of the services, so that the file can be kept, copied and committed without a secret in it."""
+    if isinstance(cfg, (str, os.PathLike)): cfg = json.load(open(cfg, encoding='utf-8'))
+    if not isinstance(cfg, dict) or not cfg.get('providers'): raise ProviderConfigError('the settings need "providers": a list with at least one entry')
+    unknown = set(cfg) - set(GATEWAY_KEYS) - {'providers'}
+    if unknown: raise ProviderConfigError(f'unknown settings: {sorted(unknown)}')
+    env = os.environ if env is None else env; provs = []
+    for e in cfg['providers']:
+        e = dict(e)
+        if 'api_key' in e: raise ProviderConfigError('api_key does not belong in a settings file: put it in the environment variable of the service (api_key_env names it)')
+        name = e.pop('provider', None)
+        if not name: raise ProviderConfigError('every provider entry needs "provider"')
+        provs.append(make_provider(name, e.pop('model', None), check_key=check_key, environ=env, **e))
+    kw = {k: cfg[k] for k in GATEWAY_KEYS if k in cfg}
+    if 'breaker' in kw: kw['breaker'] = tuple(kw['breaker'])
+    return Gateway(provs[0] if len(provs) == 1 else ChainProvider(provs), **kw)
 
 
 class ScriptedProvider:
@@ -114,6 +399,7 @@ class Gateway(LLMBackend):
     roles: who may have a sentence sent (not children, not people the robot cannot name, not guests, unless the owner widens it). names: a function returning the people's names to hide.
     A call is skipped (the robot answers 'I did not catch that' on its own) when the gate is off, the role is not allowed, the rate limit is used up, or the breaker is open."""
     def __init__(self, provider, enabled=True, roles=('owner', 'adult'), names=None, max_per_min=6, max_per_day=200, breaker=(3, 60.0), keep_text=False, now=time.monotonic):
+        if isinstance(provider, (list, tuple)): provider = ChainProvider(provider)
         self.p = provider; self.enabled = enabled; self.roles = set(roles); self.names_default = names is None; self.names = names or (lambda: ()); self.max_per_min = max_per_min; self.max_per_day = max_per_day
         self.breaker_n, self.breaker_s = breaker; self.keep_text = keep_text; self.now = now; self.calls = []; self.fails = 0; self.open_until = -1.0; self.log = []; self.recent = []
         self.stats = dict(sent=0, answered=0, skipped_off=0, skipped_role=0, skipped_rate=0, skipped_breaker=0, errors=0, empty=0, command=0, chat=0, unclear=0, rejected=0)
@@ -164,6 +450,6 @@ class Gateway(LLMBackend):
 
     def report(self):
         """What the owner may ask for ('what have you sent to the model'): counts and the log; the words only if `keep_text` was set."""
-        return dict(enabled=self.enabled, provider=type(self.p).__name__, model=getattr(self.p, 'model', None), stats=dict(self.stats), roles=sorted(self.roles), words_kept=self.keep_text, last=self.log[-10:])
+        return dict(enabled=self.enabled, provider=describe(self.p), stats=dict(self.stats), roles=sorted(self.roles), words_kept=self.keep_text, last=self.log[-10:])
 
     def clear(self): self.log = []; self.recent = []; self.calls = []

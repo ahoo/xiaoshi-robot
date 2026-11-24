@@ -4,6 +4,9 @@
   python test_armcam.py faces [n]   who-is-it, per mount: n people (default 60) placed 1-3 m ahead, enrolled or not, facing the robot or not: how often and how fast the right name comes
   python test_armcam.py mic [n]     the microphone array at 0.5 m (on the mast), 0.3 and 0.2 m (on the upper plate): the direction of a voice
   python test_armcam.py righting    the self-righting maneuvers again with the camera's 75 g on the forearm
+  python test_armcam.py righting_camera [n]   the same maneuvers: no camera / the weight / the weight and the camera's box pressed against the floor (force on it, how long)
+  python test_armcam.py sag         how far the camera's 75 g pulls the gripper down (the pinch point, mm) in the carry pose and two reaching poses
+  python test_armcam.py job [last_seed]       the plain 5-object fetch job on layouts 1..last_seed (default 12), with no camera and with the forearm camera's 75 g (and the camera's weight swept on the layout where it failed)
   (the people bench with the camera on the arm is test_home.py people_static / safety with CAM=forearm|periscope)
 Writes results/armcam_<name>.json. CAM mounts: mast (round 14), forearm, periscope (model.ARM_CAMS).
 
@@ -186,9 +189,96 @@ def righting_bench(n=12, procs=2):
     print(json.dumps(out, ensure_ascii=False)); _save('righting', dict(camera='forearm, camera mass swept', upright_of_n=out, rows=res)); return out
 
 
+def _right_col_job(args):
+    """The stored maneuver for `cls` on n perturbed rest states, with no camera / the camera's weight / the camera's weight and its box touching the floor."""
+    import model
+    import righting
+    from search_righting import Env
+    cls, mode, n, seed, mass, lib = args[:6]; kw = args[6] if len(args) > 6 else {}
+    for k in ('ARM_CAM', 'ARM_CAM_COLLIDE'): os.environ.pop(k, None)
+    if mode != 'none': os.environ['ARM_CAM'] = 'forearm_up'; model.ARM_CAMS['forearm_up']['mass'] = mass
+    if mode == 'cam_col': os.environ['ARM_CAM_COLLIDE'] = '1'
+    L = righting.LIB if lib is None else json.load(open(lib))
+    env = Env(cls); ph = L['maneuvers'][cls][0]['phases']; rng = np.random.default_rng(seed); rows = []
+    for k in range(n):
+        env.unperturb(); env.drop(rng, jitter=3.0); env.perturb(rng, **kw)
+        o = env.run_phases([dict(q=np.array(p['q']), w=np.array(p['w']), T=p['T'], speed=p['speed']) for p in ph])
+        rows.append(dict(upright=bool(o['upright']), final=round(float(o['final']), 1), cam_force=round(float(o.get('cam_force', 0.0)), 1), cam_s=round(float(o.get('cam_s', 0.0)), 2), cam_clear_mm=round(1000 * float(o.get('cam_clear', 0.05)), 1)))
+    return dict(cls=cls, mode=mode, mass=mass, n=n, rows=rows)
+
+
+def righting_camera_bench(n=12, procs=4, lib=None, name='righting_camera', masses=(0.075,), harsh=False):
+    """Does the camera change the self-righting: its weight (mode cam) and its box being pressed against the floor (mode cam_col: peak force on it and how long)?"""
+    import multiprocessing as mp
+    kw, seed = (dict(arm_deg=2.0, fric=0.3, mass=0.15), 123) if harsh else ({}, 99)                      # harsh: arm calibration 2 degrees, roller friction +-30 %, chassis mass +-15 %
+    jobs = [(c, m, n, seed, ms, lib, kw) for c in ('side_l', 'side_r', 'fwd') for ms in masses for m in (('none',) if ms == masses[0] else ()) + ('cam', 'cam_col')]
+    with mp.Pool(procs, maxtasksperchild=1) as p: res = p.map(_right_col_job, jobs)
+    out = {}
+    for r in res:
+        key = f'{r["cls"]} / {r["mode"]}' + ('' if r['mode'] == 'none' else f' / {int(1000 * r["mass"])} g'); up = sum(x['upright'] for x in r['rows']); f = [x['cam_force'] for x in r['rows']]; cs = [x['cam_s'] for x in r['rows']]
+        out[key] = dict(upright=f'{up}/{r["n"]}', mean_final_tilt=round(float(np.mean([x['final'] for x in r['rows']])), 1), camera_peak_force_N=dict(median=round(float(np.median(f)), 1), max=round(float(np.max(f)), 1)), camera_on_floor_s=dict(median=round(float(np.median(cs)), 2), max=round(float(np.max(cs)), 2)), camera_closest_to_body_mm=min(x['cam_clear_mm'] for x in r['rows']))
+        print(key, out[key], flush=True)
+    _save(name, dict(library=lib or 'sim/righting_maneuvers.json', rows=res, summary=out)); return out
+
+
+def _job_job(args):
+    """One plain fetch job (5 objects, LD19 as calibrated, no people, no fall) on a layout: no camera, or the forearm camera with its weight set to `mass` (None = the 75 g of model.ARM_CAMS)."""
+    import time
+    import model
+    from episode import make_layout, run_supervised
+    seed, cam, mass = args
+    if cam != 'none' and mass is not None: model.ARM_CAMS[cam] = dict(model.ARM_CAMS[cam], mass=mass)
+    objects, boxes = make_layout(seed); t0 = time.time()
+    res, sup = run_supervised(seed, objects=objects, boxes=boxes, soc0=None, perturbation=dict(lidar_model='ld19cal'), robot_kw=None if cam == 'none' else dict(arm_cam=cam),
+                              until=lambda s: s.task_done or s.mode == 'FAULT', t_end=720.0)          # a FAULT stays a FAULT: no need to run it to the end
+    return dict(seed=seed, cam=cam, mass=mass, delivered=res['delivered'], total=res['total'], sim_time=res['sim_time'], collisions=res['collisions'], fault=sup.fault, stuck=res['stuck'], wall_s=round(time.time() - t0))
+
+
+def job_bench(last_seed=12, procs=4, cam='forearm_up', sweep_seed=4, sweep_masses=(1e-6, 0.02, 0.04)):
+    """Does the camera's weight on the forearm change the plain fetch job (no fall)? Layouts 1..last_seed with no camera and with the camera (75 g); on `sweep_seed` (where it failed) also the camera
+    at other weights. The same layouts and seeds for both, so the pairs differ only in the camera's body (its box is drawn only, nothing touches it)."""
+    import multiprocessing as mp
+    seeds = list(range(1, last_seed + 1)); jobs = [(s, c, None) for s in seeds for c in ('none', cam)] + ([(sweep_seed, cam, m) for m in sweep_masses] if sweep_seed in seeds else [])
+    rows = []
+    with mp.Pool(procs, maxtasksperchild=1) as p:
+        for r in p.imap_unordered(_job_job, jobs): print(r, flush=True); rows.append(r)
+    rows.sort(key=lambda r: (r['seed'], r['cam'] != 'none', -1 if r['mass'] is None else r['mass']))
+    main = lambda c: sorted((r for r in rows if r['cam'] == c and r['mass'] is None), key=lambda r: r['seed'])
+    def stat(rs):
+        full = [r for r in rs if r['delivered'] == r['total']]
+        return dict(n=len(rs), all_delivered=len(full), delivered=sum(r['delivered'] for r in rs), total=sum(r['total'] for r in rs), faults=[(r['seed'], r['fault']) for r in rs if r['fault']],
+                    median_time_s=round(float(np.median([r['sim_time'] for r in full])), 1) if full else None)
+    a, b = main('none'), main(cam)
+    pairs = [(x, y) for x in a for y in b if x['seed'] == y['seed']]
+    summary = dict(no_camera=stat(a), camera=stat(b), camera_delivered_less_on=[y['seed'] for x, y in pairs if y['delivered'] < x['delivered']], camera_took_30s_or_more_longer_on=[y['seed'] for x, y in pairs if x['delivered'] == x['total'] == y['delivered'] and y['sim_time'] > x['sim_time'] + 30],
+                   weight_sweep=[dict(seed=r['seed'], mass_g=round(1000 * r['mass'], 1), delivered=f'{r["delivered"]}/{r["total"]}', fault=r['fault']) for r in rows if r['mass'] is not None])
+    print(json.dumps(summary, ensure_ascii=False)); _save('job', dict(camera=cam, rows=rows, summary=summary)); return summary
+
+
+def sag_bench(cam='forearm_up'):
+    """Does the camera's weight pull the gripper off where the arm was told to put it? The pinch point of the gripper after the arm has settled, with and without the camera, in the carry pose and two
+    poses for reaching (the simulated servos hold their position with a stiff spring; the real ones are softer and this says nothing about their backlash)."""
+    import mujoco
+    from robot import Robot, Q_CARRY
+    poses = {'carry': np.array(Q_CARRY[:5], float), 'reach_down': np.array([0.0, 0.2, 1.1, 1.2, 0.0]), 'reach_far': np.array([0.0, 0.7, 0.4, 1.0, 0.0])}; pos = {}
+    for name, kw in (('bare', {}), (cam, dict(arm_cam=cam))):
+        r = Robot([], seed=1, robot_pose=(2.0, 1.5, 0.0), **kw); sid = mujoco.mj_name2id(r.m, mujoco.mjtObj.mjOBJ_SITE, 'pinch')
+        for _ in range(50): r.step()
+        pos[name] = {}
+        for k, q in poses.items():
+            r.arm_target[:5] = q; r.arm_speed = 2.0
+            for _ in range(150): r.step()
+            pos[name][k] = r.d.site_xpos[sid].copy()
+    out = {k: dict(shift_mm=[round(float(1000 * v), 3) for v in pos[cam][k] - pos['bare'][k]], distance_mm=round(float(1000 * np.linalg.norm(pos[cam][k] - pos['bare'][k])), 3)) for k in poses}
+    print(json.dumps(out)); _save('sag', dict(camera=cam, poses={k: v.tolist() for k, v in poses.items()}, result=out)); return out
+
+
 if __name__ == '__main__':
     what = sys.argv[1] if len(sys.argv) > 1 else 'pose'; procs = int(os.environ.get('PROCS', '2'))
     if what == 'pose': pose_bench()
     elif what == 'faces': faces_bench(int(sys.argv[2]) if len(sys.argv) > 2 else 60, procs)
     elif what == 'righting': righting_bench(int(sys.argv[2]) if len(sys.argv) > 2 else 12, procs)
     elif what == 'mic': mic_bench(int(sys.argv[2]) if len(sys.argv) > 2 else 48, procs)
+    elif what == 'sag': sag_bench()
+    elif what == 'job': job_bench(int(sys.argv[2]) if len(sys.argv) > 2 else 12, procs=procs)
+    elif what == 'righting_camera': righting_camera_bench(int(sys.argv[2]) if len(sys.argv) > 2 else 12, procs, lib=os.environ.get('RIGHTING_LIB'), name=os.environ.get('RIGHTING_OUT', 'righting_camera'), harsh=bool(os.environ.get('RIGHTING_HARSH')))

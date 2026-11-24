@@ -25,32 +25,44 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ARM_ACC_RIGHT = 30.0         # rad/s^2 while a maneuver runs (8 for normal motion)
 REST_FOR = 1.5               # s the IMU must have been steady before anything moves
 WARN_S = 3.0                 # s between the announcement (beep, light) and the first movement; a disturbance restarts it
+CALM_REFIT_S = 30.0          # s: if the robot has not been calm for WARN_S by now, count from where it lies now (it settled a few degrees away from where the rest reading was taken)
+CALM_GIVE_UP_S = 90.0        # s: somebody keeps moving it (or it never stops creeping): do not move the arm, ask for help
 UPRIGHT_DEG = 15.0           # below this the robot counts as back on its wheels
 CLASS_MIN_COS = 0.85         # closer than ~32 degrees to a stored rest pose, or it is 'unknown'
 PRIOR_W = 0.04               # score taken off per metre between a relocalisation candidate and where the robot fell
 FEASIBLE = 0.09              # m: the robot centre must be at least this far from every mapped obstacle (the chassis radius is 0.105; after a fall it may be touching furniture)
 
 
-def load():
-    fn = os.path.join(HERE, 'righting_maneuvers.json')
+def load(name='righting_maneuvers.json'):
+    fn = os.path.join(HERE, name)
     return json.load(open(fn)) if os.path.exists(fn) else {'rest_poses': {}, 'maneuvers': {}}
 
 
 LIB = load()
+LIB_ARMCAM = load('righting_maneuvers_armcam.json')      # searched with the camera on the forearm (its 75 g and its box touching the floor): the bare arm's maneuvers fail with it (round 16)
 
 
-def ranked(up):
+def library_for(robot):
+    """The maneuvers that suit this robot: the ones searched with the camera on the forearm if it has one there (model.ARM_CAMS 'forearm' / 'forearm_up'), else the ones of the bare arm.
+    (A camera on the gripper, the 'periscope', has no library of its own yet: it gets the bare arm's.)"""
+    import mujoco
+    m = robot.m; cam = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_CAMERA, 'armcam')
+    if cam >= 0 and LIB_ARMCAM['maneuvers'] and m.body_parentid[m.cam_bodyid[cam]] == mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, 'lower_arm'): return LIB_ARMCAM
+    return LIB
+
+
+def ranked(up, lib=None):
     """Stored rest poses, closest first, as (cosine of the angle between them and the measurement, name)."""
     up = np.asarray(up, float)
-    return sorted(((float(up @ np.asarray(v) / np.linalg.norm(v)), k) for k, v in LIB['rest_poses'].items()), reverse=True)
+    return sorted(((float(up @ np.asarray(v) / np.linalg.norm(v)), k) for k, v in (lib or LIB)['rest_poses'].items()), reverse=True)
 
 
-def classify(up):
+def classify(up, lib=None):
     """Name of the stored rest pose closest to the measured 'up' direction (body frame), or 'upright' / 'unknown'."""
     up = np.asarray(up, float)
     if up[2] > math.cos(math.radians(UPRIGHT_DEG)): return 'upright'
     best, name = -1.0, 'unknown'
-    for k, v in LIB['rest_poses'].items():
+    for k, v in (lib or LIB)['rest_poses'].items():
         c = float(up @ np.asarray(v) / np.linalg.norm(v))
         if c > best: best, name = c, k
     return name if best >= CLASS_MIN_COS else 'unknown'
@@ -86,26 +98,35 @@ def _run_maneuver(sup, phases):
 
 def recover(sup, tries=3):
     """The RIGHT mode. Leaves the robot upright and relocalised (returns normally), or sets the supervisor's FAULT."""
-    r, a = sup.r, sup.a
+    r, a = sup.r, sup.a; lib = library_for(r)
     a.stop(); a.state = '起身'; r.wheel_target[:] = 0.0
-    attempts = []; up = r.imu()
+    attempts = []; up = r.imu(); used = {}                                          # used: how many times each class of pose has had a maneuver run
     for k in range(tries):
         up = yield from _rest(sup, REST_FOR)
         if up is None: attempts.append(('never still', None)); break
-        cls = classify(up)
+        cls = classify(up, lib)
         sup._event(f'静止了，姿态：{cls}（倾角 {_tilt(up):.0f}°）')
         if cls == 'upright': break
-        mans = LIB['maneuvers'].get(cls)
+        mans = lib['maneuvers'].get(cls)
         if not mans and cls == 'unknown':                      # a pose nobody stored: try what suits the closest one
-            cls = ranked(up)[0][1]; mans = LIB['maneuvers'].get(cls); sup._event(f'没见过的姿态，按最接近的「{cls}」试试')
+            cls = ranked(up, lib)[0][1]; mans = lib['maneuvers'].get(cls); sup._event(f'没见过的姿态，按最接近的「{cls}」试试')
         if not mans: attempts.append((cls, 'no maneuver')); break
         # announce, then wait out a calm WARN_S: anything that moves the robot meanwhile (a hand) starts the count again
         sup._event(f'{WARN_S:.0f} 秒后开始起身（第 {k + 1} 次，{cls}）')
-        t_ok = 0.0
-        while t_ok < WARN_S:
-            t_ok = t_ok + CTRL_DT if abs(_tilt(r.imu()) - _tilt(up)) < 3.0 else 0.0
+        t_ok = t_wait = 0.0; ref = up; on_wheels = False
+        while t_ok < WARN_S and t_wait < CALM_GIVE_UP_S:
+            now = r.imu()
+            if _tilt(now) < UPRIGHT_DEG: on_wheels = True; break                # somebody put it back on its wheels meanwhile: there is nothing to move
+            if abs(_tilt(now) - _tilt(ref)) < 3.0: t_ok += CTRL_DT
+            else:
+                t_ok = 0.0
+                if t_wait > CALM_REFIT_S: ref = now                             # it lay 4 degrees from the reading and never moved again: the count could never finish (round 16: a fall in a room, 98 degrees, 'RIGHT' for the rest of the run)
+            t_wait += CTRL_DT
             yield
-        yield from _run_maneuver(sup, mans[min(k, len(mans) - 1)]['phases'])
+        if on_wheels: break
+        if t_ok < WARN_S: attempts.append(('never calm', None)); break
+        n_tried = used.get(cls, 0); used[cls] = n_tried + 1; order = [mans[0]] + list(mans)
+        yield from _run_maneuver(sup, order[n_tried % len(order)]['phases'])               # the best maneuver of the class, again if it did not work (the robot is in a slightly different place and the result often differs), and only the third time the next one
         up = r.imu(); attempts.append((cls, round(_tilt(up), 1)))
         if _tilt(up) < UPRIGHT_DEG: break
     if _tilt(r.imu()) >= UPRIGHT_DEG:

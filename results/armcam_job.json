@@ -1,0 +1,378 @@
+{
+ "camera": "forearm_up",
+ "rows": [
+  {
+   "seed": 1,
+   "cam": "none",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 454.3,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 318
+  },
+  {
+   "seed": 1,
+   "cam": "forearm_up",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 631.1,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 2,
+   "wall_s": 434
+  },
+  {
+   "seed": 2,
+   "cam": "none",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 469.9,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 325
+  },
+  {
+   "seed": 2,
+   "cam": "forearm_up",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 471.4,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 339
+  },
+  {
+   "seed": 3,
+   "cam": "none",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 410.7,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 451
+  },
+  {
+   "seed": 3,
+   "cam": "forearm_up",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 392.5,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 417
+  },
+  {
+   "seed": 4,
+   "cam": "none",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 408.1,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 454
+  },
+  {
+   "seed": 4,
+   "cam": "forearm_up",
+   "mass": null,
+   "delivered": 1,
+   "total": 5,
+   "sim_time": 149.8,
+   "collisions": 0,
+   "fault": "payload stuck",
+   "stuck": 0,
+   "wall_s": 178
+  },
+  {
+   "seed": 4,
+   "cam": "forearm_up",
+   "mass": 1e-06,
+   "delivered": 1,
+   "total": 5,
+   "sim_time": 153.3,
+   "collisions": 0,
+   "fault": "payload stuck",
+   "stuck": 0,
+   "wall_s": 202
+  },
+  {
+   "seed": 4,
+   "cam": "forearm_up",
+   "mass": 0.02,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 452.6,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 396
+  },
+  {
+   "seed": 4,
+   "cam": "forearm_up",
+   "mass": 0.04,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 421.9,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 332
+  },
+  {
+   "seed": 5,
+   "cam": "none",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 439.8,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 537
+  },
+  {
+   "seed": 5,
+   "cam": "forearm_up",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 403.9,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 497
+  },
+  {
+   "seed": 6,
+   "cam": "none",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 419.1,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 587
+  },
+  {
+   "seed": 6,
+   "cam": "forearm_up",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 426.3,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 587
+  },
+  {
+   "seed": 7,
+   "cam": "none",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 450.5,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 591
+  },
+  {
+   "seed": 7,
+   "cam": "forearm_up",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 454.0,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 579
+  },
+  {
+   "seed": 8,
+   "cam": "none",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 424.7,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 528
+  },
+  {
+   "seed": 8,
+   "cam": "forearm_up",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 430.7,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 529
+  },
+  {
+   "seed": 9,
+   "cam": "none",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 449.2,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 544
+  },
+  {
+   "seed": 9,
+   "cam": "forearm_up",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 435.8,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 550
+  },
+  {
+   "seed": 10,
+   "cam": "none",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 435.8,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 598
+  },
+  {
+   "seed": 10,
+   "cam": "forearm_up",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 445.6,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 618
+  },
+  {
+   "seed": 11,
+   "cam": "none",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 388.8,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 507
+  },
+  {
+   "seed": 11,
+   "cam": "forearm_up",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 405.0,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 527
+  },
+  {
+   "seed": 12,
+   "cam": "none",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 422.6,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 535
+  },
+  {
+   "seed": 12,
+   "cam": "forearm_up",
+   "mass": null,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 411.7,
+   "collisions": 0,
+   "fault": null,
+   "stuck": 0,
+   "wall_s": 526
+  }
+ ],
+ "summary": {
+  "no_camera": {
+   "n": 12,
+   "all_delivered": 12,
+   "delivered": 60,
+   "total": 60,
+   "faults": [],
+   "median_time_s": 430.2
+  },
+  "camera": {
+   "n": 12,
+   "all_delivered": 11,
+   "delivered": 56,
+   "total": 60,
+   "faults": [
+    [
+     4,
+     "payload stuck"
+    ]
+   ],
+   "median_time_s": 430.7
+  },
+  "camera_delivered_less_on": [
+   4
+  ],
+  "camera_took_30s_or_more_longer_on": [
+   1
+  ],
+  "weight_sweep": [
+   {
+    "seed": 4,
+    "mass_g": 0.0,
+    "delivered": "1/5",
+    "fault": "payload stuck"
+   },
+   {
+    "seed": 4,
+    "mass_g": 20.0,
+    "delivered": "5/5",
+    "fault": null
+   },
+   {
+    "seed": 4,
+    "mass_g": 40.0,
+    "delivered": "5/5",
+    "fault": null
+   }
+  ]
+ }
+}

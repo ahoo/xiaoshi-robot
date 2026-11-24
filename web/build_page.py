@@ -259,11 +259,29 @@ def sound_round_rows(start):
         return '仿真（`CAM=forearm_up python test_home.py safety`，420 秒，安全层开；括号里是立杆）：' + '；'.join(parts) + f'。手臂干活时相机看地板，**整套任务里约 {100 * (sum(blind) / len(blind) if blind else 0):.0f}% 的时间相机没在看人**（那段时间只有激光雷达和安全层的“刚才有人站在那里”的记忆）'
     rows.append(('手臂相机：人和机器人同场干活', '同第 50 项：大人走过来、孩子冲过来、幼儿在筐边、一家三口；机器人在收玩具；安全层开；读碰到人的次数、最近的距离、停了几次、手臂有没有在有人伸手可及的范围内时动', _safety(), '碰到人 0 次；最近距离不比立杆差；手臂在有人伸手可及的范围内时一定停'))
     def _right():
-        if not AR: return '-'
-        u = AR['upright_of_n']
-        return ('仿真（`python test_armcam.py righting`，12 次随机摆放、同样的扰动，**存着的起身动作是没有相机时搜出来的**）起身成功率，按相机的重量 0/20/40/50/60/75 g：' + '；'.join(f'{c} ' + '、'.join(u[c][k] for k in ('0 g', '20 g', '40 g', '50 g', '60 g', '75 g')) for c in ('side_l', 'side_r', 'fwd'))
-                + '。**20 g 以下没影响，40 g 开始有失败，75 g 时两种侧倒都起不来**：要么用更轻的相机，要么装上以后重搜起身动作（`ARM_CAM=forearm_up python search_righting.py refine …`，带相机跑，这一轮没做）')
-    rows.append(('手臂相机的重量和起身', '把装了相机的机器人在软垫上推倒（侧倒、前倾），自己起身 10 次；先用低加速度', _right(), '10 次都起得来；起身时手臂撑地、相机不碰地（镜头没刮花）；起不来就重搜动作或换更轻的相机'))
+        if not AR or 'upright_of_n' not in AR: return '-'
+        u = AR['upright_of_n']; OLDR, NEWR, NEWHR = (load(n) for n in ('armcam_righting_camera.json', 'armcam_righting_camera_searched.json', 'armcam_righting_camera_searched_harsh.json'))
+        FC, FC0 = load('modes_fall_forearm_up.json'), load('modes_fall.json')
+        s = ('仿真（`python test_armcam.py righting`，12 次随机摆放、同样的扰动）只加相机的重量时，**原来存着的起身动作**（没有相机时搜的）成功率，按重量 0/20/40/50/60/75 g：' + '；'.join(f'{c} ' + '、'.join(u[c][k] for k in ('0 g', '20 g', '40 g', '50 g', '60 g', '75 g')) for c in ('side_l', 'side_r', 'fwd'))
+             + '。20 g 以下没影响，75 g 时两种侧倒都起不来')
+        if OLDR and NEWR and NEWHR:
+            g = lambda S, c: next(v for k, v in S['summary'].items() if k.startswith(f'{c} / cam_col'))
+            s += ('；再把相机的盒子也放进去、让它和地面碰：原动作 75 g 向左侧倒 ' + g(OLDR, 'side_l')['upright'] + '（相机被压 ' + f'{g(OLDR, "side_l")["camera_peak_force_N"]["median"]:.0f}' + ' N）。**带着相机重搜的动作库**（`sim/righting_maneuvers_armcam.json`，24 次新摆放，标准 / 苛刻）：'
+                  + '；'.join(f'{cn} {g(NEWR, c)["upright"]} / {g(NEWHR, c)["upright"]}' for c, cn in (('side_l', '向左侧倒'), ('side_r', '向右侧倒'), ('fwd', '前倾')))
+                  + '，相机压在地上的力中位 ' + '、'.join(f'{g(NEWR, c)["camera_peak_force_N"]["median"]:.0f}' for c in ('side_l', 'side_r')) + ' N（向左、向右侧倒；最大 '
+                  + f'{max(g(S_, c)["camera_peak_force_N"]["max"] for S_ in (NEWR, NEWHR) for c in ("side_l", "side_r")):.0f}' + ' N）、每次不到 0.6 s，**需要保护挡条**')
+        if FC and FC0:
+            f = lambda F: (sum(1 for x in F['runs'] if x['falls'] > 0), sum(1 for x in F['runs'] if x['righted'] > 0), len(F['runs']))
+            a, b = f(FC0), f(FC); s += f'；整机摔倒试验 16 次：没有相机 {a[0]} 次倒下 {a[1]} 次起来，有相机（新动作库）{b[0]} 次倒下 {b[1]} 次起来'
+        FS, FS0 = load('modes_fall_forearm_up_s17.json'), load('modes_fall_s17.json')
+        if FS and FS0:
+            f = lambda F: (sum(1 for x in F['runs'] if x['falls'] > 0), sum(1 for x in F['runs'] if x['righted'] > 0), len(F['runs']))
+            a, b = f(FS0), f(FS); s += f'；没用过的 32 个种子：没有相机 {a[0]} 次倒下 {a[1]} 次起来，有相机 {b[0]} 次倒下 {b[1]} 次起来'
+        JB = load('armcam_job.json')
+        if JB:
+            sm = JB['summary']; s += f'；不摔倒的取放任务 {sm["camera"]["n"]} 个布局：没有相机 {sm["no_camera"]["all_delivered"]} 个全送达、有相机 {sm["camera"]["all_delivered"]} 个（没做完的那个对重量不敏感：约 0 g 也失败，样本小）'
+        return s
+    rows.append(('手臂相机和起身', '把装了相机（带保护挡条）的机器人在软垫上推倒（向左侧倒、向右侧倒、前倾各 10 次），自己起身；先用低加速度；每次看镜头有没有刮花、相机有没有被压、线有没有拉扯', _right(), '30 次都起得来；镜头没刮花、线没松；起不来或压到镜头就重搜动作（`ARM_CAM=… python search_righting.py refine …`）或加大保护'))
     def _mic():
         if not AM: return '-'
         g = lambda k: f'中位 {AM[k]["median_err_deg"]:.0f}°、20° 内 {100 * AM[k]["within_20deg"]:.0f}%'
@@ -278,9 +296,10 @@ def sound_round_rows(start):
                  '命中不低于 90%；误唤醒不超过每天 1 次；机器人自己说话时不被自己叫醒；要调阈值就在你家的录音上调'))
     def _llm():
         if not LL: return '-'
-        return (f'仿真（`python test_llm.py`，真的 Anthropic SDK 加假的网络，**没有对真模型的测试**）：{LL["passed"]}/{LL["total"]} 项通过：发出去的请求只有去掉人名和数字之后的这一句话；孩子和认不出的人的话不发；停止词、没喊唤醒词的话、静音时不发；改写出来的命令要和模型说的意图一致、一律先口头问一次、记人忘人静音停止永远不接受；'
-                '拒答、被截断、不是 JSON、401/429/500、断网都退回“我没听清”；每分钟 6 次的限额和连续 3 次失败熔断 60 秒')
-    rows.append(('大模型接口', '设好 `ANTHROPIC_API_KEY`，跑 `python test_llm.py live`（六句，几美分）；主人说“房间乱糟糟的”“把红色的球放进筐里”“讲个笑话”；拔网线再说一遍；孩子说一句，看日志', _llm(), '六句里改写对的不少于 5 句；断网时机器人照常用本机能力；孩子的话日志里没有发送记录；响应时间记下来（决定要不要换小模型）'))
+        return (f'仿真（`python test_llm.py`，假的网络，Claude 那一路用真的 Anthropic SDK，**没有对任何真服务的测试**）：{LL["passed"]}/{LL["total"]} 项通过：发出去的请求只有去掉人名和数字之后的这一句话；孩子和认不出的人的话不发；停止词、没喊唤醒词的话、静音时不发；'
+                '改写出来的命令要和模型说的意图一致、一律先口头问一次、记人忘人静音停止永远不接受；拒答、被截断、不是 JSON、401/429/500、断网都退回“我没听清”；每分钟 6 次的限额和连续 3 次失败熔断 60 秒；'
+                'OpenAI 兼容接口（DeepSeek、通义、Kimi、智谱、OpenAI、Azure、Ollama 等 19 个预设和任意地址）的请求格式、JSON 模式的逐级回退、答案的各种写法、串联和用环境变量选服务；服务回重定向时不跟着走（密钥和句子只发给配置的那个主机）')
+    rows.append(('大模型接口', '设好密钥，用 `XIAOSHI_LLM=服务:型号 python test_llm.py live`（不设就用 Claude；六句，几美分）；主人说“房间乱糟糟的”“把红色的球放进筐里”“讲个笑话”；拔网线再说一遍；孩子说一句，看日志；换几家（云的、家里电脑上的）各跑一遍，比较改写对不对、慢不慢', _llm(), '六句里改写对的不少于 5 句；断网时机器人照常用本机能力；孩子的话日志里没有发送记录；响应时间记下来（决定用哪家、要不要换小型号）；`report()` 里的主机名就是你想发往的那家'))
     return [(str(start + i + 1), a, b, c, d) for i, (a, b, c, d) in enumerate(rows)]
 
 

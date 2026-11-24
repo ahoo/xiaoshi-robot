@@ -147,5 +147,6 @@
    ]
   }
  ],
- "lidar": "ld19cal"
+ "lidar": "ld19cal",
+ "camera": null
 }
