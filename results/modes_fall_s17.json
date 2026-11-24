@@ -1,0 +1,1218 @@
+{
+ "runs": [
+  {
+   "seed": 17,
+   "kind": "roll_l",
+   "strength": 1.0,
+   "in_task": false,
+   "pose": [
+    2.42,
+    1.98,
+    -1.52
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.01,
+     0.006
+    ]
+   ],
+   "loc_err_end_cm": 61.6,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 185.5,
+   "collisions": 1,
+   "events": [
+    "静止了，姿态：side_l（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_l）",
+    "站起来了（[('side_l', 1.0)]）",
+    "重新定位第 1 次看：最好的得分 0.93，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.95，一致的一对 1.88，对手 1.52（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 18,
+   "kind": "roll_r",
+   "strength": 1.0,
+   "in_task": false,
+   "pose": [
+    1.21,
+    2.03,
+    2.62
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.008,
+     0.003
+    ]
+   ],
+   "loc_err_end_cm": 57.3,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 189.6,
+   "collisions": 3,
+   "events": [
+    "静止了，姿态：side_r（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "站起来了（[('side_r', 0.9)]）",
+    "重新定位第 1 次看：最好的得分 0.94，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.95，一致的一对 1.89，对手 1.52（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 19,
+   "kind": "pitch_f",
+   "strength": 1.0,
+   "in_task": false,
+   "pose": [
+    2.45,
+    2.45,
+    -2.53
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.013,
+     0.008
+    ]
+   ],
+   "loc_err_end_cm": 23.0,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 193.1,
+   "collisions": 2,
+   "events": [
+    "静止了，姿态：fwd（倾角 54°）",
+    "3 秒后开始起身（第 1 次，fwd）",
+    "站起来了（[('fwd', 0.3)]）",
+    "重新定位第 1 次看：最好的得分 0.96，还没有一致的一对（真值误差 2 cm 1°）",
+    "重新定位第 2 次看：最好的得分 0.95，一致的一对 1.90，对手 1.55（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 20,
+   "kind": "pitch_b",
+   "strength": 1.0,
+   "in_task": false,
+   "pose": [
+    2.32,
+    1.14,
+    -2.41
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 0,
+   "righted": 0,
+   "failed": 0,
+   "fault": null,
+   "mode": "IDLE",
+   "tilt_end": 0.0,
+   "reloc_err": [],
+   "loc_err_end_cm": 2.5,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 290.0,
+   "collisions": 0,
+   "events": []
+  },
+  {
+   "seed": 21,
+   "kind": "roll_l",
+   "strength": 1.4,
+   "in_task": false,
+   "pose": [
+    3.57,
+    1.73,
+    -0.61
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.019,
+     0.02
+    ]
+   ],
+   "loc_err_end_cm": 60.9,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 201.8,
+   "collisions": 0,
+   "events": [
+    "静止了，姿态：side_l（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_l）",
+    "站起来了（[('side_l', 0.6)]）",
+    "重新定位第 1 次看：最好的得分 0.96，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.95，一致的一对 1.91，对手 1.39（真值误差 2 cm 1°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 22,
+   "kind": "roll_r",
+   "strength": 1.4,
+   "in_task": false,
+   "pose": [
+    1.35,
+    1.98,
+    3.05
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.009,
+     0.001
+    ]
+   ],
+   "loc_err_end_cm": 67.2,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 209.8,
+   "collisions": 3,
+   "events": [
+    "静止了，姿态：side_r（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "站起来了（[('side_r', 1.3)]）",
+    "重新定位第 1 次看：最好的得分 0.96，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.94，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 3 次看：最好的得分 0.95，一致的一对 1.89，对手 1.49（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 23,
+   "kind": "pitch_f",
+   "strength": 1.4,
+   "in_task": false,
+   "pose": [
+    0.46,
+    1.93,
+    -2.0
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.006,
+     0.012
+    ]
+   ],
+   "loc_err_end_cm": 56.2,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 209.2,
+   "collisions": 7,
+   "events": [
+    "静止了，姿态：side_r（倾角 108°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "站起来了（[('side_r', 1.0)]）",
+    "重新定位第 1 次看：最好的得分 0.96，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.95，一致的一对 1.91（真值误差 1 cm 1°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 24,
+   "kind": "pitch_b",
+   "strength": 1.4,
+   "in_task": false,
+   "pose": [
+    2.78,
+    2.32,
+    -0.89
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.011,
+     0.012
+    ]
+   ],
+   "loc_err_end_cm": 40.1,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 219.1,
+   "collisions": 7,
+   "events": [
+    "静止了，姿态：side_l（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_l）",
+    "站起来了（[('side_l', 1.0)]）",
+    "重新定位第 1 次看：最好的得分 0.93，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.94，还没有一致的一对（真值误差 1 cm 1°）",
+    "重新定位第 3 次看：最好的得分 0.93，一致的一对 1.87，对手 1.48（真值误差 1 cm 1°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 25,
+   "kind": "roll_l",
+   "strength": 1.8,
+   "in_task": false,
+   "pose": [
+    2.51,
+    0.78,
+    -3.13
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.015,
+     0.007
+    ]
+   ],
+   "loc_err_end_cm": 77.1,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 218.4,
+   "collisions": 0,
+   "events": [
+    "静止了，姿态：side_r（倾角 112°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "站起来了（[('side_r', 0.1)]）",
+    "重新定位第 1 次看：最好的得分 0.92，还没有一致的一对（真值误差 2 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.93，一致的一对 1.85，对手 1.55（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 26,
+   "kind": "roll_r",
+   "strength": 1.8,
+   "in_task": false,
+   "pose": [
+    0.74,
+    0.96,
+    -0.26
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.021,
+     0.005
+    ]
+   ],
+   "loc_err_end_cm": 131.5,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 234.3,
+   "collisions": 7,
+   "events": [
+    "静止了，姿态：side_r（倾角 112°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "静止了，姿态：side_l（倾角 111°）",
+    "3 秒后开始起身（第 2 次，side_l）",
+    "站起来了（[('side_r', 111.2), ('side_l', 0.8)]）",
+    "重新定位第 1 次看：最好的得分 0.89，还没有一致的一对（真值误差 3 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.89，一致的一对 1.78，对手 1.23（真值误差 2 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 27,
+   "kind": "pitch_f",
+   "strength": 1.8,
+   "in_task": false,
+   "pose": [
+    2.07,
+    1.0,
+    2.19
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.004,
+     0.004
+    ]
+   ],
+   "loc_err_end_cm": 86.3,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 228.4,
+   "collisions": 3,
+   "events": [
+    "静止了，姿态：side_l（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_l）",
+    "站起来了（[('side_l', 0.5)]）",
+    "重新定位第 1 次看：最好的得分 0.90，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.90，一致的一对 1.80，对手 1.32（真值误差 0 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 28,
+   "kind": "pitch_b",
+   "strength": 1.8,
+   "in_task": false,
+   "pose": [
+    2.51,
+    2.34,
+    -0.82
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.012,
+     0.013
+    ]
+   ],
+   "loc_err_end_cm": 31.6,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 232.5,
+   "collisions": 1,
+   "events": [
+    "静止了，姿态：side_r（倾角 112°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "站起来了（[('side_r', 1.1)]）",
+    "重新定位第 1 次看：最好的得分 0.93，还没有一致的一对（真值误差 0 cm 1°）",
+    "重新定位第 2 次看：最好的得分 0.93，一致的一对 1.86（真值误差 1 cm 1°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 29,
+   "kind": "roll_l",
+   "strength": 2.2,
+   "in_task": false,
+   "pose": [
+    0.32,
+    1.49,
+    -1.61
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.014,
+     0.003
+    ]
+   ],
+   "loc_err_end_cm": 150.5,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 246.5,
+   "collisions": 5,
+   "events": [
+    "静止了，姿态：side_r（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "静止了，姿态：side_l（倾角 111°）",
+    "3 秒后开始起身（第 2 次，side_l）",
+    "站起来了（[('side_r', 110.7), ('side_l', 0.7)]）",
+    "重新定位第 1 次看：最好的得分 0.93，还没有一致的一对（真值误差 0 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.93，一致的一对 1.86，对手 1.70（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 30,
+   "kind": "roll_r",
+   "strength": 2.2,
+   "in_task": false,
+   "pose": [
+    1.97,
+    1.43,
+    -2.85
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.009,
+     0.002
+    ]
+   ],
+   "loc_err_end_cm": 95.9,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 249.6,
+   "collisions": 8,
+   "events": [
+    "静止了，姿态：side_l（倾角 112°）",
+    "3 秒后开始起身（第 1 次，side_l）",
+    "静止了，姿态：side_r（倾角 111°）",
+    "3 秒后开始起身（第 2 次，side_r）",
+    "站起来了（[('side_l', 110.4), ('side_r', 0.6)]）",
+    "重新定位第 1 次看：最好的得分 0.89，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.90，一致的一对 1.79，对手 1.44（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 31,
+   "kind": "pitch_f",
+   "strength": 2.2,
+   "in_task": false,
+   "pose": [
+    3.35,
+    1.24,
+    -1.93
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.012,
+     0.006
+    ]
+   ],
+   "loc_err_end_cm": 78.4,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 265.3,
+   "collisions": 10,
+   "events": [
+    "静止了，姿态：side_r（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "静止了，姿态：side_l（倾角 110°）",
+    "3 秒后开始起身（第 2 次，side_l）",
+    "静止了，姿态：side_r（倾角 111°）",
+    "3 秒后开始起身（第 3 次，side_r）",
+    "站起来了（[('side_r', 110.4), ('side_l', 111.1), ('side_r', 0.3)]）",
+    "重新定位第 1 次看：最好的得分 0.93，还没有一致的一对（真值误差 0 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.95，一致的一对 1.88，对手 1.33（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 32,
+   "kind": "pitch_b",
+   "strength": 2.2,
+   "in_task": false,
+   "pose": [
+    2.53,
+    2.34,
+    0.2
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.011,
+     0.002
+    ]
+   ],
+   "loc_err_end_cm": 57.9,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 236.0,
+   "collisions": 1,
+   "events": [
+    "静止了，姿态：upright（倾角 1°）",
+    "站起来了（[]）",
+    "重新定位第 1 次看：最好的得分 0.92，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.93，一致的一对 1.85，对手 1.39（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 33,
+   "kind": "roll_l",
+   "strength": 1.0,
+   "in_task": false,
+   "pose": [
+    1.9,
+    2.71,
+    3.1
+   ],
+   "state_at_fall": "回位",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.007,
+     0.001
+    ]
+   ],
+   "loc_err_end_cm": 92.5,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 279.5,
+   "collisions": 22,
+   "events": [
+    "静止了，姿态：unknown（倾角 77°）",
+    "没见过的姿态，按最接近的「side_l」试试",
+    "3 秒后开始起身（第 1 次，side_l）",
+    "站起来了（[('side_l', 0.6)]）",
+    "重新定位第 1 次看：最好的得分 0.96，还没有一致的一对（真值误差 2 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.97，一致的一对 1.93，对手 1.56（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 34,
+   "kind": "roll_r",
+   "strength": 1.0,
+   "in_task": false,
+   "pose": [
+    1.48,
+    1.95,
+    0.82
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.007,
+     0.008
+    ]
+   ],
+   "loc_err_end_cm": 48.7,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 253.5,
+   "collisions": 0,
+   "events": [
+    "静止了，姿态：side_r（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "站起来了（[('side_r', 0.3)]）",
+    "重新定位第 1 次看：最好的得分 0.92，还没有一致的一对（真值误差 0 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.94，一致的一对 1.86，对手 1.54（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 35,
+   "kind": "pitch_f",
+   "strength": 1.0,
+   "in_task": false,
+   "pose": [
+    0.47,
+    2.55,
+    -1.58
+   ],
+   "state_at_fall": "待命",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "IDLE",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.005,
+     0.021
+    ]
+   ],
+   "loc_err_end_cm": 19.3,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 256.9,
+   "collisions": 1,
+   "events": [
+    "静止了，姿态：fwd（倾角 53°）",
+    "3 秒后开始起身（第 1 次，fwd）",
+    "站起来了（[('fwd', 0.5)]）",
+    "重新定位第 1 次看：最好的得分 0.95，还没有一致的一对（真值误差 0 cm 1°）",
+    "重新定位第 2 次看：最好的得分 0.92，一致的一对 1.87，对手 1.53（真值误差 1 cm 1°）",
+    "→ IDLE"
+   ]
+  },
+  {
+   "seed": 36,
+   "kind": "pitch_b",
+   "strength": 1.0,
+   "in_task": false,
+   "pose": [
+    0.4,
+    2.26,
+    -0.43
+   ],
+   "state_at_fall": "回位",
+   "held": false,
+   "falls": 0,
+   "righted": 0,
+   "failed": 0,
+   "fault": null,
+   "mode": "IDLE",
+   "tilt_end": 0.0,
+   "reloc_err": [],
+   "loc_err_end_cm": 0.6,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 354.0,
+   "collisions": 0,
+   "events": []
+  },
+  {
+   "seed": 37,
+   "kind": "roll_l",
+   "strength": 1.4,
+   "in_task": false,
+   "pose": [
+    2.46,
+    2.46,
+    -1.56
+   ],
+   "state_at_fall": "巡视",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.011,
+     0.002
+    ]
+   ],
+   "loc_err_end_cm": 56.6,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 267.5,
+   "collisions": 0,
+   "events": [
+    "静止了，姿态：side_l（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_l）",
+    "站起来了（[('side_l', 0.8)]）",
+    "重新定位第 1 次看：最好的得分 0.95，还没有一致的一对（真值误差 2 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.96，一致的一对 1.91，对手 1.41（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 38,
+   "kind": "roll_r",
+   "strength": 1.4,
+   "in_task": false,
+   "pose": [
+    0.38,
+    2.21,
+    0.32
+   ],
+   "state_at_fall": "回位",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.021,
+     0.012
+    ]
+   ],
+   "loc_err_end_cm": 45.6,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 269.9,
+   "collisions": 0,
+   "events": [
+    "静止了，姿态：side_r（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "站起来了（[('side_r', 0.8)]）",
+    "重新定位第 1 次看：最好的得分 0.98，还没有一致的一对（真值误差 2 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.93，一致的一对 1.91，对手 1.37（真值误差 2 cm 1°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 39,
+   "kind": "pitch_f",
+   "strength": 1.4,
+   "in_task": false,
+   "pose": [
+    1.93,
+    0.99,
+    -0.51
+   ],
+   "state_at_fall": "回位",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.008,
+     0.013
+    ]
+   ],
+   "loc_err_end_cm": 60.9,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 273.8,
+   "collisions": 2,
+   "events": [
+    "静止了，姿态：side_r（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "站起来了（[('side_r', 0.8)]）",
+    "重新定位第 1 次看：最好的得分 0.90，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.90，一致的一对 1.80，对手 1.52（真值误差 1 cm 1°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 40,
+   "kind": "pitch_b",
+   "strength": 1.4,
+   "in_task": false,
+   "pose": [
+    0.44,
+    2.55,
+    -1.57
+   ],
+   "state_at_fall": "待命",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "IDLE",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.014,
+     0.0
+    ]
+   ],
+   "loc_err_end_cm": 22.4,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 280.0,
+   "collisions": 0,
+   "events": [
+    "静止了，姿态：side_r（倾角 112°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "站起来了（[('side_r', 0.7)]）",
+    "重新定位第 1 次看：最好的得分 0.96，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.95，一致的一对 1.91，对手 1.43（真值误差 1 cm 0°）",
+    "→ IDLE"
+   ]
+  },
+  {
+   "seed": 41,
+   "kind": "roll_l",
+   "strength": 1.8,
+   "in_task": false,
+   "pose": [
+    0.45,
+    2.55,
+    -1.57
+   ],
+   "state_at_fall": "待命",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "IDLE",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.013,
+     0.002
+    ]
+   ],
+   "loc_err_end_cm": 102.3,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 295.1,
+   "collisions": 19,
+   "events": [
+    "静止了，姿态：unknown（倾角 151°）",
+    "没见过的姿态，按最接近的「side_r」试试",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "静止了，姿态：side_l（倾角 111°）",
+    "3 秒后开始起身（第 2 次，side_l）",
+    "站起来了（[('side_r', 110.3), ('side_l', 0.6)]）",
+    "重新定位第 1 次看：最好的得分 0.95，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.93，一致的一对 1.88，对手 1.41（真值误差 1 cm 0°）",
+    "→ IDLE"
+   ]
+  },
+  {
+   "seed": 42,
+   "kind": "roll_r",
+   "strength": 1.8,
+   "in_task": false,
+   "pose": [
+    0.45,
+    2.54,
+    -1.57
+   ],
+   "state_at_fall": "待命",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "IDLE",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.005,
+     0.006
+    ]
+   ],
+   "loc_err_end_cm": 73.0,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 285.1,
+   "collisions": 1,
+   "events": [
+    "静止了，姿态：side_l（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_l）",
+    "站起来了（[('side_l', 0.4)]）",
+    "重新定位第 1 次看：最好的得分 0.92，还没有一致的一对（真值误差 3 cm 1°）",
+    "重新定位第 2 次看：最好的得分 0.95，一致的一对 1.87，对手 1.48（真值误差 1 cm 0°）",
+    "→ IDLE"
+   ]
+  },
+  {
+   "seed": 43,
+   "kind": "pitch_f",
+   "strength": 1.8,
+   "in_task": false,
+   "pose": [
+    1.42,
+    1.99,
+    2.61
+   ],
+   "state_at_fall": "回位",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "TASK",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.011,
+     0.001
+    ]
+   ],
+   "loc_err_end_cm": 102.5,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 280.0,
+   "collisions": 0,
+   "events": [
+    "静止了，姿态：upright（倾角 1°）",
+    "站起来了（[]）",
+    "重新定位第 1 次看：最好的得分 0.92，还没有一致的一对（真值误差 2 cm 1°）",
+    "重新定位第 2 次看：最好的得分 0.93，一致的一对 1.86，对手 1.51（真值误差 1 cm 0°）",
+    "→ TASK {'resume': True, 'handback': True}"
+   ]
+  },
+  {
+   "seed": 44,
+   "kind": "pitch_b",
+   "strength": 1.8,
+   "in_task": false,
+   "pose": [
+    0.47,
+    2.55,
+    -1.58
+   ],
+   "state_at_fall": "待命",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "IDLE",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.005,
+     0.001
+    ]
+   ],
+   "loc_err_end_cm": 25.0,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 294.9,
+   "collisions": 1,
+   "events": [
+    "静止了，姿态：side_l（倾角 112°）",
+    "3 秒后开始起身（第 1 次，side_l）",
+    "站起来了（[('side_l', 0.5)]）",
+    "重新定位第 1 次看：最好的得分 0.95，还没有一致的一对（真值误差 2 cm 1°）",
+    "重新定位第 2 次看：最好的得分 0.95，一致的一对 1.90，对手 1.39（真值误差 0 cm 0°）",
+    "→ IDLE"
+   ]
+  },
+  {
+   "seed": 45,
+   "kind": "roll_l",
+   "strength": 2.2,
+   "in_task": false,
+   "pose": [
+    0.46,
+    2.55,
+    -1.58
+   ],
+   "state_at_fall": "待命",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "IDLE",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.006,
+     0.005
+    ]
+   ],
+   "loc_err_end_cm": 45.9,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 297.0,
+   "collisions": 9,
+   "events": [
+    "静止了，姿态：unknown（倾角 80°）",
+    "没见过的姿态，按最接近的「fwd_b」试试",
+    "3 秒后开始起身（第 1 次，fwd_b）",
+    "站起来了（[('fwd_b', 0.8)]）",
+    "重新定位第 1 次看：最好的得分 0.94，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.95，一致的一对 1.89（真值误差 1 cm 0°）",
+    "→ IDLE"
+   ]
+  },
+  {
+   "seed": 46,
+   "kind": "roll_r",
+   "strength": 2.2,
+   "in_task": false,
+   "pose": [
+    0.43,
+    2.54,
+    -1.56
+   ],
+   "state_at_fall": "待命",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "IDLE",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.025,
+     0.004
+    ]
+   ],
+   "loc_err_end_cm": 120.1,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 314.5,
+   "collisions": 1,
+   "events": [
+    "静止了，姿态：side_l（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_l）",
+    "静止了，姿态：side_r（倾角 112°）",
+    "3 秒后开始起身（第 2 次，side_r）",
+    "站起来了（[('side_l', 111.9), ('side_r', 1.0)]）",
+    "重新定位第 1 次看：最好的得分 0.91，还没有一致的一对（真值误差 2 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.93，一致的一对 1.84，对手 1.36（真值误差 3 cm 0°）",
+    "→ IDLE"
+   ]
+  },
+  {
+   "seed": 47,
+   "kind": "pitch_f",
+   "strength": 2.2,
+   "in_task": false,
+   "pose": [
+    0.44,
+    2.54,
+    -1.56
+   ],
+   "state_at_fall": "待命",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "IDLE",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.0,
+     0.004
+    ]
+   ],
+   "loc_err_end_cm": 43.8,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 305.5,
+   "collisions": 2,
+   "events": [
+    "静止了，姿态：side_r（倾角 112°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "站起来了（[('side_r', 0.3)]）",
+    "重新定位第 1 次看：最好的得分 0.95，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.93，一致的一对 1.88，对手 1.41（真值误差 0 cm 0°）",
+    "→ IDLE"
+   ]
+  },
+  {
+   "seed": 48,
+   "kind": "pitch_b",
+   "strength": 2.2,
+   "in_task": false,
+   "pose": [
+    0.43,
+    2.54,
+    -1.57
+   ],
+   "state_at_fall": "待命",
+   "held": false,
+   "falls": 1,
+   "righted": 1,
+   "failed": 0,
+   "fault": null,
+   "mode": "IDLE",
+   "tilt_end": 0.0,
+   "reloc_err": [
+    [
+     0.004,
+     0.005
+    ]
+   ],
+   "loc_err_end_cm": 103.5,
+   "delivered": 0,
+   "total": 0,
+   "sim_time": 324.3,
+   "collisions": 5,
+   "events": [
+    "静止了，姿态：side_r（倾角 111°）",
+    "3 秒后开始起身（第 1 次，side_r）",
+    "静止了，姿态：side_l（倾角 111°）",
+    "3 秒后开始起身（第 2 次，side_l）",
+    "站起来了（[('side_r', 111.3), ('side_l', 0.4)]）",
+    "重新定位第 1 次看：最好的得分 0.95，还没有一致的一对（真值误差 1 cm 0°）",
+    "重新定位第 2 次看：最好的得分 0.95，一致的一对 1.91，对手 1.50（真值误差 0 cm 0°）",
+    "→ IDLE"
+   ]
+  }
+ ],
+ "lidar": "ld19cal",
+ "camera": null,
+ "first_seed": 17
+}

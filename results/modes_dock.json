@@ -1,0 +1,297 @@
+{
+ "lidar": "ld19cal",
+ "n": 10,
+ "runs": [
+  {
+   "seed": 1,
+   "start": [
+    1.0,
+    2.29,
+    -2.66
+   ],
+   "contact": {
+    "t": 17.4,
+    "x": 0.467,
+    "y": 2.787,
+    "yaw_deg": -0.0,
+    "dx_cm": 1.7,
+    "dy_cm": 0.0
+   },
+   "docked": true,
+   "fault": null,
+   "collisions": 0,
+   "stuck": 0,
+   "t_end": 38.4,
+   "attempts": 1,
+   "loc_err_max": 0.0179,
+   "left_dock": false,
+   "soc": [
+    0.492,
+    0.9
+   ],
+   "charge_min": 57.5
+  },
+  {
+   "seed": 2,
+   "start": [
+    2.79,
+    1.26,
+    -1.02
+   ],
+   "contact": {
+    "t": 25.2,
+    "x": 0.437,
+    "y": 2.787,
+    "yaw_deg": 0.3,
+    "dx_cm": -1.3,
+    "dy_cm": 0.0
+   },
+   "docked": true,
+   "fault": null,
+   "collisions": 0,
+   "stuck": 0,
+   "t_end": 46.2,
+   "attempts": 1,
+   "loc_err_max": 0.0148,
+   "left_dock": false,
+   "soc": [
+    0.489,
+    0.9
+   ],
+   "charge_min": 57.833333333333336
+  },
+  {
+   "seed": 3,
+   "start": [
+    2.11,
+    1.56,
+    2.07
+   ],
+   "contact": {
+    "t": 21.8,
+    "x": 0.444,
+    "y": 2.787,
+    "yaw_deg": 0.1,
+    "dx_cm": -0.6,
+    "dy_cm": 0.0
+   },
+   "docked": true,
+   "fault": null,
+   "collisions": 0,
+   "stuck": 0,
+   "t_end": 42.8,
+   "attempts": 1,
+   "loc_err_max": 0.0124,
+   "left_dock": false,
+   "soc": [
+    0.49,
+    0.9
+   ],
+   "charge_min": 57.666666666666664
+  },
+  {
+   "seed": 4,
+   "start": [
+    1.28,
+    2.21,
+    0.89
+   ],
+   "contact": {
+    "t": 17.5,
+    "x": 0.459,
+    "y": 2.787,
+    "yaw_deg": 0.1,
+    "dx_cm": 0.9,
+    "dy_cm": 0.0
+   },
+   "docked": true,
+   "fault": null,
+   "collisions": 0,
+   "stuck": 0,
+   "t_end": 38.5,
+   "attempts": 1,
+   "loc_err_max": 0.0107,
+   "left_dock": false,
+   "soc": [
+    0.492,
+    0.9
+   ],
+   "charge_min": 57.5
+  },
+  {
+   "seed": 5,
+   "start": [
+    0.66,
+    2.45,
+    -1.34
+   ],
+   "contact": {
+    "t": 18.1,
+    "x": 0.446,
+    "y": 2.787,
+    "yaw_deg": 0.3,
+    "dx_cm": -0.4,
+    "dy_cm": 0.0
+   },
+   "docked": true,
+   "fault": null,
+   "collisions": 0,
+   "stuck": 0,
+   "t_end": 39.2,
+   "attempts": 1,
+   "loc_err_max": 0.0119,
+   "left_dock": false,
+   "soc": [
+    0.492,
+    0.9
+   ],
+   "charge_min": 57.5
+  },
+  {
+   "seed": 6,
+   "start": [
+    2.96,
+    1.14,
+    -0.59
+   ],
+   "contact": {
+    "t": 26.5,
+    "x": 0.46,
+    "y": 2.787,
+    "yaw_deg": -0.2,
+    "dx_cm": 1.0,
+    "dy_cm": 0.0
+   },
+   "docked": true,
+   "fault": null,
+   "collisions": 0,
+   "stuck": 0,
+   "t_end": 47.5,
+   "attempts": 1,
+   "loc_err_max": 0.0181,
+   "left_dock": false,
+   "soc": [
+    0.488,
+    0.9
+   ],
+   "charge_min": 57.916666666666664
+  },
+  {
+   "seed": 7,
+   "start": [
+    0.63,
+    2.2,
+    0.9
+   ],
+   "contact": {
+    "t": 15.0,
+    "x": 0.446,
+    "y": 2.787,
+    "yaw_deg": 0.6,
+    "dx_cm": -0.4,
+    "dy_cm": 0.0
+   },
+   "docked": true,
+   "fault": null,
+   "collisions": 0,
+   "stuck": 0,
+   "t_end": 36.0,
+   "attempts": 1,
+   "loc_err_max": 0.0057,
+   "left_dock": false,
+   "soc": [
+    0.492,
+    0.9
+   ],
+   "charge_min": 57.416666666666664
+  },
+  {
+   "seed": 8,
+   "start": [
+    0.94,
+    2.19,
+    -1.78
+   ],
+   "contact": {
+    "t": 35.5,
+    "x": 0.442,
+    "y": 2.787,
+    "yaw_deg": 0.4,
+    "dx_cm": -0.8,
+    "dy_cm": 0.0
+   },
+   "docked": true,
+   "fault": null,
+   "collisions": 0,
+   "stuck": 0,
+   "t_end": 56.5,
+   "attempts": 1,
+   "loc_err_max": 0.0179,
+   "left_dock": false,
+   "soc": [
+    0.49,
+    0.9
+   ],
+   "charge_min": 57.666666666666664
+  },
+  {
+   "seed": 9,
+   "start": [
+    2.2,
+    1.5,
+    -2.96
+   ],
+   "contact": {
+    "t": 23.2,
+    "x": 0.432,
+    "y": 2.787,
+    "yaw_deg": 0.4,
+    "dx_cm": -1.8,
+    "dy_cm": 0.0
+   },
+   "docked": true,
+   "fault": null,
+   "collisions": 0,
+   "stuck": 0,
+   "t_end": 44.2,
+   "attempts": 1,
+   "loc_err_max": 0.0195,
+   "left_dock": false,
+   "soc": [
+    0.49,
+    0.9
+   ],
+   "charge_min": 57.75
+  },
+  {
+   "seed": 10,
+   "start": [
+    1.24,
+    2.32,
+    -2.89
+   ],
+   "contact": {
+    "t": 18.9,
+    "x": 0.44,
+    "y": 2.787,
+    "yaw_deg": 0.3,
+    "dx_cm": -1.0,
+    "dy_cm": 0.0
+   },
+   "docked": true,
+   "fault": null,
+   "collisions": 0,
+   "stuck": 0,
+   "t_end": 39.9,
+   "attempts": 1,
+   "loc_err_max": 0.0116,
+   "left_dock": false,
+   "soc": [
+    0.491,
+    0.9
+   ],
+   "charge_min": 57.583333333333336
+  }
+ ],
+ "wall": 74
+}

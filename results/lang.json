@@ -1,0 +1,1658 @@
+{
+ "sweep": [
+  {
+   "set": "zh",
+   "cer": 0.0,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 1.0,
+   "ok": 0.968,
+   "confirmed": 0.032,
+   "reask": 0.0,
+   "wrong": 0.0,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.0,
+   "reply_language": 1.0,
+   "n": 444
+  },
+  {
+   "set": "zh",
+   "cer": 0.04,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.986,
+   "ok": 0.944,
+   "confirmed": 0.043,
+   "reask": 0.005,
+   "wrong": 0.009,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.0,
+   "reply_language": 1.0,
+   "n": 444
+  },
+  {
+   "set": "zh",
+   "cer": 0.08,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.984,
+   "ok": 0.914,
+   "confirmed": 0.07,
+   "reask": 0.005,
+   "wrong": 0.011,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.0,
+   "reply_language": 1.0,
+   "n": 444
+  },
+  {
+   "set": "zh",
+   "cer": 0.15,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.973,
+   "ok": 0.856,
+   "confirmed": 0.117,
+   "reask": 0.011,
+   "wrong": 0.014,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.002,
+   "reply_language": 1.0,
+   "n": 444
+  },
+  {
+   "set": "zh",
+   "cer": 0.25,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.946,
+   "ok": 0.723,
+   "confirmed": 0.223,
+   "reask": 0.025,
+   "wrong": 0.027,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.002,
+   "reply_language": 1.0,
+   "n": 444
+  },
+  {
+   "set": "en_dev",
+   "cer": 0.0,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.983,
+   "ok": 0.972,
+   "confirmed": 0.011,
+   "reask": 0.0,
+   "wrong": 0.0,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.017,
+   "reply_language": 0.987,
+   "n": 462
+  },
+  {
+   "set": "en_dev",
+   "cer": 0.04,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.89,
+   "ok": 0.812,
+   "confirmed": 0.078,
+   "reask": 0.032,
+   "wrong": 0.017,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.061,
+   "reply_language": 0.981,
+   "n": 462
+  },
+  {
+   "set": "en_dev",
+   "cer": 0.08,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.81,
+   "ok": 0.682,
+   "confirmed": 0.128,
+   "reask": 0.071,
+   "wrong": 0.017,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.102,
+   "reply_language": 0.979,
+   "n": 462
+  },
+  {
+   "set": "en_dev",
+   "cer": 0.15,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.66,
+   "ok": 0.437,
+   "confirmed": 0.223,
+   "reask": 0.165,
+   "wrong": 0.024,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.152,
+   "reply_language": 0.977,
+   "n": 462
+  },
+  {
+   "set": "en_dev",
+   "cer": 0.25,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.513,
+   "ok": 0.255,
+   "confirmed": 0.258,
+   "reask": 0.247,
+   "wrong": 0.019,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.221,
+   "reply_language": 0.979,
+   "n": 462
+  },
+  {
+   "set": "en_holdout",
+   "cer": 0.0,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.953,
+   "ok": 0.95,
+   "confirmed": 0.003,
+   "reask": 0.014,
+   "wrong": 0.017,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.017,
+   "reply_language": 0.983,
+   "n": 360
+  },
+  {
+   "set": "en_holdout",
+   "cer": 0.04,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.847,
+   "ok": 0.778,
+   "confirmed": 0.069,
+   "reask": 0.064,
+   "wrong": 0.031,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.058,
+   "reply_language": 0.98,
+   "n": 360
+  },
+  {
+   "set": "en_holdout",
+   "cer": 0.08,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.783,
+   "ok": 0.653,
+   "confirmed": 0.131,
+   "reask": 0.094,
+   "wrong": 0.033,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.089,
+   "reply_language": 0.975,
+   "n": 360
+  },
+  {
+   "set": "en_holdout",
+   "cer": 0.15,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.625,
+   "ok": 0.456,
+   "confirmed": 0.169,
+   "reask": 0.2,
+   "wrong": 0.028,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.147,
+   "reply_language": 0.978,
+   "n": 360
+  },
+  {
+   "set": "en_holdout",
+   "cer": 0.25,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.436,
+   "ok": 0.222,
+   "confirmed": 0.214,
+   "reask": 0.314,
+   "wrong": 0.033,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.217,
+   "reply_language": 0.968,
+   "n": 360
+  },
+  {
+   "set": "en_test",
+   "cer": 0.0,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.841,
+   "ok": 0.833,
+   "confirmed": 0.007,
+   "reask": 0.104,
+   "wrong": 0.039,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.017,
+   "reply_language": 0.986,
+   "n": 414
+  },
+  {
+   "set": "en_test",
+   "cer": 0.04,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.739,
+   "ok": 0.686,
+   "confirmed": 0.053,
+   "reask": 0.167,
+   "wrong": 0.036,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.058,
+   "reply_language": 0.984,
+   "n": 414
+  },
+  {
+   "set": "en_test",
+   "cer": 0.08,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.674,
+   "ok": 0.563,
+   "confirmed": 0.111,
+   "reask": 0.186,
+   "wrong": 0.048,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.092,
+   "reply_language": 0.982,
+   "n": 414
+  },
+  {
+   "set": "en_test",
+   "cer": 0.15,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.529,
+   "ok": 0.343,
+   "confirmed": 0.186,
+   "reask": 0.302,
+   "wrong": 0.022,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.147,
+   "reply_language": 0.977,
+   "n": 414
+  },
+  {
+   "set": "en_test",
+   "cer": 0.25,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.345,
+   "ok": 0.169,
+   "confirmed": 0.176,
+   "reask": 0.415,
+   "wrong": 0.022,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.217,
+   "reply_language": 0.979,
+   "n": 414
+  },
+  {
+   "set": "mix_dev",
+   "cer": 0.0,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.85,
+   "ok": 0.733,
+   "confirmed": 0.117,
+   "reask": 0.125,
+   "wrong": 0.025,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.0,
+   "reply_language": null,
+   "n": 120
+  },
+  {
+   "set": "mix_dev",
+   "cer": 0.04,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.775,
+   "ok": 0.6,
+   "confirmed": 0.175,
+   "reask": 0.175,
+   "wrong": 0.042,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.008,
+   "reply_language": null,
+   "n": 120
+  },
+  {
+   "set": "mix_dev",
+   "cer": 0.08,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.792,
+   "ok": 0.533,
+   "confirmed": 0.258,
+   "reask": 0.167,
+   "wrong": 0.017,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.025,
+   "reply_language": null,
+   "n": 120
+  },
+  {
+   "set": "mix_dev",
+   "cer": 0.15,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.642,
+   "ok": 0.292,
+   "confirmed": 0.35,
+   "reask": 0.242,
+   "wrong": 0.042,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.075,
+   "reply_language": null,
+   "n": 120
+  },
+  {
+   "set": "mix_dev",
+   "cer": 0.25,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.483,
+   "ok": 0.15,
+   "confirmed": 0.333,
+   "reask": 0.325,
+   "wrong": 0.05,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.142,
+   "reply_language": null,
+   "n": 120
+  },
+  {
+   "set": "mix_holdout",
+   "cer": 0.0,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.823,
+   "ok": 0.781,
+   "confirmed": 0.042,
+   "reask": 0.125,
+   "wrong": 0.052,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.0,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "mix_holdout",
+   "cer": 0.04,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.771,
+   "ok": 0.677,
+   "confirmed": 0.094,
+   "reask": 0.167,
+   "wrong": 0.052,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.01,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "mix_holdout",
+   "cer": 0.08,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.74,
+   "ok": 0.583,
+   "confirmed": 0.156,
+   "reask": 0.167,
+   "wrong": 0.042,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.052,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "mix_holdout",
+   "cer": 0.15,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.615,
+   "ok": 0.406,
+   "confirmed": 0.208,
+   "reask": 0.219,
+   "wrong": 0.042,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.125,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "mix_holdout",
+   "cer": 0.25,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.479,
+   "ok": 0.229,
+   "confirmed": 0.25,
+   "reask": 0.219,
+   "wrong": 0.094,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.208,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "mix_test",
+   "cer": 0.0,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.719,
+   "ok": 0.604,
+   "confirmed": 0.115,
+   "reask": 0.177,
+   "wrong": 0.094,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.01,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "mix_test",
+   "cer": 0.04,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.719,
+   "ok": 0.531,
+   "confirmed": 0.188,
+   "reask": 0.167,
+   "wrong": 0.094,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.021,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "mix_test",
+   "cer": 0.08,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.719,
+   "ok": 0.448,
+   "confirmed": 0.271,
+   "reask": 0.167,
+   "wrong": 0.052,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.062,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "mix_test",
+   "cer": 0.15,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.573,
+   "ok": 0.229,
+   "confirmed": 0.344,
+   "reask": 0.219,
+   "wrong": 0.083,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.125,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "mix_test",
+   "cer": 0.25,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.469,
+   "ok": 0.094,
+   "confirmed": 0.375,
+   "reask": 0.26,
+   "wrong": 0.052,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.219,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "en_test",
+   "cer": 0.04,
+   "accent": 0.5,
+   "mode": "bilingual",
+   "understood": 0.688,
+   "ok": 0.582,
+   "confirmed": 0.106,
+   "reask": 0.186,
+   "wrong": 0.046,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.08,
+   "reply_language": 0.982,
+   "n": 414
+  },
+  {
+   "set": "en_test",
+   "cer": 0.08,
+   "accent": 0.5,
+   "mode": "bilingual",
+   "understood": 0.543,
+   "ok": 0.367,
+   "confirmed": 0.176,
+   "reask": 0.29,
+   "wrong": 0.024,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.143,
+   "reply_language": 0.978,
+   "n": 414
+  },
+  {
+   "set": "en_test",
+   "cer": 0.04,
+   "accent": 1.0,
+   "mode": "bilingual",
+   "understood": 0.621,
+   "ok": 0.481,
+   "confirmed": 0.14,
+   "reask": 0.217,
+   "wrong": 0.046,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.116,
+   "reply_language": 0.981,
+   "n": 414
+  },
+  {
+   "set": "en_test",
+   "cer": 0.08,
+   "accent": 1.0,
+   "mode": "bilingual",
+   "understood": 0.423,
+   "ok": 0.232,
+   "confirmed": 0.191,
+   "reask": 0.374,
+   "wrong": 0.024,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.179,
+   "reply_language": 0.971,
+   "n": 414
+  },
+  {
+   "set": "mix_test",
+   "cer": 0.04,
+   "accent": 0.5,
+   "mode": "bilingual",
+   "understood": 0.708,
+   "ok": 0.479,
+   "confirmed": 0.229,
+   "reask": 0.177,
+   "wrong": 0.062,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.052,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "mix_test",
+   "cer": 0.08,
+   "accent": 0.5,
+   "mode": "bilingual",
+   "understood": 0.594,
+   "ok": 0.25,
+   "confirmed": 0.344,
+   "reask": 0.188,
+   "wrong": 0.094,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.125,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "mix_test",
+   "cer": 0.04,
+   "accent": 1.0,
+   "mode": "bilingual",
+   "understood": 0.646,
+   "ok": 0.417,
+   "confirmed": 0.229,
+   "reask": 0.167,
+   "wrong": 0.083,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.104,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "mix_test",
+   "cer": 0.08,
+   "accent": 1.0,
+   "mode": "bilingual",
+   "understood": 0.573,
+   "ok": 0.208,
+   "confirmed": 0.365,
+   "reask": 0.198,
+   "wrong": 0.083,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.146,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "en_test",
+   "cer": 0.04,
+   "accent": 0.0,
+   "mode": "zh_only",
+   "understood": 0.0,
+   "ok": 0.0,
+   "confirmed": 0.0,
+   "reask": 0.0,
+   "wrong": 0.0,
+   "wrong_motion": 0.0,
+   "missed_wake": 1.0,
+   "reply_language": null,
+   "n": 414
+  },
+  {
+   "set": "mix_test",
+   "cer": 0.04,
+   "accent": 0.0,
+   "mode": "zh_only",
+   "understood": 0.062,
+   "ok": 0.0,
+   "confirmed": 0.062,
+   "reask": 0.0,
+   "wrong": 0.125,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.812,
+   "reply_language": null,
+   "n": 96
+  },
+  {
+   "set": "zh",
+   "cer": 0.04,
+   "accent": 0.0,
+   "mode": "en_only",
+   "understood": 0.0,
+   "ok": 0.0,
+   "confirmed": 0.0,
+   "reask": 0.0,
+   "wrong": 0.0,
+   "wrong_motion": 0.0,
+   "missed_wake": 1.0,
+   "reply_language": null,
+   "n": 444
+  },
+  {
+   "set": "zh",
+   "cer": 0.04,
+   "accent": 0.0,
+   "mode": "bilingual",
+   "understood": 0.986,
+   "ok": 0.944,
+   "confirmed": 0.043,
+   "reask": 0.005,
+   "wrong": 0.009,
+   "wrong_motion": 0.0,
+   "missed_wake": 0.0,
+   "reply_language": 1.0,
+   "n": 444
+  }
+ ],
+ "by_intent_test_sets": {
+  "zh @cer 0.04": {
+   "tidy": {
+    "n": 48,
+    "ok": 48
+   },
+   "fetch_item": {
+    "n": 48,
+    "ok": 47
+   },
+   "where_is": {
+    "n": 48,
+    "ok": 47
+   },
+   "list_items": {
+    "n": 24,
+    "ok": 24
+   },
+   "what_new": {
+    "n": 30,
+    "ok": 30
+   },
+   "scan_home": {
+    "n": 30,
+    "ok": 30
+   },
+   "go_to": {
+    "n": 36,
+    "ok": 36
+   },
+   "charge": {
+    "n": 24,
+    "ok": 24
+   },
+   "who_here": {
+    "n": 24,
+    "ok": 23
+   },
+   "enrol": {
+    "n": 18,
+    "ok": 17
+   },
+   "forget": {
+    "n": 12,
+    "ok": 12
+   },
+   "name_item": {
+    "n": 12,
+    "ok": 11
+   },
+   "status": {
+    "n": 18,
+    "ok": 18
+   },
+   "privacy": {
+    "n": 18,
+    "ok": 17
+   },
+   "greet": {
+    "n": 12,
+    "ok": 12
+   },
+   "identity": {
+    "n": 12,
+    "ok": 12
+   },
+   "help": {
+    "n": 12,
+    "ok": 12
+   },
+   "cancel": {
+    "n": 6,
+    "ok": 6
+   },
+   "resume": {
+    "n": 12,
+    "ok": 12
+   }
+  },
+  "en_dev @cer 0.04": {
+   "tidy": {
+    "n": 42,
+    "ok": 41
+   },
+   "fetch_item": {
+    "n": 48,
+    "ok": 42
+   },
+   "where_is": {
+    "n": 48,
+    "ok": 43
+   },
+   "list_items": {
+    "n": 24,
+    "ok": 22
+   },
+   "what_new": {
+    "n": 24,
+    "ok": 22
+   },
+   "scan_home": {
+    "n": 30,
+    "ok": 28
+   },
+   "go_to": {
+    "n": 36,
+    "ok": 30
+   },
+   "charge": {
+    "n": 24,
+    "ok": 23
+   },
+   "who_here": {
+    "n": 24,
+    "ok": 21
+   },
+   "enrol": {
+    "n": 12,
+    "ok": 9
+   },
+   "forget": {
+    "n": 12,
+    "ok": 11
+   },
+   "name_item": {
+    "n": 12,
+    "ok": 8
+   },
+   "status": {
+    "n": 18,
+    "ok": 18
+   },
+   "privacy": {
+    "n": 18,
+    "ok": 17
+   },
+   "greet": {
+    "n": 18,
+    "ok": 16
+   },
+   "identity": {
+    "n": 12,
+    "ok": 11
+   },
+   "help": {
+    "n": 6,
+    "ok": 5
+   },
+   "cancel": {
+    "n": 12,
+    "ok": 10
+   },
+   "resume": {
+    "n": 12,
+    "ok": 11
+   },
+   "come_here": {
+    "n": 12,
+    "ok": 9
+   },
+   "set_lang": {
+    "n": 12,
+    "ok": 8
+   },
+   "profile_show": {
+    "n": 6,
+    "ok": 6
+   }
+  },
+  "en_holdout @cer 0.04": {
+   "tidy": {
+    "n": 24,
+    "ok": 23
+   },
+   "fetch_item": {
+    "n": 30,
+    "ok": 27
+   },
+   "where_is": {
+    "n": 36,
+    "ok": 31
+   },
+   "list_items": {
+    "n": 18,
+    "ok": 17
+   },
+   "what_new": {
+    "n": 18,
+    "ok": 16
+   },
+   "scan_home": {
+    "n": 18,
+    "ok": 17
+   },
+   "go_to": {
+    "n": 24,
+    "ok": 19
+   },
+   "charge": {
+    "n": 18,
+    "ok": 11
+   },
+   "who_here": {
+    "n": 18,
+    "ok": 17
+   },
+   "enrol": {
+    "n": 12,
+    "ok": 9
+   },
+   "forget": {
+    "n": 12,
+    "ok": 10
+   },
+   "name_item": {
+    "n": 12,
+    "ok": 7
+   },
+   "status": {
+    "n": 18,
+    "ok": 16
+   },
+   "privacy": {
+    "n": 18,
+    "ok": 17
+   },
+   "greet": {
+    "n": 12,
+    "ok": 6
+   },
+   "identity": {
+    "n": 6,
+    "ok": 5
+   },
+   "help": {
+    "n": 12,
+    "ok": 10
+   },
+   "cancel": {
+    "n": 12,
+    "ok": 8
+   },
+   "resume": {
+    "n": 12,
+    "ok": 11
+   },
+   "come_here": {
+    "n": 12,
+    "ok": 12
+   },
+   "set_lang": {
+    "n": 12,
+    "ok": 11
+   },
+   "profile_show": {
+    "n": 6,
+    "ok": 5
+   }
+  },
+  "en_test @cer 0.04": {
+   "tidy": {
+    "n": 30,
+    "ok": 25
+   },
+   "fetch_item": {
+    "n": 36,
+    "ok": 33
+   },
+   "where_is": {
+    "n": 36,
+    "ok": 25
+   },
+   "list_items": {
+    "n": 18,
+    "ok": 11
+   },
+   "what_new": {
+    "n": 24,
+    "ok": 22
+   },
+   "scan_home": {
+    "n": 24,
+    "ok": 20
+   },
+   "go_to": {
+    "n": 24,
+    "ok": 19
+   },
+   "charge": {
+    "n": 24,
+    "ok": 18
+   },
+   "who_here": {
+    "n": 24,
+    "ok": 11
+   },
+   "enrol": {
+    "n": 18,
+    "ok": 14
+   },
+   "forget": {
+    "n": 18,
+    "ok": 17
+   },
+   "name_item": {
+    "n": 12,
+    "ok": 5
+   },
+   "status": {
+    "n": 18,
+    "ok": 10
+   },
+   "privacy": {
+    "n": 18,
+    "ok": 10
+   },
+   "greet": {
+    "n": 12,
+    "ok": 5
+   },
+   "identity": {
+    "n": 6,
+    "ok": 6
+   },
+   "help": {
+    "n": 12,
+    "ok": 5
+   },
+   "cancel": {
+    "n": 12,
+    "ok": 6
+   },
+   "resume": {
+    "n": 12,
+    "ok": 11
+   },
+   "come_here": {
+    "n": 12,
+    "ok": 11
+   },
+   "set_lang": {
+    "n": 12,
+    "ok": 11
+   },
+   "profile_show": {
+    "n": 12,
+    "ok": 11
+   }
+  },
+  "mix_dev @cer 0.04": {
+   "fetch_item": {
+    "n": 30,
+    "ok": 25
+   },
+   "go_to": {
+    "n": 30,
+    "ok": 27
+   },
+   "where_is": {
+    "n": 18,
+    "ok": 14
+   },
+   "tidy": {
+    "n": 12,
+    "ok": 8
+   },
+   "scan_home": {
+    "n": 6,
+    "ok": 4
+   },
+   "charge": {
+    "n": 6,
+    "ok": 6
+   },
+   "list_items": {
+    "n": 6,
+    "ok": 5
+   },
+   "who_here": {
+    "n": 6,
+    "ok": 0
+   },
+   "what_new": {
+    "n": 6,
+    "ok": 4
+   }
+  },
+  "mix_holdout @cer 0.04": {
+   "fetch_item": {
+    "n": 24,
+    "ok": 18
+   },
+   "go_to": {
+    "n": 18,
+    "ok": 17
+   },
+   "where_is": {
+    "n": 18,
+    "ok": 15
+   },
+   "charge": {
+    "n": 6,
+    "ok": 6
+   },
+   "tidy": {
+    "n": 6,
+    "ok": 1
+   },
+   "scan_home": {
+    "n": 6,
+    "ok": 5
+   },
+   "list_items": {
+    "n": 6,
+    "ok": 6
+   },
+   "who_here": {
+    "n": 6,
+    "ok": 0
+   },
+   "what_new": {
+    "n": 6,
+    "ok": 6
+   }
+  },
+  "mix_test @cer 0.04": {
+   "fetch_item": {
+    "n": 24,
+    "ok": 12
+   },
+   "go_to": {
+    "n": 18,
+    "ok": 15
+   },
+   "where_is": {
+    "n": 18,
+    "ok": 14
+   },
+   "tidy": {
+    "n": 12,
+    "ok": 10
+   },
+   "scan_home": {
+    "n": 6,
+    "ok": 6
+   },
+   "list_items": {
+    "n": 6,
+    "ok": 0
+   },
+   "come_here": {
+    "n": 6,
+    "ok": 6
+   },
+   "charge": {
+    "n": 6,
+    "ok": 6
+   }
+  }
+ },
+ "noise": {
+  "wake_word_caught": {
+   "zh @cer 0.0": 1.0,
+   "zh @cer 0.05": 1.0,
+   "zh @cer 0.1": 1.0,
+   "zh @cer 0.2": 1.0,
+   "en @cer 0.0": 0.985,
+   "en @cer 0.05": 0.93,
+   "en @cer 0.1": 0.855,
+   "en @cer 0.2": 0.735,
+   "en accented @cer 0.0": 0.985,
+   "en accented @cer 0.05": 0.815,
+   "en accented @cer 0.1": 0.675,
+   "en accented @cer 0.2": 0.545,
+   "mix @cer 0.0": 1.0,
+   "mix @cer 0.05": 0.985,
+   "mix @cer 0.1": 0.945,
+   "mix @cer 0.2": 0.9,
+   "mix accented @cer 0.0": 1.0,
+   "mix accented @cer 0.05": 0.94,
+   "mix accented @cer 0.1": 0.85,
+   "mix accented @cer 0.2": 0.765
+  },
+  "stop_words_detected": {
+   "zh adult quiet": 1.0,
+   "zh adult noisy": 0.965,
+   "zh child noisy": 0.97,
+   "en adult quiet": 0.976,
+   "en adult noisy": 0.86,
+   "en child noisy": 0.752,
+   "en accented adult quiet": 0.916,
+   "en accented adult noisy": 0.616
+  },
+  "chatter_no_wake": {
+   "zh": {
+    "n": 432,
+    "not_ignored": 0,
+    "false_stops": 0,
+    "false_wake_rate": 0.0
+   },
+   "en": {
+    "n": 540,
+    "not_ignored": 0,
+    "false_stops": 0,
+    "false_wake_rate": 0.0
+   },
+   "mix": {
+    "n": 144,
+    "not_ignored": 2,
+    "false_stops": 2,
+    "false_wake_rate": 0.0139
+   }
+  },
+  "stop_word_inside_a_sentence": {
+   "n": 140,
+   "false_stops": 0
+  }
+ },
+ "dialogues": [
+  {
+   "name": "English wake word alone: \"I'm here\"",
+   "ok": true,
+   "detail": "I'm here."
+  },
+  {
+   "name": "English follow-up without the wake word, then not after the window",
+   "ok": true,
+   "detail": [
+    "identity",
+    "ignored: no wake word"
+   ]
+  },
+  {
+   "name": "asks which one (English)",
+   "ok": true,
+   "detail": "Which one do you mean?"
+  },
+  {
+   "name": "missing item asked for in English, answered in English",
+   "ok": true,
+   "detail": [
+    "Which one do you mean?",
+    "where_is",
+    [
+     [
+      "where_is",
+      {
+       "item": "ball"
+      }
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "\"it\" = the last item (English)",
+   "ok": true,
+   "detail": [
+    [
+     "fetch_item",
+     {
+      "place": "收纳筐",
+      "item": 7
+     }
+    ]
+   ]
+  },
+  {
+   "name": "confirm then \"yes please\"",
+   "ok": true,
+   "detail": [
+    "go_to",
+    [
+     [
+      "go_to",
+      {
+       "place": "沙发"
+      }
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "confirm then \"no thanks\"",
+   "ok": true,
+   "detail": [
+    "cancelled",
+    []
+   ]
+  },
+  {
+   "name": "a child cannot confirm a scan (English)",
+   "ok": true,
+   "detail": [
+    "denied",
+    "That one needs a grown-up to ask."
+   ]
+  },
+  {
+   "name": "mute in English works and sticks",
+   "ok": true,
+   "detail": [
+    "privacy",
+    "ignored: muted"
+   ]
+  },
+  {
+   "name": "forget Tom: asks, then forgets",
+   "ok": true,
+   "detail": [
+    "Shall I forget Tom? Once deleted it cannot be recovered.",
+    "Done, I have forgotten Tom."
+   ]
+  },
+  {
+   "name": "a child cannot make it forget (English)",
+   "ok": true,
+   "detail": "That one needs a grown-up to ask."
+  },
+  {
+   "name": "the reply follows the language of the question (en, zh, mixed)",
+   "ok": true,
+   "detail": [
+    "Hello! I'm Xiaoshi.",
+    "你好！我是小拾",
+    "你好！我是小拾"
+   ]
+  },
+  {
+   "name": "\"speak Chinese\" is answered in Chinese",
+   "ok": true,
+   "detail": [
+    "好的，我以后说中文。",
+    "你好！我是小拾"
+   ]
+  },
+  {
+   "name": "code-switching in both directions",
+   "ok": true,
+   "detail": [
+    {
+     "item": "sock",
+     "place": "收纳筐"
+    },
+    {
+     "place": "收纳筐",
+     "item": "ball"
+    }
+   ]
+  },
+  {
+   "name": "a Chinese name spelled in pinyin is found in an English sentence",
+   "ok": true,
+   "detail": {
+    "person": "小明"
+   }
+  },
+  {
+   "name": "enrolment needs the owner (English)",
+   "ok": true,
+   "detail": [
+    "denied",
+    "The owner has to confirm that."
+   ]
+  },
+  {
+   "name": "English: a language-model proposal still has to be confirmed",
+   "ok": true,
+   "detail": [
+    "confirm",
+    "Do you want me to tidy up the toys?",
+    "confirmed"
+   ]
+  },
+  {
+   "name": "English: free text is not spoken to a child",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice enrolment: a stranger speaking first is ignored and the print is Tom's",
+   "ok": true,
+   "detail": [
+    "voice enrolment: another voice ignored",
+    "voice enrolled"
+   ]
+  },
+  {
+   "name": "voice enrolment: the television is not enrolled",
+   "ok": true,
+   "detail": "ignored: from a device"
+  },
+  {
+   "name": "voice enrolment for somebody else: the grown-up's own voice is not taken, and the role stored is the lower one",
+   "ok": true,
+   "detail": [
+    "voice enrolment: another voice ignored",
+    [
+     "Mia"
+    ]
+   ]
+  },
+  {
+   "name": "strangers' voices are forgotten when the day changes, the profiles fade",
+   "ok": true,
+   "detail": [
+    1,
+    0
+   ]
+  },
+  {
+   "name": "voice enrolment: when nobody could be named or placed at the consent, the voice that holds together is enough and it completes",
+   "ok": true,
+   "detail": "voice enrolled"
+  },
+  {
+   "name": "voice enrolment: with nothing else to go by another voice is still turned away (the sentences have to agree with each other)",
+   "ok": true,
+   "detail": "voice enrolment: another voice ignored"
+  },
+  {
+   "name": "voice enrolment: somebody standing within 0.8 m is not the person who asked (named otherwise, a voice id, a track of his own, or unknown)",
+   "ok": true,
+   "detail": {
+    "named Leo": [
+     true,
+     0
+    ],
+    "a voice id": [
+     true,
+     0
+    ],
+    "a track of his own": [
+     true,
+     0
+    ],
+    "nothing known": [
+     true,
+     0
+    ]
+   }
+  },
+  {
+   "name": "voice enrolment: the child at his side saying all three sentences does not become \"Tom\"",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "voice enrolment: the same person whose track was made anew (same place, the voice of his request) is still himself; a neighbour with another voice, or with no voice to compare, is not",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "the day is the calendar day when a calendar clock is given: strangers are forgotten once, when it changes (not on the robot's own seconds)",
+   "ok": true,
+   "detail": [
+    0,
+    1
+   ]
+  },
+  {
+   "name": "the day is the household's: with UTC+8 strangers go at 16:00 UTC (local midnight), not at 00:00 UTC",
+   "ok": true,
+   "detail": [
+    1,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "with the real voiceprint store, the stranger's voice id is gone after midnight and the next stranger starts again at voice#1",
+   "ok": true,
+   "detail": [
+    0,
+    0
+   ]
+  },
+  {
+   "name": "a motion command on direction alone (an unnamed grown-up in view) is asked back, and only that person can say yes",
+   "ok": true,
+   "detail": [
+    "confirm",
+    "ignored: not the person I was talking to",
+    "charge"
+   ]
+  },
+  {
+   "name": "the yes of the person who was asked still counts when the tracker made a new track of them (same place); somebody elsewhere, or with no place to compare, does not",
+   "ok": true,
+   "detail": [
+    [
+     "confirm",
+     "charge",
+     true
+    ],
+    [
+     "confirm",
+     "charge",
+     true
+    ],
+    [
+     "confirm",
+     "ignored: not the person I was talking to",
+     false
+    ],
+    [
+     "confirm",
+     "ignored: not the person I was talking to",
+     false
+    ]
+   ]
+  },
+  {
+   "name": "that does not let anything else past the conversation's own key: another sentence from the new track is still not for the robot",
+   "ok": true,
+   "detail": [
+    "ignored: not the person I was talking to",
+    []
+   ]
+  },
+  {
+   "name": "a yes from somebody out of view is not the answer of the person in view who was asked",
+   "ok": true,
+   "detail": [
+    "ignored: not the person I was talking to",
+    []
+   ]
+  },
+  {
+   "name": "a named grown-up is not asked back, and neither is what a child may ask for",
+   "ok": true,
+   "detail": [
+    "charge",
+    "tidy"
+   ]
+  }
+ ],
+ "examples": [
+  {
+   "said": "Hey Xiaoshi, put the red ball in the basket",
+   "heard": "hay Xiaoshi, put ertha redd ball in the ",
+   "intent": "fetch_item",
+   "slots": {
+    "item": "ball"
+   },
+   "action": "confirm",
+   "reply": "Do you want me to put the ball in the basket?"
+  },
+  {
+   "said": "小拾小拾，把红色的小球放进筐里",
+   "heard": "小十是小拾，把红色的小球放进筐里",
+   "intent": "fetch_item",
+   "slots": {
+    "item": "ball",
+    "place": "收纳筐"
+   },
+   "action": "fetch_item",
+   "reply": "好的，我去把小球放进筐里"
+  },
+  {
+   "said": "Hey Xiaoshi, 把 ball 放进筐里",
+   "heard": "Hey Xiaoshi,  ball  ",
+   "intent": null,
+   "slots": {
+    "item": "ball"
+   },
+   "action": "reask",
+   "reply": "Sorry, I didn't catch that. Could you say it again?"
+  },
+  {
+   "said": "Hey Xiaoshi, where's my teddy bear",
+   "heard": "Hey Xiaoshi, where's my teddy bear",
+   "intent": "where_is",
+   "slots": {
+    "item": "plush"
+   },
+   "action": "where_is",
+   "reply": "The plush toy? I don't have any item records yet."
+  },
+  {
+   "said": "小拾小拾，go to the 沙发",
+   "heard": "小拾小拾，go to  沙发",
+   "intent": "go_to",
+   "slots": {
+    "place": "沙发"
+   },
+   "action": "go_to",
+   "reply": "OK, I'll go to the sofa."
+  },
+  {
+   "said": "Xiaoshi Xiaoshi, what can you do",
+   "heard": "show she show she, what can you do",
+   "intent": "help",
+   "slots": {},
+   "action": "help",
+   "reply": "I can pick up toys from the floor, scan the house, remember where things are, tell you where something is, and go and charge."
+  },
+  {
+   "said": "Hey Xiaoshi, scan the house",
+   "heard": "Hey Xiaoshi, scan the hause",
+   "intent": "scan_home",
+   "slots": {},
+   "action": "confirm",
+   "reply": "Do you want me to scan the house?"
+  },
+  {
+   "said": "Hey Xiaoshi, 你好",
+   "heard": "Hey shaw she,  ",
+   "intent": "wake",
+   "slots": null,
+   "action": "listening",
+   "reply": "I'm here."
+  },
+  {
+   "said": "Hey Xiaoshi, speak Chinese",
+   "heard": "Hey show she, speak Chinese",
+   "intent": "set_lang",
+   "slots": {
+    "lang": "zh"
+   },
+   "action": "set_lang",
+   "reply": "好的，我以后说中文。"
+  },
+  {
+   "said": "stop",
+   "heard": "stop",
+   "intent": "stop",
+   "slots": null,
+   "action": "stop",
+   "reply": "OK, I've stopped."
+  },
+  {
+   "said": "where is the bus stop",
+   "heard": "where is the bus stop",
+   "intent": null,
+   "slots": null,
+   "action": "ignored: no wake word",
+   "reply": null
+  },
+  {
+   "said": "Hey Xiaoshi, are you recording",
+   "heard": "Hey Xiaoshi, ar ewe recording",
+   "intent": "privacy",
+   "slots": {},
+   "action": "privacy",
+   "reply": "I only process what you say after I hear \"Xiaoshi Xiaoshi\" or \"Hey Xiaoshi\". I do not store recordings and I do not send sound anywhere. To make me stop listening completely, press the mute button on my body."
+  }
+ ],
+ "ms_per_parse_en": 23.2,
+ "ms_per_parse_zh": 34.1
+}

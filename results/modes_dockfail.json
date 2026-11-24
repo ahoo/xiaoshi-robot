@@ -1,0 +1,60 @@
+{
+ "runs": [
+  {
+   "seed": 1,
+   "believed_offset_cm": 0.0,
+   "docked": true,
+   "fault": null,
+   "max_tilt_deg": 0.11,
+   "collisions": 0,
+   "t_end": 38.5,
+   "events": [
+    "去充电（requested），电量 46%",
+    "充电 49% → 90%，用了 58 分钟（仿真里快进，物理时间没走）",
+    "→ IDLE"
+   ]
+  },
+  {
+   "seed": 1,
+   "believed_offset_cm": 8.0,
+   "docked": true,
+   "fault": null,
+   "max_tilt_deg": 0.06,
+   "collisions": 0,
+   "t_end": 38.0,
+   "events": [
+    "去充电（requested），电量 46%",
+    "充电 49% → 90%，用了 58 分钟（仿真里快进，物理时间没走）",
+    "→ IDLE"
+   ]
+  },
+  {
+   "seed": 1,
+   "believed_offset_cm": 15.0,
+   "docked": false,
+   "fault": "dock unreachable",
+   "max_tilt_deg": 0.08,
+   "collisions": 4,
+   "t_end": 71.8,
+   "events": [
+    "去充电（requested），电量 46%",
+    "故障：dock unreachable，需要人来处理",
+    "→ FAULT {'why': 'dock unreachable'}"
+   ]
+  },
+  {
+   "seed": 1,
+   "believed_offset_cm": 25.0,
+   "docked": false,
+   "fault": "dock unreachable",
+   "max_tilt_deg": 0.15,
+   "collisions": 6,
+   "t_end": 73.4,
+   "events": [
+    "去充电（requested），电量 46%",
+    "故障：dock unreachable，需要人来处理",
+    "→ FAULT {'why': 'dock unreachable'}"
+   ]
+  }
+ ]
+}

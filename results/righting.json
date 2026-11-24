@@ -1,0 +1,324 @@
+{
+ "per_pose": {
+  "side_l": {
+   "standard": {
+    "upright": 24,
+    "n": 24,
+    "mean_final_tilt": 0.0
+   },
+   "harsh": {
+    "upright": 24,
+    "n": 24,
+    "mean_final_tilt": 0.0
+   }
+  },
+  "side_r": {
+   "standard": {
+    "upright": 24,
+    "n": 24,
+    "mean_final_tilt": 0.0
+   },
+   "harsh": {
+    "upright": 23,
+    "n": 24,
+    "mean_final_tilt": 4.6
+   }
+  },
+  "fwd": {
+   "standard": {
+    "upright": 24,
+    "n": 24,
+    "mean_final_tilt": 0.0
+   },
+   "harsh": {
+    "upright": 22,
+    "n": 24,
+    "mean_final_tilt": 9.3
+   }
+  }
+ },
+ "sweep": {
+  "trials": [
+   {
+    "kind": "roll_l",
+    "strength": 1.0,
+    "poses": [
+     "side_l",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_l",
+    "strength": 1.2,
+    "poses": [
+     "side_l",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_l",
+    "strength": 1.4,
+    "poses": [
+     "side_l",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_l",
+    "strength": 1.6,
+    "poses": [
+     "side_l",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_l",
+    "strength": 1.8,
+    "poses": [
+     "side_r",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_l",
+    "strength": 2.0,
+    "poses": [
+     "upright"
+    ],
+    "up": true,
+    "fell": false
+   },
+   {
+    "kind": "roll_l",
+    "strength": 2.4,
+    "poses": [
+     "side_r",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_r",
+    "strength": 1.0,
+    "poses": [
+     "side_r",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_r",
+    "strength": 1.2,
+    "poses": [
+     "side_r",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_r",
+    "strength": 1.4,
+    "poses": [
+     "side_r",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_r",
+    "strength": 1.6,
+    "poses": [
+     "side_r",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_r",
+    "strength": 1.8,
+    "poses": [
+     "side_l",
+     "side_r",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_r",
+    "strength": 2.0,
+    "poses": [
+     "side_l",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_r",
+    "strength": 2.4,
+    "poses": [
+     "fwd",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_f",
+    "strength": 1.0,
+    "poses": [
+     "fwd",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_f",
+    "strength": 1.2,
+    "poses": [
+     "fwd",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_f",
+    "strength": 1.4,
+    "poses": [
+     "upright"
+    ],
+    "up": true,
+    "fell": false
+   },
+   {
+    "kind": "pitch_f",
+    "strength": 1.6,
+    "poses": [
+     "upright"
+    ],
+    "up": true,
+    "fell": false
+   },
+   {
+    "kind": "pitch_f",
+    "strength": 1.8,
+    "poses": [
+     "side_l",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_f",
+    "strength": 2.0,
+    "poses": [
+     "unknown",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_f",
+    "strength": 2.4,
+    "poses": [
+     "side_r",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_b",
+    "strength": 1.0,
+    "poses": [
+     "upright"
+    ],
+    "up": true,
+    "fell": false
+   },
+   {
+    "kind": "pitch_b",
+    "strength": 1.2,
+    "poses": [
+     "upright"
+    ],
+    "up": true,
+    "fell": false
+   },
+   {
+    "kind": "pitch_b",
+    "strength": 1.4,
+    "poses": [
+     "fwd",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_b",
+    "strength": 1.6,
+    "poses": [
+     "side_r",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_b",
+    "strength": 1.8,
+    "poses": [
+     "side_r",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_b",
+    "strength": 2.0,
+    "poses": [
+     "side_l",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_b",
+    "strength": 2.4,
+    "poses": [
+     "fwd_b",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   }
+  ],
+  "fell": 23,
+  "got_up": 23,
+  "n": 28,
+  "camera": null
+ }
+}

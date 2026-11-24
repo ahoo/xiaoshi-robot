@@ -1,0 +1,19 @@
+{
+  "what": "How the self-righting maneuvers in sim/righting_maneuvers.json were found (sim/search_righting.py), and what the search showed. Numbers are from the search sessions; the final success rates of the stored maneuvers are in righting.json (sim/test_righting.py).",
+  "method": "Cross-entropy search over 4-phase open-loop maneuvers (4 arm joint targets, 3 wheel speeds, duration, arm speed per phase; arm acceleration limit 30 rad/s^2). Cost: tilt left after letting go and settling, plus half the smallest tilt reached on the way; candidates whose arm would pass through the chassis are penalised. First pass: 48 random candidates per generation, one scenario each. Second pass (robust refinement): the best first-pass candidate as the starting mean, 45 candidates per generation, each judged on 3 perturbed scenarios (arm calibration 1 deg, roller friction +-20 %, chassis mass +-8 %, resting pose +-3 deg and any heading), the same 3 for every candidate.",
+  "first_pass": {
+    "side_l": "1440 candidates (30 generations): 2 reached upright, and those two succeeded in only 3 of 24 fresh perturbed scenarios (a needle in the parameter space; the population collapsed back to 'no effect' after finding it). 160 further random candidates: 2 upright, 1 ended leaning on the front wheels and the gripper at 61.8 degrees (the 'fwd' pose, from which the 'fwd' maneuver gets up).",
+    "fwd": "13-24 of 48 candidates upright in every generation (an easy pose); best candidate 23 of 24 fresh perturbed scenarios.",
+    "back": "1 of 1440 reached upright, 1 of 24 on fresh scenarios. Dropped: once the lidar head and its standoffs are solid in the model, a robot dropped nose-up no longer settles on its back (it ends on its side), so this pose is not in the library."
+  },
+  "robust_refinement": {
+    "side_l": "Generation 5 (of 40 planned, stopped there): 3 of 3 training scenarios upright. On 24 fresh scenarios 24/24; with harsher perturbations (arm offset 2 deg, friction +-30 %, mass +-15 %) 23/24 (model without the solid lidar head). With the solid lidar head: 24/24 and 24/24.",
+    "side_r": "Mirror image of the side_l maneuver (shoulder pan sign flipped, wheel 0 and 2 swapped with signs flipped, wheel 1 sign flipped): 24/24 fresh scenarios without re-searching."
+  },
+  "chain": "A maneuver that only gets from the side to the forward-lean pose, followed by the 'fwd' maneuver, got up in 8 of 12 perturbed scenarios without any robustness search on the first stage: the library works as a chain, and the supervisor re-classifies the pose after each attempt (up to 3 attempts).",
+  "caveats": [
+    "All of this is in the simulator. Contact friction, servo acceleration limits, the cables and the battery position of the real robot are not in it.",
+    "The maneuvers were searched with the arm in the carry pose. Knock-overs with the arm reaching down in front with the gripper open (what a grasp looks like): 9 of 16 fell, all 9 got up with the same maneuvers (results/righting_arm_out.json). Arm raised, or the gripper holding something: not tried.",
+    "Only the lidar head and its standoffs are solid on top of the chassis; the camera mount and other parts are not modelled, so real rest poses may differ."
+  ]
+}

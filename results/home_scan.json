@@ -1,0 +1,993 @@
+{
+ "lidar": "ld19cal",
+ "runs": [
+  {
+   "planner": "tour",
+   "seed": 1,
+   "sim_s": 129.0,
+   "wall_s": 163,
+   "stops": 18,
+   "path_m": 7.5,
+   "frames": 429,
+   "observed": 0.552,
+   "recall": 0.96,
+   "precision": 0.999,
+   "n_true_visible": 13889,
+   "n_map": 5491,
+   "furniture": 7,
+   "walls": 4,
+   "collisions": 0,
+   "stuck": 0,
+   "log": [
+    {
+     "t": 20.2,
+     "stops": 1,
+     "gain": 0,
+     "observed": 0.334,
+     "path_m": 0.75
+    },
+    {
+     "t": 31.1,
+     "stops": 2,
+     "gain": 0,
+     "observed": 0.334,
+     "path_m": 1.05
+    },
+    {
+     "t": 37.1,
+     "stops": 3,
+     "gain": 0,
+     "observed": 0.334,
+     "path_m": 1.27
+    },
+    {
+     "t": 41.9,
+     "stops": 4,
+     "gain": 0,
+     "observed": 0.394,
+     "path_m": 1.46
+    },
+    {
+     "t": 48.5,
+     "stops": 5,
+     "gain": 0,
+     "observed": 0.454,
+     "path_m": 1.55
+    },
+    {
+     "t": 56.4,
+     "stops": 6,
+     "gain": 0,
+     "observed": 0.474,
+     "path_m": 1.91
+    },
+    {
+     "t": 65.9,
+     "stops": 7,
+     "gain": 0,
+     "observed": 0.475,
+     "path_m": 2.71
+    },
+    {
+     "t": 73.3,
+     "stops": 8,
+     "gain": 0,
+     "observed": 0.498,
+     "path_m": 3.13
+    },
+    {
+     "t": 77.9,
+     "stops": 9,
+     "gain": 0,
+     "observed": 0.506,
+     "path_m": 3.38
+    },
+    {
+     "t": 90.6,
+     "stops": 10,
+     "gain": 0,
+     "observed": 0.537,
+     "path_m": 4.11
+    },
+    {
+     "t": 102.0,
+     "stops": 11,
+     "gain": 0,
+     "observed": 0.546,
+     "path_m": 4.75
+    },
+    {
+     "t": 114.9,
+     "stops": 12,
+     "gain": 0,
+     "observed": 0.551,
+     "path_m": 6.65
+    },
+    {
+     "t": 116.2,
+     "stops": 13,
+     "gain": 0,
+     "observed": 0.551,
+     "path_m": 6.66
+    },
+    {
+     "t": 117.4,
+     "stops": 14,
+     "gain": 0,
+     "observed": 0.551,
+     "path_m": 6.66
+    },
+    {
+     "t": 118.6,
+     "stops": 15,
+     "gain": 0,
+     "observed": 0.551,
+     "path_m": 6.66
+    },
+    {
+     "t": 119.9,
+     "stops": 16,
+     "gain": 0,
+     "observed": 0.551,
+     "path_m": 6.66
+    },
+    {
+     "t": 127.7,
+     "stops": 17,
+     "gain": 0,
+     "observed": 0.552,
+     "path_m": 7.49
+    },
+    {
+     "t": 128.9,
+     "stops": 18,
+     "gain": 0,
+     "observed": 0.552,
+     "path_m": 7.49
+    }
+   ],
+   "ms_per_frame": 179,
+   "furniture_boxes": [
+    {
+     "centre": [
+      0.98,
+      0.44
+     ],
+     "length": 1.58,
+     "width": 0.6,
+     "height": 0.4
+    },
+    {
+     "centre": [
+      2.6,
+      0.26
+     ],
+     "length": 0.96,
+     "width": 0.28,
+     "height": 0.64
+    },
+    {
+     "centre": [
+      1.0,
+      1.46
+     ],
+     "length": 0.88,
+     "width": 0.52,
+     "height": 0.32
+    },
+    {
+     "centre": [
+      3.0,
+      1.88
+     ],
+     "length": 0.48,
+     "width": 0.48,
+     "height": 0.44
+    },
+    {
+     "centre": [
+      1.9,
+      2.3
+     ],
+     "length": 0.44,
+     "width": 0.36,
+     "height": 0.28
+    },
+    {
+     "centre": [
+      3.51,
+      0.53
+     ],
+     "length": 0.4,
+     "width": 0.24,
+     "height": 0.32
+    },
+    {
+     "centre": [
+      3.46,
+      2.54
+     ],
+     "length": 0.36,
+     "width": 0.28,
+     "height": 0.12
+    }
+   ]
+  },
+  {
+   "planner": "nbv",
+   "seed": 1,
+   "sim_s": 92.9,
+   "wall_s": 117,
+   "stops": 5,
+   "path_m": 7.0,
+   "frames": 309,
+   "observed": 0.578,
+   "recall": 0.973,
+   "precision": 0.998,
+   "n_true_visible": 13889,
+   "n_map": 5923,
+   "furniture": 7,
+   "walls": 4,
+   "collisions": 0,
+   "stuck": 0,
+   "log": [
+    {
+     "t": 30.8,
+     "stops": 1,
+     "gain": 270,
+     "observed": 0.483,
+     "path_m": 2.33
+    },
+    {
+     "t": 47.1,
+     "stops": 2,
+     "gain": 43,
+     "observed": 0.515,
+     "path_m": 3.13
+    },
+    {
+     "t": 60.0,
+     "stops": 3,
+     "gain": 34,
+     "observed": 0.549,
+     "path_m": 4.11
+    },
+    {
+     "t": 77.3,
+     "stops": 4,
+     "gain": 19,
+     "observed": 0.569,
+     "path_m": 5.61
+    },
+    {
+     "t": 92.9,
+     "stops": 5,
+     "gain": 16,
+     "observed": 0.578,
+     "path_m": 6.96
+    }
+   ],
+   "ms_per_frame": 184,
+   "furniture_boxes": [
+    {
+     "centre": [
+      0.96,
+      0.48
+     ],
+     "length": 1.56,
+     "width": 0.6,
+     "height": 0.4
+    },
+    {
+     "centre": [
+      2.6,
+      0.26
+     ],
+     "length": 1.04,
+     "width": 0.28,
+     "height": 0.64
+    },
+    {
+     "centre": [
+      1.0,
+      1.46
+     ],
+     "length": 0.88,
+     "width": 0.52,
+     "height": 0.32
+    },
+    {
+     "centre": [
+      3.0,
+      1.88
+     ],
+     "length": 0.48,
+     "width": 0.48,
+     "height": 0.44
+    },
+    {
+     "centre": [
+      1.9,
+      2.3
+     ],
+     "length": 0.44,
+     "width": 0.36,
+     "height": 0.28
+    },
+    {
+     "centre": [
+      3.48,
+      0.49
+     ],
+     "length": 0.41,
+     "width": 0.26,
+     "height": 0.32
+    },
+    {
+     "centre": [
+      3.44,
+      2.52
+     ],
+     "length": 0.32,
+     "width": 0.24,
+     "height": 0.12
+    }
+   ]
+  },
+  {
+   "planner": "tour",
+   "seed": 2,
+   "sim_s": 128.7,
+   "wall_s": 167,
+   "stops": 17,
+   "path_m": 6.5,
+   "frames": 428,
+   "observed": 0.549,
+   "recall": 0.925,
+   "precision": 0.999,
+   "n_true_visible": 13889,
+   "n_map": 5758,
+   "furniture": 7,
+   "walls": 4,
+   "collisions": 0,
+   "stuck": 0,
+   "log": [
+    {
+     "t": 19.3,
+     "stops": 1,
+     "gain": 0,
+     "observed": 0.334,
+     "path_m": 0.76
+    },
+    {
+     "t": 27.4,
+     "stops": 2,
+     "gain": 0,
+     "observed": 0.334,
+     "path_m": 0.98
+    },
+    {
+     "t": 37.2,
+     "stops": 3,
+     "gain": 0,
+     "observed": 0.334,
+     "path_m": 1.24
+    },
+    {
+     "t": 44.2,
+     "stops": 4,
+     "gain": 0,
+     "observed": 0.334,
+     "path_m": 1.4
+    },
+    {
+     "t": 55.7,
+     "stops": 5,
+     "gain": 0,
+     "observed": 0.45,
+     "path_m": 1.56
+    },
+    {
+     "t": 62.7,
+     "stops": 6,
+     "gain": 0,
+     "observed": 0.471,
+     "path_m": 1.92
+    },
+    {
+     "t": 73.1,
+     "stops": 7,
+     "gain": 0,
+     "observed": 0.473,
+     "path_m": 2.76
+    },
+    {
+     "t": 84.0,
+     "stops": 8,
+     "gain": 0,
+     "observed": 0.512,
+     "path_m": 3.29
+    },
+    {
+     "t": 91.2,
+     "stops": 9,
+     "gain": 0,
+     "observed": 0.516,
+     "path_m": 3.49
+    },
+    {
+     "t": 109.1,
+     "stops": 10,
+     "gain": 0,
+     "observed": 0.544,
+     "path_m": 4.89
+    },
+    {
+     "t": 114.2,
+     "stops": 11,
+     "gain": 0,
+     "observed": 0.544,
+     "path_m": 5.59
+    },
+    {
+     "t": 115.5,
+     "stops": 12,
+     "gain": 0,
+     "observed": 0.544,
+     "path_m": 5.61
+    },
+    {
+     "t": 116.7,
+     "stops": 13,
+     "gain": 0,
+     "observed": 0.544,
+     "path_m": 5.61
+    },
+    {
+     "t": 117.9,
+     "stops": 14,
+     "gain": 0,
+     "observed": 0.544,
+     "path_m": 5.61
+    },
+    {
+     "t": 126.2,
+     "stops": 15,
+     "gain": 0,
+     "observed": 0.549,
+     "path_m": 6.53
+    },
+    {
+     "t": 127.4,
+     "stops": 16,
+     "gain": 0,
+     "observed": 0.549,
+     "path_m": 6.54
+    },
+    {
+     "t": 128.6,
+     "stops": 17,
+     "gain": 0,
+     "observed": 0.549,
+     "path_m": 6.54
+    }
+   ],
+   "ms_per_frame": 180,
+   "furniture_boxes": [
+    {
+     "centre": [
+      1.05,
+      0.65
+     ],
+     "length": 1.66,
+     "width": 0.71,
+     "height": 0.4
+    },
+    {
+     "centre": [
+      2.56,
+      0.26
+     ],
+     "length": 0.96,
+     "width": 0.28,
+     "height": 0.64
+    },
+    {
+     "centre": [
+      0.98,
+      1.46
+     ],
+     "length": 0.84,
+     "width": 0.52,
+     "height": 0.32
+    },
+    {
+     "centre": [
+      2.96,
+      1.88
+     ],
+     "length": 0.48,
+     "width": 0.48,
+     "height": 0.44
+    },
+    {
+     "centre": [
+      1.88,
+      2.3
+     ],
+     "length": 0.4,
+     "width": 0.36,
+     "height": 0.28
+    },
+    {
+     "centre": [
+      3.44,
+      0.5
+     ],
+     "length": 0.38,
+     "width": 0.23,
+     "height": 0.32
+    },
+    {
+     "centre": [
+      3.42,
+      2.54
+     ],
+     "length": 0.36,
+     "width": 0.28,
+     "height": 0.12
+    }
+   ]
+  },
+  {
+   "planner": "nbv",
+   "seed": 2,
+   "sim_s": 93.4,
+   "wall_s": 119,
+   "stops": 5,
+   "path_m": 7.1,
+   "frames": 311,
+   "observed": 0.576,
+   "recall": 0.959,
+   "precision": 0.998,
+   "n_true_visible": 13889,
+   "n_map": 5873,
+   "furniture": 5,
+   "walls": 3,
+   "collisions": 0,
+   "stuck": 0,
+   "log": [
+    {
+     "t": 31.4,
+     "stops": 1,
+     "gain": 270,
+     "observed": 0.482,
+     "path_m": 2.3
+    },
+    {
+     "t": 47.3,
+     "stops": 2,
+     "gain": 33,
+     "observed": 0.518,
+     "path_m": 3.14
+    },
+    {
+     "t": 60.0,
+     "stops": 3,
+     "gain": 41,
+     "observed": 0.544,
+     "path_m": 4.09
+    },
+    {
+     "t": 78.1,
+     "stops": 4,
+     "gain": 21,
+     "observed": 0.566,
+     "path_m": 5.71
+    },
+    {
+     "t": 93.3,
+     "stops": 5,
+     "gain": 16,
+     "observed": 0.576,
+     "path_m": 7.08
+    }
+   ],
+   "ms_per_frame": 179,
+   "furniture_boxes": [
+    {
+     "centre": [
+      2.0,
+      0.35
+     ],
+     "length": 3.7,
+     "width": 0.72,
+     "height": 0.64
+    },
+    {
+     "centre": [
+      1.0,
+      1.46
+     ],
+     "length": 0.88,
+     "width": 0.52,
+     "height": 0.32
+    },
+    {
+     "centre": [
+      2.96,
+      1.88
+     ],
+     "length": 0.48,
+     "width": 0.48,
+     "height": 0.44
+    },
+    {
+     "centre": [
+      1.9,
+      2.3
+     ],
+     "length": 0.44,
+     "width": 0.36,
+     "height": 0.28
+    },
+    {
+     "centre": [
+      3.44,
+      0.5
+     ],
+     "length": 0.39,
+     "width": 0.24,
+     "height": 0.32
+    }
+   ]
+  },
+  {
+   "planner": "tour",
+   "seed": 3,
+   "sim_s": 159.2,
+   "wall_s": 182,
+   "stops": 20,
+   "path_m": 8.7,
+   "frames": 530,
+   "observed": 0.574,
+   "recall": 0.963,
+   "precision": 0.999,
+   "n_true_visible": 13889,
+   "n_map": 6206,
+   "furniture": 7,
+   "walls": 4,
+   "collisions": 0,
+   "stuck": 0,
+   "log": [
+    {
+     "t": 19.3,
+     "stops": 1,
+     "gain": 0,
+     "observed": 0.336,
+     "path_m": 0.76
+    },
+    {
+     "t": 26.9,
+     "stops": 2,
+     "gain": 0,
+     "observed": 0.336,
+     "path_m": 0.98
+    },
+    {
+     "t": 36.0,
+     "stops": 3,
+     "gain": 0,
+     "observed": 0.336,
+     "path_m": 1.24
+    },
+    {
+     "t": 43.2,
+     "stops": 4,
+     "gain": 0,
+     "observed": 0.336,
+     "path_m": 1.42
+    },
+    {
+     "t": 52.8,
+     "stops": 5,
+     "gain": 0,
+     "observed": 0.454,
+     "path_m": 1.54
+    },
+    {
+     "t": 62.4,
+     "stops": 6,
+     "gain": 0,
+     "observed": 0.472,
+     "path_m": 1.95
+    },
+    {
+     "t": 74.7,
+     "stops": 7,
+     "gain": 0,
+     "observed": 0.487,
+     "path_m": 2.31
+    },
+    {
+     "t": 81.9,
+     "stops": 8,
+     "gain": 0,
+     "observed": 0.503,
+     "path_m": 3.06
+    },
+    {
+     "t": 93.2,
+     "stops": 9,
+     "gain": 0,
+     "observed": 0.529,
+     "path_m": 3.79
+    },
+    {
+     "t": 94.2,
+     "stops": 10,
+     "gain": 0,
+     "observed": 0.53,
+     "path_m": 3.92
+    },
+    {
+     "t": 121.2,
+     "stops": 11,
+     "gain": 0,
+     "observed": 0.558,
+     "path_m": 5.35
+    },
+    {
+     "t": 124.8,
+     "stops": 12,
+     "gain": 0,
+     "observed": 0.559,
+     "path_m": 5.94
+    },
+    {
+     "t": 134.4,
+     "stops": 13,
+     "gain": 0,
+     "observed": 0.57,
+     "path_m": 6.34
+    },
+    {
+     "t": 141.9,
+     "stops": 14,
+     "gain": 0,
+     "observed": 0.574,
+     "path_m": 7.34
+    },
+    {
+     "t": 143.1,
+     "stops": 15,
+     "gain": 0,
+     "observed": 0.574,
+     "path_m": 7.36
+    },
+    {
+     "t": 144.3,
+     "stops": 16,
+     "gain": 0,
+     "observed": 0.574,
+     "path_m": 7.36
+    },
+    {
+     "t": 145.5,
+     "stops": 17,
+     "gain": 0,
+     "observed": 0.574,
+     "path_m": 7.36
+    },
+    {
+     "t": 146.7,
+     "stops": 18,
+     "gain": 0,
+     "observed": 0.574,
+     "path_m": 7.36
+    },
+    {
+     "t": 158.0,
+     "stops": 19,
+     "gain": 0,
+     "observed": 0.574,
+     "path_m": 8.72
+    },
+    {
+     "t": 159.2,
+     "stops": 20,
+     "gain": 0,
+     "observed": 0.574,
+     "path_m": 8.72
+    }
+   ],
+   "ms_per_frame": 157,
+   "furniture_boxes": [
+    {
+     "centre": [
+      1.02,
+      0.66
+     ],
+     "length": 1.67,
+     "width": 0.58,
+     "height": 0.4
+    },
+    {
+     "centre": [
+      2.6,
+      0.26
+     ],
+     "length": 0.96,
+     "width": 0.28,
+     "height": 0.64
+    },
+    {
+     "centre": [
+      1.0,
+      1.46
+     ],
+     "length": 0.88,
+     "width": 0.52,
+     "height": 0.32
+    },
+    {
+     "centre": [
+      3.0,
+      1.9
+     ],
+     "length": 0.52,
+     "width": 0.48,
+     "height": 0.44
+    },
+    {
+     "centre": [
+      1.9,
+      2.3
+     ],
+     "length": 0.44,
+     "width": 0.36,
+     "height": 0.28
+    },
+    {
+     "centre": [
+      3.45,
+      0.52
+     ],
+     "length": 0.36,
+     "width": 0.23,
+     "height": 0.32
+    },
+    {
+     "centre": [
+      3.44,
+      2.54
+     ],
+     "length": 0.4,
+     "width": 0.28,
+     "height": 0.12
+    }
+   ]
+  },
+  {
+   "planner": "nbv",
+   "seed": 3,
+   "sim_s": 91.4,
+   "wall_s": 108,
+   "stops": 5,
+   "path_m": 6.8,
+   "frames": 304,
+   "observed": 0.568,
+   "recall": 0.948,
+   "precision": 0.997,
+   "n_true_visible": 13889,
+   "n_map": 5927,
+   "furniture": 7,
+   "walls": 4,
+   "collisions": 0,
+   "stuck": 0,
+   "log": [
+    {
+     "t": 27.6,
+     "stops": 1,
+     "gain": 250,
+     "observed": 0.426,
+     "path_m": 2.5
+    },
+    {
+     "t": 50.7,
+     "stops": 2,
+     "gain": 64,
+     "observed": 0.502,
+     "path_m": 4.01
+    },
+    {
+     "t": 63.1,
+     "stops": 3,
+     "gain": 35,
+     "observed": 0.526,
+     "path_m": 4.63
+    },
+    {
+     "t": 74.4,
+     "stops": 4,
+     "gain": 31,
+     "observed": 0.546,
+     "path_m": 5.23
+    },
+    {
+     "t": 91.4,
+     "stops": 5,
+     "gain": 17,
+     "observed": 0.568,
+     "path_m": 6.76
+    }
+   ],
+   "ms_per_frame": 169,
+   "furniture_boxes": [
+    {
+     "centre": [
+      0.96,
+      0.45
+     ],
+     "length": 1.54,
+     "width": 0.6,
+     "height": 0.4
+    },
+    {
+     "centre": [
+      2.6,
+      0.26
+     ],
+     "length": 0.96,
+     "width": 0.28,
+     "height": 0.64
+    },
+    {
+     "centre": [
+      1.0,
+      1.46
+     ],
+     "length": 0.88,
+     "width": 0.52,
+     "height": 0.32
+    },
+    {
+     "centre": [
+      3.0,
+      1.88
+     ],
+     "length": 0.48,
+     "width": 0.48,
+     "height": 0.44
+    },
+    {
+     "centre": [
+      1.9,
+      2.3
+     ],
+     "length": 0.44,
+     "width": 0.36,
+     "height": 0.28
+    },
+    {
+     "centre": [
+      3.47,
+      0.47
+     ],
+     "length": 0.41,
+     "width": 0.27,
+     "height": 0.32
+    },
+    {
+     "centre": [
+      3.46,
+      2.5
+     ],
+     "length": 0.36,
+     "width": 0.28,
+     "height": 0.12
+    }
+   ]
+  }
+ ]
+}

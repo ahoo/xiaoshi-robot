@@ -1,0 +1,1850 @@
+{
+ "runs": [
+  {
+   "seed": 3,
+   "sim_s": 480,
+   "wall_s": 651,
+   "checks": [
+    {
+     "name": "greeting answered",
+     "ok": true,
+     "detail": "你好！我是小拾"
+    },
+    {
+     "name": "dad enrolled with consent",
+     "ok": true,
+     "detail": [
+      {
+       "name": "爸爸",
+       "role": "adult",
+       "looks": 12,
+       "consent_by": "owner",
+       "stored": "feature vector only"
+      }
+     ]
+    },
+    {
+     "name": "scan started by voice",
+     "ok": true,
+     "detail": "SCAN"
+    },
+    {
+     "name": "scan finished",
+     "ok": true,
+     "detail": 101.0
+    },
+    {
+     "name": "scan found the furniture and the walls",
+     "ok": true,
+     "detail": [
+      7,
+      4
+     ]
+    },
+    {
+     "name": "no false halts while nobody was there",
+     "ok": true,
+     "detail": {
+      "halt_s": 3.880000000000003,
+      "slow_s": 0.0,
+      "halts": 2,
+      "arm_pauses": 0,
+      "max_scale_cut": 0.0
+     }
+    },
+    {
+     "name": "sees the child, as a child",
+     "ok": true,
+     "detail": [
+      [
+       "child",
+       0.87,
+       null,
+       1
+      ]
+     ]
+    },
+    {
+     "name": "a child cannot give the consent",
+     "ok": true,
+     "detail": "需要大人说同意才可以哦"
+    },
+    {
+     "name": "child enrolled by a grown-up",
+     "ok": true,
+     "detail": [
+      {
+       "name": "爸爸",
+       "role": "adult",
+       "looks": 12,
+       "consent_by": "owner",
+       "stored": "feature vector only"
+      },
+      {
+       "name": "小明",
+       "role": "child",
+       "looks": 8,
+       "consent_by": "owner",
+       "stored": "feature vector only"
+      }
+     ]
+    },
+    {
+     "name": "the child is recognised by name",
+     "ok": true,
+     "detail": [
+      [
+       "爸爸",
+       0.97
+      ],
+      [
+       "小明",
+       0.97
+      ]
+     ]
+    },
+    {
+     "name": "child gets an answer about a toy",
+     "ok": true,
+     "detail": "小球：桌子旁边（在地上，2 分钟前看到）"
+    },
+    {
+     "name": "a child cannot send the robot to charge",
+     "ok": true,
+     "detail": [
+      "这个要大人来说哦",
+      "IDLE"
+     ]
+    },
+    {
+     "name": "stop word stops the robot",
+     "ok": true,
+     "detail": [
+      "stop",
+      "IDLE",
+      0.38
+     ]
+    },
+    {
+     "name": "continue resumes the job",
+     "ok": true,
+     "detail": [
+      "TASK",
+      [
+       [
+        185.1,
+        "好的，接着收玩具"
+       ],
+       [
+        186.0,
+        "请让一让，我想拿您旁边的玩具"
+       ]
+      ]
+     ]
+    },
+    {
+     "name": "forgetting removes the child",
+     "ok": true,
+     "detail": [
+      {
+       "name": "爸爸",
+       "role": "adult",
+       "looks": 12,
+       "consent_by": "owner",
+       "stored": "feature vector only"
+      }
+     ]
+    },
+    {
+     "name": "after forgetting the child is only \"a child\"",
+     "ok": true,
+     "detail": "我看到：爸爸，约 1.7 米高，在正前方 1.4 米"
+    }
+   ],
+   "passed": 16,
+   "n_checks": 16,
+   "timeline": [
+    [
+     3.0,
+     "greet"
+    ],
+    [
+     4.0,
+     "check greet"
+    ],
+    [
+     7.1,
+     "dad: remember me"
+    ],
+    [
+     10.1,
+     "dad: yes (name)"
+    ],
+    [
+     14.1,
+     "dad: agree (consent)"
+    ],
+    [
+     14.1,
+     "wait enrolled"
+    ],
+    [
+     16.1,
+     "dad: scan"
+    ],
+    [
+     18.1,
+     "dad leaves"
+    ],
+    [
+     101.0,
+     "scan done"
+    ],
+    [
+     104.0,
+     "dad and child come in"
+    ],
+    [
+     118.0,
+     "who is here"
+    ],
+    [
+     118.5,
+     "check who"
+    ],
+    [
+     121.6,
+     "dad: remember the child"
+    ],
+    [
+     124.6,
+     "dad: yes (name 2)"
+    ],
+    [
+     128.6,
+     "child tries to agree"
+    ],
+    [
+     128.8,
+     "check child consent refused"
+    ],
+    [
+     130.8,
+     "dad: agree 2"
+    ],
+    [
+     133.2,
+     "wait enrolled child"
+    ],
+    [
+     139.2,
+     "child recognised"
+    ],
+    [
+     141.2,
+     "child: where is X"
+    ],
+    [
+     141.5,
+     "check where"
+    ],
+    [
+     145.5,
+     "child: go charge"
+    ],
+    [
+     145.7,
+     "check denied"
+    ],
+    [
+     148.7,
+     "dad: tidy"
+    ],
+    [
+     151.7,
+     "dad steps aside"
+    ],
+    [
+     163.7,
+     "child runs up"
+    ],
+    [
+     183.7,
+     "dad: stop"
+    ],
+    [
+     184.1,
+     "measure stop"
+    ],
+    [
+     185.1,
+     "dad: continue"
+    ],
+    [
+     191.1,
+     "check resumed"
+    ],
+    [
+     451.1,
+     "task done"
+    ],
+    [
+     452.1,
+     "dad: stop (end of the job)"
+    ],
+    [
+     454.1,
+     "dad comes back"
+    ],
+    [
+     464.1,
+     "dad: forget the child"
+    ],
+    [
+     470.6,
+     "dad: yes (forget)"
+    ],
+    [
+     471.1,
+     "check forgotten"
+    ],
+    [
+     479.1,
+     "who again"
+    ],
+    [
+     480.1,
+     "end"
+    ]
+   ],
+   "finished_script": true,
+   "delivered": 4,
+   "total": 5,
+   "collisions": 0,
+   "stuck": 1,
+   "contacts": [
+    0,
+    0
+   ],
+   "min_gap_cm": [
+    82.5,
+    22.2
+   ],
+   "guard": {
+    "halt_s": 3.880000000000003,
+    "slow_s": 0.0,
+    "halts": 2,
+    "arm_pauses": 0,
+    "max_scale_cut": 0.0
+   },
+   "guard_episodes": [
+    [
+     110.3,
+     112.0,
+     "unsure coming fast 1.3 m/s"
+    ],
+    [
+     165.7,
+     167.9,
+     "unsure coming fast 1.7 m/s"
+    ]
+   ],
+   "asked_to_make_way": 7,
+   "moved_aside": 1,
+   "stop_latency_s": 0.38,
+   "t_task_end": 451.1,
+   "halts_during_scan": 0,
+   "snapshots": [
+    {
+     "t": 0.0,
+     "mode": "IDLE",
+     "robot": [
+      0.45,
+      2.55,
+      -1.57
+     ],
+     "tracks": [
+      [
+       1,
+       0.45,
+       1.55,
+       1,
+       "adult",
+       null,
+       true,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       0.45,
+       1.5
+      ]
+     ]
+    },
+    {
+     "t": 10.0,
+     "mode": "IDLE",
+     "robot": [
+      0.45,
+      2.55,
+      -1.57
+     ],
+     "tracks": [
+      [
+       1,
+       0.45,
+       1.55,
+       51,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       0.45,
+       1.5
+      ]
+     ]
+    },
+    {
+     "t": 20.0,
+     "mode": "SCAN",
+     "robot": [
+      0.45,
+      2.55,
+      1.41
+     ],
+     "tracks": [
+      [
+       1,
+       2.96,
+       0.83,
+       91,
+       "adult",
+       0,
+       true,
+       "cam"
+      ]
+     ],
+     "people": []
+    },
+    {
+     "t": 30.1,
+     "mode": "SCAN",
+     "robot": [
+      1.27,
+      2.08,
+      -0.55
+     ],
+     "tracks": [],
+     "people": []
+    },
+    {
+     "t": 40.1,
+     "mode": "SCAN",
+     "robot": [
+      1.59,
+      0.99,
+      -1.95
+     ],
+     "tracks": [
+      [
+       3,
+       1.67,
+       0.71,
+       2,
+       "unsure",
+       null,
+       true,
+       "lidar"
+      ]
+     ],
+     "people": []
+    },
+    {
+     "t": 50.1,
+     "mode": "SCAN",
+     "robot": [
+      1.67,
+      1.0,
+      -1.08
+     ],
+     "tracks": [],
+     "people": []
+    },
+    {
+     "t": 60.1,
+     "mode": "SCAN",
+     "robot": [
+      1.88,
+      1.66,
+      1.6
+     ],
+     "tracks": [
+      [
+       5,
+       2.04,
+       2.16,
+       1,
+       "unsure",
+       null,
+       true,
+       "lidar"
+      ]
+     ],
+     "people": []
+    },
+    {
+     "t": 70.1,
+     "mode": "SCAN",
+     "robot": [
+      1.99,
+      1.67,
+      -0.05
+     ],
+     "tracks": [],
+     "people": []
+    },
+    {
+     "t": 80.1,
+     "mode": "SCAN",
+     "robot": [
+      2.64,
+      1.29,
+      -1.91
+     ],
+     "tracks": [],
+     "people": []
+    },
+    {
+     "t": 90.1,
+     "mode": "SCAN",
+     "robot": [
+      2.56,
+      2.3,
+      1.31
+     ],
+     "tracks": [],
+     "people": []
+    },
+    {
+     "t": 100.1,
+     "mode": "SCAN",
+     "robot": [
+      2.64,
+      2.43,
+      1.13
+     ],
+     "tracks": [
+      [
+       9,
+       1.69,
+       0.22,
+       1,
+       "unsure",
+       null,
+       true,
+       "lidar"
+      ],
+      [
+       10,
+       1.07,
+       3.01,
+       1,
+       "unsure",
+       null,
+       true,
+       "lidar"
+      ]
+     ],
+     "people": []
+    },
+    {
+     "t": 110.2,
+     "mode": "IDLE",
+     "robot": [
+      2.64,
+      2.43,
+      1.13
+     ],
+     "tracks": [
+      [
+       15,
+       1.9,
+       2.0,
+       5,
+       "unsure",
+       null,
+       false,
+       "lidar"
+      ],
+      [
+       16,
+       1.01,
+       2.98,
+       1,
+       "unsure",
+       null,
+       true,
+       "lidar"
+      ],
+      [
+       17,
+       2.35,
+       2.04,
+       2,
+       "unsure",
+       null,
+       false,
+       "lidar"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       2.61,
+       0.94
+      ],
+      [
+       "child_8",
+       2.15,
+       2.04
+      ]
+     ]
+    },
+    {
+     "t": 120.2,
+     "mode": "NAV",
+     "robot": [
+      2.64,
+      2.44,
+      -0.86
+     ],
+     "tracks": [
+      [
+       18,
+       3.52,
+       2.5,
+       45,
+       "child",
+       1,
+       false,
+       "cam"
+      ],
+      [
+       20,
+       2.66,
+       1.03,
+       2,
+       "adult",
+       0,
+       false,
+       "cam"
+      ],
+      [
+       21,
+       3.55,
+       2.59,
+       1,
+       "unsure",
+       null,
+       true,
+       "lidar"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       2.61,
+       0.94
+      ],
+      [
+       "child_8",
+       3.57,
+       2.54
+      ]
+     ]
+    },
+    {
+     "t": 130.2,
+     "mode": "IDLE",
+     "robot": [
+      2.64,
+      2.44,
+      -1.57
+     ],
+     "tracks": [
+      [
+       20,
+       2.61,
+       0.99,
+       52,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       2.61,
+       0.94
+      ],
+      [
+       "child_8",
+       3.57,
+       2.54
+      ]
+     ]
+    },
+    {
+     "t": 140.2,
+     "mode": "IDLE",
+     "robot": [
+      2.64,
+      2.43,
+      -0.61
+     ],
+     "tracks": [
+      [
+       20,
+       2.71,
+       1.0,
+       102,
+       "adult",
+       0,
+       false,
+       "cam"
+      ],
+      [
+       22,
+       3.53,
+       2.53,
+       43,
+       "child",
+       1,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       2.61,
+       0.94
+      ],
+      [
+       "child_8",
+       3.57,
+       2.54
+      ]
+     ]
+    },
+    {
+     "t": 150.2,
+     "mode": "TASK",
+     "robot": [
+      2.58,
+      2.47,
+      -1.91
+     ],
+     "tracks": [
+      [
+       20,
+       2.61,
+       0.99,
+       152,
+       "adult",
+       0,
+       false,
+       "cam"
+      ],
+      [
+       22,
+       3.72,
+       2.02,
+       89,
+       "child",
+       1,
+       true,
+       "cam"
+      ],
+      [
+       27,
+       2.52,
+       0.96,
+       3,
+       "unsure",
+       null,
+       false,
+       "lidar"
+      ],
+      [
+       28,
+       3.57,
+       2.47,
+       1,
+       "unsure",
+       null,
+       true,
+       "lidar"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       2.61,
+       0.94
+      ],
+      [
+       "child_8",
+       3.57,
+       2.54
+      ]
+     ]
+    },
+    {
+     "t": 160.2,
+     "mode": "TASK",
+     "robot": [
+      1.5,
+      2.62,
+      -2.77
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.58,
+       1.29
+      ],
+      [
+       "child_8",
+       3.57,
+       2.54
+      ]
+     ]
+    },
+    {
+     "t": 170.2,
+     "mode": "TASK",
+     "robot": [
+      0.56,
+      2.0,
+      2.89
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.58,
+       1.29
+      ],
+      [
+       "child_8",
+       1.05,
+       2.26
+      ]
+     ]
+    },
+    {
+     "t": 180.2,
+     "mode": "TASK",
+     "robot": [
+      0.55,
+      1.99,
+      2.88
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.58,
+       1.29
+      ]
+     ]
+    },
+    {
+     "t": 190.2,
+     "mode": "TASK",
+     "robot": [
+      0.74,
+      1.92,
+      0.05
+     ],
+     "tracks": [
+      [
+       34,
+       3.51,
+       1.31,
+       35,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.58,
+       1.29
+      ]
+     ]
+    },
+    {
+     "t": 200.2,
+     "mode": "TASK",
+     "robot": [
+      0.69,
+      1.93,
+      0.87
+     ],
+     "tracks": [
+      [
+       34,
+       3.58,
+       1.52,
+       85,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.58,
+       1.29
+      ]
+     ]
+    },
+    {
+     "t": 210.2,
+     "mode": "TASK",
+     "robot": [
+      1.57,
+      1.87,
+      -0.84
+     ],
+     "tracks": [
+      [
+       35,
+       3.51,
+       1.32,
+       30,
+       "adult",
+       0,
+       false,
+       "cam"
+      ],
+      [
+       36,
+       3.56,
+       1.29,
+       1,
+       "unsure",
+       null,
+       true,
+       "lidar"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.58,
+       1.29
+      ]
+     ]
+    },
+    {
+     "t": 220.2,
+     "mode": "TASK",
+     "robot": [
+      2.24,
+      1.02,
+      -0.17
+     ],
+     "tracks": [
+      [
+       35,
+       3.5,
+       1.27,
+       80,
+       "adult",
+       0,
+       false,
+       "cam"
+      ],
+      [
+       37,
+       3.65,
+       1.23,
+       2,
+       "unsure",
+       null,
+       true,
+       "lidar"
+      ],
+      [
+       38,
+       0.88,
+       0.72,
+       1,
+       "unsure",
+       null,
+       true,
+       "lidar"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.58,
+       1.29
+      ]
+     ]
+    },
+    {
+     "t": 230.2,
+     "mode": "TASK",
+     "robot": [
+      2.27,
+      1.15,
+      1.09
+     ],
+     "tracks": [
+      [
+       35,
+       3.48,
+       1.3,
+       130,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.58,
+       1.29
+      ]
+     ]
+    },
+    {
+     "t": 240.2,
+     "mode": "TASK",
+     "robot": [
+      2.96,
+      2.52,
+      0.02
+     ],
+     "tracks": [
+      [
+       40,
+       3.74,
+       1.4,
+       7,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.58,
+       1.29
+      ]
+     ]
+    },
+    {
+     "t": 250.2,
+     "mode": "TASK",
+     "robot": [
+      3.05,
+      2.54,
+      0.01
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.58,
+       1.29
+      ]
+     ]
+    },
+    {
+     "t": 260.2,
+     "mode": "TASK",
+     "robot": [
+      2.57,
+      1.68,
+      -1.42
+     ],
+     "tracks": [
+      [
+       43,
+       3.67,
+       0.46,
+       17,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 270.2,
+     "mode": "TASK",
+     "robot": [
+      2.72,
+      1.01,
+      -1.29
+     ],
+     "tracks": [
+      [
+       43,
+       3.65,
+       0.44,
+       67,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 280.2,
+     "mode": "TASK",
+     "robot": [
+      2.56,
+      1.43,
+      1.93
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 290.2,
+     "mode": "TASK",
+     "robot": [
+      3.01,
+      2.54,
+      0.01
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 300.2,
+     "mode": "TASK",
+     "robot": [
+      3.0,
+      2.52,
+      -1.44
+     ],
+     "tracks": [
+      [
+       45,
+       3.7,
+       0.45,
+       6,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 310.2,
+     "mode": "TASK",
+     "robot": [
+      2.63,
+      1.44,
+      -0.33
+     ],
+     "tracks": [
+      [
+       47,
+       3.65,
+       0.44,
+       24,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 320.2,
+     "mode": "TASK",
+     "robot": [
+      2.9,
+      1.27,
+      0.28
+     ],
+     "tracks": [
+      [
+       47,
+       3.83,
+       0.51,
+       74,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 330.2,
+     "mode": "TASK",
+     "robot": [
+      3.55,
+      1.91,
+      1.77
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 340.2,
+     "mode": "TASK",
+     "robot": [
+      3.54,
+      2.19,
+      1.8
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 350.2,
+     "mode": "TASK",
+     "robot": [
+      3.17,
+      1.38,
+      -2.9
+     ],
+     "tracks": [
+      [
+       48,
+       2.77,
+       -0.25,
+       27,
+       "adult",
+       0,
+       true,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 360.2,
+     "mode": "TASK",
+     "robot": [
+      1.55,
+      1.9,
+      2.72
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 370.2,
+     "mode": "TASK",
+     "robot": [
+      1.13,
+      1.95,
+      2.88
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 380.2,
+     "mode": "TASK",
+     "robot": [
+      1.46,
+      1.95,
+      -0.12
+     ],
+     "tracks": [
+      [
+       52,
+       3.67,
+       0.43,
+       7,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 390.2,
+     "mode": "TASK",
+     "robot": [
+      2.67,
+      2.4,
+      0.64
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 400.2,
+     "mode": "TASK",
+     "robot": [
+      3.05,
+      2.54,
+      0.01
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 410.2,
+     "mode": "TASK",
+     "robot": [
+      2.58,
+      2.32,
+      -2.6
+     ],
+     "tracks": [
+      [
+       54,
+       2.4,
+       -0.09,
+       22,
+       "adult",
+       0,
+       true,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 420.2,
+     "mode": "TASK",
+     "robot": [
+      1.33,
+      1.98,
+      3.07
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 430.2,
+     "mode": "TASK",
+     "robot": [
+      0.3,
+      1.67,
+      -1.93
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 440.2,
+     "mode": "TASK",
+     "robot": [
+      0.3,
+      1.67,
+      -1.93
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 450.2,
+     "mode": "TASK",
+     "robot": [
+      0.3,
+      1.67,
+      -1.93
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       3.74,
+       0.39
+      ]
+     ]
+    },
+    {
+     "t": 460.2,
+     "mode": "IDLE",
+     "robot": [
+      0.3,
+      1.67,
+      -1.93
+     ],
+     "tracks": [],
+     "people": [
+      [
+       "adult_m",
+       1.65,
+       1.17
+      ]
+     ]
+    },
+    {
+     "t": 470.2,
+     "mode": "IDLE",
+     "robot": [
+      0.29,
+      1.67,
+      -0.38
+     ],
+     "tracks": [
+      [
+       55,
+       1.58,
+       1.21,
+       27,
+       "adult",
+       0,
+       false,
+       "cam"
+      ]
+     ],
+     "people": [
+      [
+       "adult_m",
+       1.65,
+       1.17
+      ]
+     ]
+    }
+   ],
+   "collision_log": [],
+   "scan_log": [
+    {
+     "t": 31.1,
+     "stops": 1,
+     "observed": 0.477
+    },
+    {
+     "t": 51.9,
+     "stops": 2,
+     "observed": 0.533
+    },
+    {
+     "t": 65.9,
+     "stops": 3,
+     "observed": 0.549
+    },
+    {
+     "t": 83.6,
+     "stops": 4,
+     "observed": 0.567
+    }
+   ],
+   "voice_stats": {
+    "heard": 21,
+    "ignored": 0,
+    "reask": 0,
+    "confirm": 0,
+    "denied": 2,
+    "acted": 7,
+    "stop": 2
+   },
+   "tts": [
+    [
+     3.0,
+     "你好！我是小拾"
+    ],
+    [
+     7.1,
+     "是叫“爸爸”对吗？"
+    ],
+    [
+     10.1,
+     "我会记住“爸爸”的样子特征，不保存照片，只存在我自己里面，随时可以说“忘掉爸爸”删除。需要大人同意，请大人说“同意”。"
+    ],
+    [
+     14.1,
+     "好，请让他看着我，大概三秒钟"
+    ],
+    [
+     14.1,
+     "记住了，爸爸。"
+    ],
+    [
+     16.1,
+     "好的，我去把家里扫描一遍，大概要两分钟"
+    ],
+    [
+     110.3,
+     "有人在附近（unsure coming fast 1.3 m/s），先停一下"
+    ],
+    [
+     118.0,
+     "我转过来看看"
+    ],
+    [
+     121.5,
+     "我看到：一个小孩，约 1.3 米高，在左前方 1.4 米；爸爸，约 1.7 米高，在正前方 1.4 米"
+    ],
+    [
+     121.6,
+     "是叫“小明”对吗？"
+    ],
+    [
+     124.6,
+     "我会记住“小明”的样子特征，不保存照片，只存在我自己里面，随时可以说“忘掉小明”删除。需要大人同意，请大人说“同意”。"
+    ],
+    [
+     128.6,
+     "需要大人说同意才可以哦"
+    ],
+    [
+     130.8,
+     "好，请让他看着我，大概三秒钟"
+    ],
+    [
+     133.2,
+     "记住了，小明。"
+    ],
+    [
+     141.2,
+     "小球：桌子旁边（在地上，2 分钟前看到）"
+    ],
+    [
+     145.5,
+     "这个要大人来说哦"
+    ],
+    [
+     148.7,
+     "好的，我去收地上的玩具"
+    ],
+    [
+     148.7,
+     "请让一让，我想拿您旁边的玩具"
+    ],
+    [
+     165.7,
+     "有人在附近（unsure coming fast 1.7 m/s），先停一下"
+    ],
+    [
+     183.7,
+     "好的，我停下来了"
+    ],
+    [
+     185.1,
+     "好的，接着收玩具"
+    ],
+    [
+     186.0,
+     "请让一让，我想拿您旁边的玩具"
+    ],
+    [
+     250.2,
+     "请让一让，我想拿您旁边的玩具"
+    ],
+    [
+     341.5,
+     "请让一让，我想拿您旁边的玩具"
+    ],
+    [
+     402.2,
+     "请让一让，我想拿您旁边的玩具"
+    ],
+    [
+     422.2,
+     "请让一让，我想拿您旁边的玩具"
+    ],
+    [
+     443.2,
+     "请让一让，我想拿您旁边的玩具"
+    ],
+    [
+     452.1,
+     "好的，我停下来了"
+    ],
+    [
+     464.1,
+     "我转过来看看"
+    ],
+    [
+     467.6,
+     "要我忘掉小明的特征吗？删掉就找不回来了"
+    ],
+    [
+     470.6,
+     "好了，已经忘掉小明了"
+    ],
+    [
+     479.1,
+     "我看到：爸爸，约 1.7 米高，在正前方 1.4 米"
+    ]
+   ],
+   "actions": [
+    [
+     "greet",
+     {}
+    ],
+    [
+     "enrol",
+     "爸爸",
+     "adult"
+    ],
+    [
+     "scan_home",
+     {}
+    ],
+    [
+     "who_here",
+     {}
+    ],
+    [
+     "enrol",
+     "小明",
+     "child"
+    ],
+    [
+     "where_is",
+     {
+      "item": "ball"
+     }
+    ],
+    [
+     "tidy",
+     {}
+    ],
+    [
+     "stop"
+    ],
+    [
+     "resume",
+     {}
+    ],
+    [
+     "stop"
+    ],
+    [
+     "forget",
+     "小明"
+    ],
+    [
+     "who_here",
+     {}
+    ]
+   ],
+   "registry_file_keys": [
+    "consent_by",
+    "emb",
+    "n",
+    "role",
+    "t"
+   ],
+   "inventory": {
+    "summary": {
+     "total": 5,
+     "by_status": {
+      "in_basket": 4,
+      "on_floor": 1
+     },
+     "named": 0
+    },
+    "items": [
+     [
+      1,
+      "ball",
+      "收纳筐里",
+      "in_basket"
+     ],
+     [
+      2,
+      "sock",
+      "收纳筐里",
+      "in_basket"
+     ],
+     [
+      3,
+      "banana",
+      "收纳筐里",
+      "in_basket"
+     ],
+     [
+      4,
+      "cube",
+      "收纳筐里",
+      "in_basket"
+     ],
+     [
+      5,
+      "plush",
+      "盆栽旁边",
+      "on_floor"
+     ]
+    ]
+   },
+   "scan": {
+    "furniture": 7,
+    "walls": 4
+   },
+   "cls_votes": [
+    {
+     "adult": 819
+    },
+    {
+     "child": 129
+    }
+   ],
+   "id_votes": [
+    {
+     "unknown": 92,
+     "爸爸": 727
+    },
+    {
+     "unknown": 49,
+     "小明": 80
+    }
+   ],
+   "false_track_share": 0.0
+  }
+ ]
+}

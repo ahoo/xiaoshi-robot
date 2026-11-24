@@ -34,6 +34,19 @@ class ArmIK:
         R = self.d.site_xmat[self.site].reshape(3, 3)
         return self.d.site_xpos[self.site].copy(), -R[:, 2].copy(), R[:, 0].copy()   # position, approach axis, jaw axis
 
+    def hits_body(self, q5):
+        """Would the arm, at joint angles q5, run into the chassis? (The simulator's arm geoms do not collide with the chassis, a real arm does.)
+        Samples points along the links and tests them against the chassis cylinder (radius 0.105, 0.02-0.09 m above the axle plane)."""
+        q = np.asarray(q5, float).copy(); self.d.qpos[self.qadr] = q[:5]
+        mujoco.mj_kinematics(self.m, self.d)
+        names = ('shoulder', 'upper_arm', 'lower_arm', 'wrist', 'gripper')
+        pts = [self.d.xpos[mujoco.mj_name2id(self.m, mujoco.mjtObj.mjOBJ_BODY, n)] - [0, 0, 0.0508] for n in names] + [self.d.site_xpos[self.site] - [0, 0, 0.0508]]
+        for a_, b_ in zip(pts[1:-1], pts[2:]):
+            for t in (0, 0.25, 0.5, 0.75, 1.0):
+                p = a_ + (b_ - a_) * t
+                if math.hypot(p[0], p[1]) < 0.115 and 0.02 < p[2] < 0.09: return True
+        return False
+
     def solve(self, pos, approach=(0, 0, -1), yaw=None, seed=None, iters=200, w_rot=0.12):
         pos = np.asarray(pos, float); a_t = np.asarray(approach, float); a_t /= np.linalg.norm(a_t)
         seeds = [seed] if seed is not None else []

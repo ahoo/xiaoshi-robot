@@ -1,0 +1,731 @@
+{
+ "checks": [
+  {
+   "name": "redact: names, digits, e-mail, links",
+   "ok": true,
+   "detail": "某人的电话是 ，邮箱 ，看 然后收拾玩具"
+  },
+  {
+   "name": "redact: English name, digit run",
+   "ok": true,
+   "detail": "Tell someone to call please"
+  },
+  {
+   "name": "redact: a Latin name only as a whole word",
+   "ok": true,
+   "detail": "someone tidied up and Edward helped"
+  },
+  {
+   "name": "redact: cut to 160 characters",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "reply cleaning: links, tags, control characters",
+   "ok": true,
+   "detail": "好的 script x /script 呢"
+  },
+  {
+   "name": "gateway: a command comes back as intent + rewrite",
+   "ok": true,
+   "detail": "{'intent': 'tidy', 'rephrase': '收拾玩具'}"
+  },
+  {
+   "name": "gateway: role \"child\" is not sent",
+   "ok": true,
+   "detail": "(None, [])"
+  },
+  {
+   "name": "gateway: role \"unknown\" is not sent",
+   "ok": true,
+   "detail": "(None, [])"
+  },
+  {
+   "name": "gateway: role \"guest\" is not sent",
+   "ok": true,
+   "detail": "(None, [])"
+  },
+  {
+   "name": "gateway: off means nothing is sent",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway: the owner can narrow it to the owner only",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway: a known name is hidden in what is sent",
+   "ok": true,
+   "detail": "['某人说我觉得家里有点乱']"
+  },
+  {
+   "name": "gateway: rate limit (3 per minute)",
+   "ok": true,
+   "detail": "{'sent': 3, 'answered': 3, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 2, 'skipped_breaker': 0, 'errors': 0, 'empty': 0, 'command': 3, 'chat': 0, 'unclear': 0, 'rejected': 0}"
+  },
+  {
+   "name": "gateway: ... and it recovers a minute later",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway: a failing provider gives None and opens the breaker after 3",
+   "ok": true,
+   "detail": "(3, {'sent': 3, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 3, 'errors': 3, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 0})"
+  },
+  {
+   "name": "gateway: the breaker closes after 60 s and tries again",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway: the log holds no words by default",
+   "ok": true,
+   "detail": "{'t': 1795509919.4, 'role': 'owner', 'chars': 8, 'result': 'command', 'ms': 0, 'sha': '4155ea81'}"
+  },
+  {
+   "name": "gateway: with keep_text the last five are in memory only",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway: clear() empties the log",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway: refuses an answer that is tidy-with-forget",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is nonsense",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is empty-text",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is long",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is stop",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is privacy",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is kind",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is list",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: refuses an answer that is empty-chat",
+   "ok": true,
+   "detail": "None"
+  },
+  {
+   "name": "gateway: a chat reply is cleaned",
+   "ok": true,
+   "detail": "{'say': '好的 b 你好 /b'}"
+  },
+  {
+   "name": "gateway: \"unclear\" is no proposal",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "claude: a command comes back through the real SDK",
+   "ok": true,
+   "detail": "{'intent': 'tidy', 'rephrase': '收拾玩具'}"
+  },
+  {
+   "name": "claude: model, effort and schema",
+   "ok": true,
+   "detail": "('claude-opus-5-5', 'low')"
+  },
+  {
+   "name": "claude: refusal fallback is asked for",
+   "ok": true,
+   "detail": "('default', 'server-side-fallback-2026-07-01')"
+  },
+  {
+   "name": "claude: nothing but the redacted sentence goes as the user message",
+   "ok": true,
+   "detail": "([{'role': 'user', 'content': '某人说我觉得家里有点乱'}], ['fallbacks', 'max_tokens', 'messages', 'model', 'output_config', 'system'])"
+  },
+  {
+   "name": "claude: the system prompt names the allowed requests and none of the forbidden",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "claude: tokens are counted",
+   "ok": true,
+   "detail": "{'input': 21, 'output': 7, 'calls': 1}"
+  },
+  {
+   "name": "claude: with fallbacks off it is the plain endpoint",
+   "ok": true,
+   "detail": "(dict_keys(['max_tokens', 'messages', 'model', 'output_config', 'system']), None)"
+  },
+  {
+   "name": "claude: another model is a parameter",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "claude: a refusal -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 0, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 1})"
+  },
+  {
+   "name": "claude: a cut-off answer -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 0, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 1})"
+  },
+  {
+   "name": "claude: not JSON -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 0, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 1})"
+  },
+  {
+   "name": "claude: JSON that is not an object -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 0, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 1})"
+  },
+  {
+   "name": "claude: no text block -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 0, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 1})"
+  },
+  {
+   "name": "claude: an HTTP 500 -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 1, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 0})"
+  },
+  {
+   "name": "claude: an HTTP 429 -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 1, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 0})"
+  },
+  {
+   "name": "claude: an HTTP 401 (bad key) -> no proposal, no exception",
+   "ok": true,
+   "detail": "(None, {'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 1, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 0})"
+  },
+  {
+   "name": "claude: no network -> no proposal",
+   "ok": true,
+   "detail": "{'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 1, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 0}"
+  },
+  {
+   "name": "openai-compatible: a command comes back",
+   "ok": true,
+   "detail": "{'kind': 'command', 'intent': 'tidy', 'command_text': '收拾玩具', 'reply': ''}"
+  },
+  {
+   "name": "openai-compatible: URL, key, model, messages",
+   "ok": true,
+   "detail": "('https://api.example.com/v1/chat/completions', {'role': 'user', 'content': '我觉得家里有点乱'})"
+  },
+  {
+   "name": "openai-compatible: json_schema mode sends the schema; no temperature unless asked",
+   "ok": true,
+   "detail": "json_schema"
+  },
+  {
+   "name": "openai-compatible: the system prompt says JSON (some services insist on the word)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "openai-compatible: json_object mode",
+   "ok": true,
+   "detail": "{'type': 'json_object'}"
+  },
+  {
+   "name": "openai-compatible: no JSON mode, temperature, token-limit name and extra fields as asked",
+   "ok": true,
+   "detail": "['enable_thinking', 'max_completion_tokens', 'messages', 'model', 'temperature']"
+  },
+  {
+   "name": "azure: deployment URL with api-version, api-key header, no Bearer",
+   "ok": true,
+   "detail": "('https://res1.openai.azure.com/openai/deployments/dep1/chat/completions?api-version=2024-10-21', ['Accept', 'Content-Type', 'api-key'])"
+  },
+  {
+   "name": "a local server needs no key: no Authorization header",
+   "ok": true,
+   "detail": "['Accept', 'Content-Type']"
+  },
+  {
+   "name": "a base URL that already ends in /chat/completions is not extended",
+   "ok": true,
+   "detail": "https://h.example/v1/chat/completions"
+  },
+  {
+   "name": "the key is read from the environment variable at call time",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "a missing key is an error that names the variable",
+   "ok": true,
+   "detail": "no API key for openai-compatible: set TEST_KEY_ENV"
+  },
+  {
+   "name": "openai-compatible: reads the JSON plain JSON",
+   "ok": true,
+   "detail": "plain JSON"
+  },
+  {
+   "name": "openai-compatible: reads the JSON a ```json fence",
+   "ok": true,
+   "detail": "a ```json fence"
+  },
+  {
+   "name": "openai-compatible: reads the JSON after a reasoning block",
+   "ok": true,
+   "detail": "after a reasoning block"
+  },
+  {
+   "name": "openai-compatible: reads the JSON between chatter",
+   "ok": true,
+   "detail": "between chatter"
+  },
+  {
+   "name": "openai-compatible: reads the JSON content as parts",
+   "ok": true,
+   "detail": "content as parts"
+  },
+  {
+   "name": "openai-compatible: cut off by the length limit -> no proposal",
+   "ok": true,
+   "detail": "cut off by the length limit"
+  },
+  {
+   "name": "openai-compatible: filtered -> no proposal",
+   "ok": true,
+   "detail": "filtered"
+  },
+  {
+   "name": "openai-compatible: a refusal -> no proposal",
+   "ok": true,
+   "detail": "a refusal"
+  },
+  {
+   "name": "openai-compatible: empty -> no proposal",
+   "ok": true,
+   "detail": "empty"
+  },
+  {
+   "name": "openai-compatible: not JSON -> no proposal",
+   "ok": true,
+   "detail": "not JSON"
+  },
+  {
+   "name": "openai-compatible: a JSON list -> no proposal",
+   "ok": true,
+   "detail": "a JSON list"
+  },
+  {
+   "name": "openai-compatible: an unfinished reasoning block -> no proposal",
+   "ok": true,
+   "detail": "an unfinished reasoning block"
+  },
+  {
+   "name": "openai-compatible: no choices -> no proposal",
+   "ok": true,
+   "detail": "no choices"
+  },
+  {
+   "name": "openai-compatible: not even JSON as the body -> no proposal",
+   "ok": true,
+   "detail": "not even JSON as the body"
+  },
+  {
+   "name": "openai-compatible: HTTP 401 raises",
+   "ok": true,
+   "detail": "HTTP 401: {\"error\": {\"message\": \"nope\"}}"
+  },
+  {
+   "name": "openai-compatible: HTTP 403 raises",
+   "ok": true,
+   "detail": "HTTP 403: {\"error\": {\"message\": \"nope\"}}"
+  },
+  {
+   "name": "openai-compatible: HTTP 404 raises",
+   "ok": true,
+   "detail": "HTTP 404: {\"error\": {\"message\": \"nope\"}}"
+  },
+  {
+   "name": "openai-compatible: HTTP 429 raises",
+   "ok": true,
+   "detail": "HTTP 429: {\"error\": {\"message\": \"nope\"}}"
+  },
+  {
+   "name": "openai-compatible: HTTP 500 raises",
+   "ok": true,
+   "detail": "HTTP 500: {\"error\": {\"message\": \"nope\"}}"
+  },
+  {
+   "name": "openai-compatible: HTTP 503 raises",
+   "ok": true,
+   "detail": "HTTP 503: {\"error\": {\"message\": \"nope\"}}"
+  },
+  {
+   "name": "openai-compatible: TimeoutError propagates",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "openai-compatible: ConnectionError propagates",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "through the gateway an error status is no proposal and a counted error",
+   "ok": true,
+   "detail": "{'sent': 1, 'answered': 0, 'skipped_off': 0, 'skipped_role': 0, 'skipped_rate': 0, 'skipped_breaker': 0, 'errors': 1, 'empty': 0, 'command': 0, 'chat': 0, 'unclear': 0, 'rejected': 0}"
+  },
+  {
+   "name": "auto JSON mode: falls back from json_schema to json_object to none, and remembers",
+   "ok": true,
+   "detail": "['json_schema', 'json_object', None, None]"
+  },
+  {
+   "name": "the token-limit field is switched when the service refuses its name",
+   "ok": true,
+   "detail": "[['max_tokens', 'messages', 'model'], ['max_completion_tokens', 'messages', 'model']]"
+  },
+  {
+   "name": "a 400 about something else is not retried",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "chain: the first fails, the second answers",
+   "ok": true,
+   "detail": "{'kind': 'command', 'intent': 'tidy', 'command_text': '收拾玩具', 'reply': ''}"
+  },
+  {
+   "name": "chain: the first has nothing to say, the second does",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chain: all failing raises the last error",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "chain: none failing and none answering is no proposal",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "a list of providers given to the gateway is a chain",
+   "ok": true,
+   "detail": "chain"
+  },
+  {
+   "name": "all 19 presets build, point at their address, and say whether that is the home network",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "make_provider refuses: unknown",
+   "ok": true,
+   "detail": "unknown provider 'nope'; known: anthropic-compatible, azure, claude, deepseek, doubao, gemini, groq, hunyuan, llamacpp, lmstudio, mistral, moonshot, ollama, openai, openai-compatible, openrouter, qwen, qwen-intl, siliconflow, together, vllm, xai, zhipu"
+  },
+  {
+   "name": "make_provider refuses: no model",
+   "ok": true,
+   "detail": "deepseek needs a model name (see the service's documents)"
+  },
+  {
+   "name": "make_provider refuses: no base_url",
+   "ok": true,
+   "detail": "openai-compatible needs base_url="
+  },
+  {
+   "name": "make_provider refuses: no base_url",
+   "ok": true,
+   "detail": "anthropic-compatible needs base_url and model"
+  },
+  {
+   "name": "make_provider refuses: no resource",
+   "ok": true,
+   "detail": "azure needs resource=, model= (the deployment name) and api_version="
+  },
+  {
+   "name": "make_provider refuses a missing key and names the variable",
+   "ok": true,
+   "detail": "no API key for deepseek: set DEEPSEEK_API_KEY"
+  },
+  {
+   "name": "make_provider(check_key=False) builds without the key",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "a server on the home network counts as local",
+   "ok": true,
+   "detail": "{'name': 'openai-compatible', 'model': 'm', 'host': '192.168.1.20', 'local': True, 'json_mode': 'json_schema'}"
+  },
+  {
+   "name": "is_local_url",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "from_env: nothing asked -> None (the robot manages alone)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "from_env: provider:model, the timeout and the JSON mode",
+   "ok": true,
+   "detail": "{'name': 'deepseek', 'model': 'deepseek-chat', 'host': 'api.deepseek.com', 'local': False, 'json_mode': 'none'}"
+  },
+  {
+   "name": "from_env: a chain, and a colon inside a model name",
+   "ok": true,
+   "detail": "{'name': 'chain', 'providers': [{'name': 'ollama', 'model': 'qwen2.5:7b', 'host': 'localhost', 'local': True, 'json_mode': 'json_schema'}, {'name': 'deepseek', 'model': 'deepseek-chat', 'host': 'api.deepseek.com', 'local': False, 'json_mode': 'json_object'}]}"
+  },
+  {
+   "name": "from_env: a base URL and a key for a single provider",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "from_env: claude with its default model",
+   "ok": true,
+   "detail": "claude-opus-5-5"
+  },
+  {
+   "name": "from_env: a missing key is reported",
+   "ok": true,
+   "detail": "no API key for deepseek: set DEEPSEEK_API_KEY"
+  },
+  {
+   "name": "from_env(check_key=False) lets the robot start anyway",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "from_config: a chain from a dict, with the gateway settings",
+   "ok": true,
+   "detail": "{'name': 'chain', 'providers': [{'name': 'ollama', 'model': 'qwen2.5:7b', 'host': 'localhost', 'local': True, 'json_mode': 'json_schema'}, {'name': 'deepseek', 'model': 'm', 'host': 'api.deepseek.com', 'local': False, 'json_mode': 'json_object'}]}"
+  },
+  {
+   "name": "from_config: a JSON file, one provider is used as it is",
+   "ok": true,
+   "detail": "{'name': 'ollama', 'model': 'm', 'host': 'localhost', 'local': True, 'json_mode': 'json_schema'}"
+  },
+  {
+   "name": "from_config refuses a key in the file",
+   "ok": true,
+   "detail": "api_key does not belong in a settings file: put it in the environment variable of the service (api_key_env names it)"
+  },
+  {
+   "name": "from_config refuses no providers",
+   "ok": true,
+   "detail": "the settings need \"providers\": a list with at least one entry"
+  },
+  {
+   "name": "from_config refuses an unknown setting",
+   "ok": true,
+   "detail": "unknown settings: ['temperature']"
+  },
+  {
+   "name": "from_config refuses no provider name",
+   "ok": true,
+   "detail": "every provider entry needs \"provider\""
+  },
+  {
+   "name": "anthropic-compatible: no structured-output or fallback fields, the JSON is read from the text",
+   "ok": true,
+   "detail": "(['max_tokens', 'messages', 'model', 'system'], 'https://compat.example/anthropic/v1/messages')"
+  },
+  {
+   "name": "anthropic-compatible: describe() says where it goes",
+   "ok": true,
+   "detail": "{'name': 'anthropic-compatible', 'model': 'some-model', 'host': 'compat.example', 'local': False}"
+  },
+  {
+   "name": "a redirect is returned as it is, not followed: the other host is never asked (no key, no sentence sent on)",
+   "ok": true,
+   "detail": "([301, 302, 303, 307, 308], ['A', 'A', 'A', 'A', 'A'])"
+  },
+  {
+   "name": "a redirecting service is an error for the provider (so no proposal)",
+   "ok": true,
+   "detail": "302"
+  },
+  {
+   "name": "Claude: the SDK client the provider builds does not follow redirects",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "gateway + openai-compatible: only the redacted sentence leaves, as the user message",
+   "ok": true,
+   "detail": "['max_tokens', 'messages', 'model', 'response_format']"
+  },
+  {
+   "name": "the report says where the sentences go and never holds the key",
+   "ok": true,
+   "detail": "{'name': 'openai-compatible', 'model': 'm1', 'host': 'api.example.com', 'local': False, 'json_mode': 'json_schema'}"
+  },
+  {
+   "name": "voice + openai-compatible: rewrite, question, then the action",
+   "ok": true,
+   "detail": "('confirm', [('tidy', {})])"
+  },
+  {
+   "name": "extract_json: braces inside strings, nested objects, fences without a tag",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "voice: the model rewrites, the robot asks, and only \"yes\" makes it move",
+   "ok": true,
+   "detail": "('confirm', 'confirmed', [('tidy', {})])"
+  },
+  {
+   "name": "voice: what was sent is the sentence after the wake word, nothing else",
+   "ok": true,
+   "detail": "['我觉得家里有点乱']"
+  },
+  {
+   "name": "voice: \"no\" cancels it",
+   "ok": true,
+   "detail": "('cancelled', [])"
+  },
+  {
+   "name": "voice: a rewrite that parses as something else is refused (the model said tidy, the sentence says forget)",
+   "ok": true,
+   "detail": "('reask', 'forget', [])"
+  },
+  {
+   "name": "voice: ... also when it is another allowed request",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: a model cannot ask for \"forget\"",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: a model cannot ask for \"enrol\"",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: a model cannot ask for \"privacy\"",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: a model cannot ask for \"stop\"",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: a child's sentence is not sent",
+   "ok": true,
+   "detail": "([], 'reask')"
+  },
+  {
+   "name": "voice: nor is that of somebody the robot cannot name",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "voice: the stop word never reaches the model",
+   "ok": true,
+   "detail": "([], 2)"
+  },
+  {
+   "name": "voice: talk without the wake word never reaches it",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "voice: set_online(False) -> the robot manages alone",
+   "ok": true,
+   "detail": "([], 'reask')"
+  },
+  {
+   "name": "voice: the names the robot knows are hidden in what is sent (the gateway is given the list)",
+   "ok": true,
+   "detail": "['某人说我觉得家里有点乱，某人 也这么说']"
+  },
+  {
+   "name": "voice: muted means nothing is sent",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "voice: a chat reply is spoken (adult)",
+   "ok": true,
+   "detail": "{'t': 0.0, 'said': None, 'role': 'owner', 'speaker': None, 'heard': None, 'asr_conf': 0.95, 'woke': True, 'intent': None, 'conf': 0.0, 'slots': {}, 'action': 'llm reply', 'via': 'llm', 'reply': '从前有一只小机器人。'}"
+  },
+  {
+   "name": "voice: ... but not to a child (nothing is sent either)",
+   "ok": true,
+   "detail": "('reask', [])"
+  },
+  {
+   "name": "voice: a provider with no answer -> \"I did not catch that\"",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: a provider that is down -> the same, and the robot still works on its own",
+   "ok": true,
+   "detail": "reask"
+  },
+  {
+   "name": "voice: an injected sentence that is understood locally is handled locally (denied to a guest) and not sent",
+   "ok": true,
+   "detail": "([], 'denied')"
+  },
+  {
+   "name": "voice: an injected sentence that fools the model still only gets a question, and no motion",
+   "ok": true,
+   "detail": "('confirm', [])"
+  },
+  {
+   "name": "voice: a grown-up who is not the owner may be offered what a grown-up may do",
+   "ok": true,
+   "detail": "confirm"
+  },
+  {
+   "name": "voice: English works the same way",
+   "ok": true,
+   "detail": "('confirm', 'Do you want me to tidy up the toys?')"
+  }
+ ],
+ "passed": 145,
+ "total": 145
+}

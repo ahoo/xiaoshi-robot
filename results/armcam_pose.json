@@ -1,0 +1,41 @@
+{
+ "mast": {
+  "height_m": 0.501,
+  "elevation_deg": 28.0,
+  "time_to_raise_s": 0.0,
+  "believed_pose_angle_error_deg": {
+   "mean": 0.0,
+   "max": 0.0
+  },
+  "believed_pose_position_error_mm": {
+   "mean": 0.0,
+   "max": 0.0
+  }
+ },
+ "forearm": {
+  "height_m": 0.387,
+  "elevation_deg": 25.5,
+  "time_to_raise_s": 0.0,
+  "believed_pose_angle_error_deg": {
+   "mean": 0.76,
+   "max": 1.17
+  },
+  "believed_pose_position_error_mm": {
+   "mean": 1.7,
+   "max": 2.4
+  }
+ },
+ "periscope": {
+  "height_m": 0.593,
+  "elevation_deg": 24.0,
+  "time_to_raise_s": 2.0,
+  "believed_pose_angle_error_deg": {
+   "mean": 0.88,
+   "max": 1.51
+  },
+  "believed_pose_position_error_mm": {
+   "mean": 3.1,
+   "max": 6.0
+  }
+ }
+}

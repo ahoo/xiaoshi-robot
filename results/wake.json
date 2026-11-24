@@ -1,0 +1,105 @@
+{
+ "checks": [
+  {
+   "name": "keywords become the right tokens",
+   "ok": true,
+   "detail": "(['x iǎo sh í x iǎo sh í :2.0 #0.25 @xiaoshi', 'n ǐ h ǎo x iǎo sh í :2.0 #0.25 @nihao_xiaoshi', 'HH EY1 SH AW1 SH IY1 :2.0 #0.25 @hey_xiaoshi'], ['t íng x ià l ái :2.0 #0.3 @stop_zh1', 'b ié d òng :2.0 #0.3 @stop_zh2', 'zh àn zh ù :2.0 #0.3 @stop_zh3', 'S T AA1 P :2.0 #0.3 @stop_en1', 'F R IY1 Z :2.",
+   "skipped": false
+  },
+  {
+   "name": "a phrase that cannot be tokenised is refused",
+   "ok": true,
+   "detail": "cannot tokenise 'xiaoshi': give its sounds as tokens of the model",
+   "skipped": false
+  },
+  {
+   "name": "a phrase is spotted in a real recording",
+   "ok": true,
+   "detail": "[{'name': 'light_up', 'kind': 'wake', 't': 3.7}]",
+   "skipped": false
+  },
+  {
+   "name": "a second phrase in another recording",
+   "ok": true,
+   "detail": "[{'name': 'lovely_child', 'kind': 'wake', 't': 6.3}]",
+   "skipped": false
+  },
+  {
+   "name": "other speech and silence: no false alarm",
+   "ok": true,
+   "detail": "{}",
+   "skipped": false
+  },
+  {
+   "name": "refractory time",
+   "ok": true,
+   "detail": "(2, 1)",
+   "skipped": false
+  },
+  {
+   "name": "suppression holds off the wake words but not the stop words",
+   "ok": true,
+   "detail": "([], [{'name': 'light_up', 'kind': 'stop', 't': 3.7}])",
+   "skipped": false
+  },
+  {
+   "name": "evaluate() on a folder",
+   "ok": true,
+   "detail": "[{'threshold': 0.25, 'hit_rate': 1.0, 'false_alarms': 0, 'false_alarms_per_hour': 0.0, 'positives': 1, 'negative_hours': 0.004}]",
+   "skipped": false
+  },
+  {
+   "name": "espeak speech does not stand in for a person",
+   "ok": true,
+   "detail": "the spotter fired for 0 of 16 synthesised wake phrases: a synthesiser says nothing about the real rate",
+   "skipped": false
+  },
+  {
+   "name": "voice: the spotter heard the wake word, the text does not have it: taken as woken",
+   "ok": true,
+   "detail": "(True, 'tidy', 'tidy')",
+   "skipped": false
+  },
+  {
+   "name": "voice: the text has the name but the spotter did not hear it: not woken",
+   "ok": true,
+   "detail": "ignored: no wake word",
+   "skipped": false
+  },
+  {
+   "name": "voice: no spotter (the earlier way): the text decides",
+   "ok": true,
+   "detail": "ignored: no wake word",
+   "skipped": false
+  },
+  {
+   "name": "voice: a stop word heard in the audio stops, whatever the text says",
+   "ok": true,
+   "detail": "('stop', 1)",
+   "skipped": false
+  },
+  {
+   "name": "voice: \"stop\" in the text is not enough when a spotter is in use and did not hear it",
+   "ok": true,
+   "detail": "(None, 'ignored: no wake word')",
+   "skipped": false
+  },
+  {
+   "name": "voice: a follow-up inside the window needs no wake word, spotter or not",
+   "ok": true,
+   "detail": "identity",
+   "skipped": false
+  },
+  {
+   "name": "voice: TextASR gives the words of a real recogniser back unchanged",
+   "ok": true,
+   "detail": "('fetch_item', 'tidy')",
+   "skipped": false
+  }
+ ],
+ "passed": 16,
+ "skipped": 0,
+ "total": 16,
+ "false_alarm_material_s": 141.3,
+ "espeak_wake_hits": "0/16"
+}

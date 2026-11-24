@@ -1,0 +1,229 @@
+{
+ "replies": [
+  [
+   "status",
+   true
+  ],
+  [
+   "mode",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "drive",
+   true
+  ],
+  [
+   "arm_to",
+   true
+  ],
+  [
+   "arm_to",
+   false
+  ],
+  [
+   "bogus",
+   false
+  ],
+  [
+   "status",
+   true
+  ],
+  [
+   "goto",
+   true
+  ],
+  [
+   "status",
+   true
+  ]
+ ],
+ "status_after": {
+  "ok": true,
+  "t": 6.1,
+  "mode": "TELEOP",
+  "state": "遥控",
+  "pose": [
+   2.396,
+   1.502,
+   -0.006
+  ],
+  "tilt": 0.3,
+  "fault": null,
+  "warn": null,
+  "soc": 0.626,
+  "volts": 11.25,
+  "dock": false,
+  "nav": [],
+  "messages": []
+ },
+ "nav": [
+  {
+   "t": 20.7,
+   "goal": [
+    3.0,
+    1.0,
+    0.0
+   ],
+   "result": "arrived",
+   "secs": 6.7
+  }
+ ],
+ "client_keys_ok": true,
+ "ok": true
+}

@@ -1,0 +1,1479 @@
+{
+ "seed": 5,
+ "sim_s": 167,
+ "wall_s": 177,
+ "checks": [
+  {
+   "name": "the television is found from its sound alone",
+   "ok": true,
+   "detail": [
+    [
+     {
+      "xy": [
+       3.8578280959433613,
+       0.05
+      ],
+      "n": 4
+     }
+    ],
+    [
+     3.7,
+     0.3
+    ],
+    5
+   ]
+  },
+  {
+   "name": "Tom, in view, is recognised as a person with the owner role and answered in Chinese",
+   "ok": true,
+   "detail": [
+    "person",
+    "Tom",
+    "owner",
+    0.953,
+    "who_here",
+    "我看到：Tom，约 1.7 米高，在正前方 0.9 米；Mia，约 1.3 米高，在右前方 1.2 米"
+   ]
+  },
+  {
+   "name": "Emma, out of view, is answered in English and is never given the owner role",
+   "ok": true,
+   "detail": [
+    "unseen",
+    "Emma",
+    "unknown",
+    "Let me turn and have a look."
+   ]
+  },
+  {
+   "name": "the television saying the robot's name does not start a scan",
+   "ok": true,
+   "detail": [
+    "device",
+    "ignored: from a device",
+    "IDLE"
+   ]
+  },
+  {
+   "name": "a voice alone (Emma out of view) cannot make the robot forget somebody",
+   "ok": true,
+   "detail": [
+    "denied",
+    "The owner has to confirm that."
+   ]
+  },
+  {
+   "name": "a stranger out of view cannot send the robot to charge",
+   "ok": true,
+   "detail": [
+    "ambiguous",
+    "unknown",
+    "turning toward the speaker",
+    "Let me turn and have a look."
+   ]
+  },
+  {
+   "name": "a child in view is given the child role and is answered",
+   "ok": true,
+   "detail": [
+    "child",
+    "where_is",
+    "我没见过小球"
+   ]
+  },
+  {
+   "name": "a recording of the owner played by the television cannot make the robot forget the family",
+   "ok": true,
+   "detail": [
+    "ambiguous",
+    null,
+    "unknown",
+    "denied"
+   ]
+  },
+  {
+   "name": "Tom (owner, in view) is shown the profile of the child, in English, with only what is kept",
+   "ok": true,
+   "detail": [
+    "profile_show",
+    "Mia (child). Languages: Chinese 100% - not enough to tell yet. For a child I keep only the name, the language and that I can recognise them. Kept: a few counters, a voiceprint vector, a face vector. N"
+   ]
+  },
+  {
+   "name": "\"come here\" from the owner in view is understood and the robot heads for him",
+   "ok": true,
+   "detail": [
+    "come_here",
+    "confirm",
+    "Do you want me to come to you?",
+    "IDLE"
+   ]
+  },
+  {
+   "name": "a follow-up from somebody else is not taken as part of Tom's conversation",
+   "ok": false,
+   "detail": [
+    "what_new",
+    "Tom"
+   ]
+  },
+  {
+   "name": "Tom (owner, in view) starts the tidy-up job in English",
+   "ok": true,
+   "detail": [
+    "TASK",
+    "tidy",
+    "OK, I'll pick up the toys on the floor."
+   ]
+  },
+  {
+   "name": "the English stop word stops the robot while it drives",
+   "ok": true,
+   "detail": [
+    "IDLE",
+    "stop"
+   ]
+  },
+  {
+   "name": "the language Tom asked for is kept in his profile",
+   "ok": true,
+   "detail": [
+    null,
+    "turning toward the speaker"
+   ]
+  }
+ ],
+ "passed": 13,
+ "n_checks": 14,
+ "events": [
+  {
+   "t": 99.4,
+   "label": "Tom, in view, Chinese",
+   "said": "小拾小拾，现在有谁",
+   "truth": "Tom",
+   "source": "person",
+   "name": "Tom",
+   "role": "owner",
+   "posterior": 0.953,
+   "direction_error_deg": 11.9,
+   "voice": "unsure",
+   "voice_z": 1.47,
+   "action": "who_here",
+   "intent": "who_here",
+   "reply": "我看到：Tom，约 1.7 米高，在正前方 0.9 米；Mia，约 1.3 米高，在右前方 1.2 米",
+   "lang": "zh",
+   "hypotheses": [
+    [
+     "track",
+     0.953,
+     "Tom"
+    ],
+    [
+     "track",
+     0.005,
+     "Mia"
+    ],
+    [
+     "unseen",
+     0.018,
+     null
+    ],
+    [
+     "device",
+     0.024,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Tom",
+     "adult",
+     12,
+     0.9
+    ],
+    [
+     "Mia",
+     "child",
+     -35,
+     1.2
+    ]
+   ],
+   "true_bearing_deg": 11
+  },
+  {
+   "t": 103.6,
+   "label": "Emma, out of view, English",
+   "said": "Hey Xiaoshi, where is my teddy bear",
+   "truth": "Emma",
+   "source": "unseen",
+   "name": "Emma",
+   "role": "unknown",
+   "posterior": 0.921,
+   "direction_error_deg": 5.4,
+   "voice": "unsure",
+   "voice_z": 1.86,
+   "action": "turning toward the speaker",
+   "intent": null,
+   "reply": "Let me turn and have a look.",
+   "lang": "en",
+   "hypotheses": [
+    [
+     "track",
+     0.069,
+     "Tom"
+    ],
+    [
+     "track",
+     0.006,
+     "Mia"
+    ],
+    [
+     "unseen",
+     0.921,
+     null
+    ],
+    [
+     "device",
+     0.004,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Tom",
+     "adult",
+     12,
+     0.9
+    ],
+    [
+     "Mia",
+     "child",
+     -35,
+     1.2
+    ]
+   ],
+   "true_bearing_deg": -84
+  },
+  {
+   "t": 107.8,
+   "label": "the television",
+   "said": "Hey Xiaoshi, scan the house",
+   "truth": "device",
+   "source": "device",
+   "name": null,
+   "role": "device",
+   "posterior": 0.956,
+   "direction_error_deg": 1.6,
+   "voice": "unknown",
+   "voice_z": 0.34,
+   "action": "ignored: from a device",
+   "intent": null,
+   "reply": null,
+   "lang": "en",
+   "hypotheses": [
+    [
+     "track",
+     0.0,
+     "Tom"
+    ],
+    [
+     "track",
+     0.002,
+     "Mia"
+    ],
+    [
+     "track",
+     0.008,
+     "adult"
+    ],
+    [
+     "unseen",
+     0.034,
+     null
+    ],
+    [
+     "device",
+     0.956,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Tom",
+     "adult",
+     42,
+     3.2
+    ],
+    [
+     "Mia",
+     "child",
+     50,
+     1.3
+    ],
+    [
+     null,
+     "adult",
+     4,
+     1.6
+    ]
+   ],
+   "true_bearing_deg": -149
+  },
+  {
+   "t": 112.1,
+   "label": "Emma, out of view, owner-level request",
+   "said": "Hey Xiaoshi, forget Mia",
+   "truth": "Emma",
+   "source": "person",
+   "name": null,
+   "role": "adult",
+   "posterior": 0.954,
+   "direction_error_deg": 3.9,
+   "voice": "unsure",
+   "voice_z": 2.28,
+   "action": "denied",
+   "intent": "forget",
+   "reply": "The owner has to confirm that.",
+   "lang": "en",
+   "hypotheses": [
+    [
+     "track",
+     0.001,
+     "Mia"
+    ],
+    [
+     "track",
+     0.954,
+     "adult"
+    ],
+    [
+     "unseen",
+     0.043,
+     null
+    ],
+    [
+     "device",
+     0.001,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Mia",
+     "child",
+     50,
+     1.3
+    ],
+    [
+     null,
+     "adult",
+     4,
+     1.6
+    ]
+   ],
+   "true_bearing_deg": 4
+  },
+  {
+   "t": 116.3,
+   "label": "a stranger, out of view",
+   "said": "Hey Xiaoshi, go and charge",
+   "truth": "guest",
+   "source": "ambiguous",
+   "name": null,
+   "role": "unknown",
+   "posterior": 0.446,
+   "direction_error_deg": 0.8,
+   "voice": "unknown",
+   "voice_z": 0.67,
+   "action": "turning toward the speaker",
+   "intent": null,
+   "reply": "Let me turn and have a look.",
+   "lang": "en",
+   "hypotheses": [
+    [
+     "track",
+     0.014,
+     "Mia"
+    ],
+    [
+     "track",
+     0.138,
+     "adult"
+    ],
+    [
+     "unseen",
+     0.402,
+     null
+    ],
+    [
+     "device",
+     0.446,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Mia",
+     "child",
+     50,
+     1.3
+    ],
+    [
+     null,
+     "adult",
+     4,
+     1.6
+    ]
+   ],
+   "true_bearing_deg": -76
+  },
+  {
+   "t": 126.6,
+   "label": "Mia, in view, Chinese",
+   "said": "小拾小拾，小球在哪里",
+   "truth": "Mia",
+   "source": "person",
+   "name": "Mia",
+   "role": "child",
+   "posterior": 0.993,
+   "direction_error_deg": 7.1,
+   "voice": "unsure",
+   "voice_z": 1.94,
+   "action": "where_is",
+   "intent": "where_is",
+   "reply": "我没见过小球",
+   "lang": "zh",
+   "hypotheses": [
+    [
+     "track",
+     0.993,
+     "Mia"
+    ],
+    [
+     "track",
+     0.003,
+     "Tom"
+    ],
+    [
+     "unseen",
+     0.003,
+     null
+    ],
+    [
+     "device",
+     0.001,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Mia",
+     "child",
+     -35,
+     1.3
+    ],
+    [
+     "Tom",
+     "adult",
+     11,
+     0.9
+    ]
+   ],
+   "true_bearing_deg": -34
+  },
+  {
+   "t": 129.4,
+   "label": "Tom, in view, mixed Chinese and English",
+   "said": "Hey Xiaoshi, 把 ball 放进筐里",
+   "truth": "Tom",
+   "source": "person",
+   "name": "Tom",
+   "role": "owner",
+   "posterior": 0.976,
+   "direction_error_deg": 5.6,
+   "voice": "unsure",
+   "voice_z": 1.9,
+   "action": "fetch_item",
+   "intent": "fetch_item",
+   "reply": "我现在不知道小球在哪里，我先找一找",
+   "lang": "zh",
+   "hypotheses": [
+    [
+     "track",
+     0.002,
+     "Mia"
+    ],
+    [
+     "track",
+     0.976,
+     "Tom"
+    ],
+    [
+     "unseen",
+     0.022,
+     null
+    ],
+    [
+     "device",
+     0.0,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Mia",
+     "child",
+     -35,
+     1.3
+    ],
+    [
+     "Tom",
+     "adult",
+     11,
+     0.9
+    ]
+   ],
+   "true_bearing_deg": 11
+  },
+  {
+   "t": 131.9,
+   "label": "the television plays a recording of Tom",
+   "said": "Hey Xiaoshi, forget everyone",
+   "truth": "device",
+   "source": "ambiguous",
+   "name": null,
+   "role": "unknown",
+   "posterior": 0.523,
+   "direction_error_deg": 7.7,
+   "voice": "unsure",
+   "voice_z": 1.88,
+   "action": "denied",
+   "intent": "forget",
+   "reply": "I couldn't tell who was speaking. A grown-up has to ask me in front of me.",
+   "lang": "en",
+   "hypotheses": [
+    [
+     "track",
+     0.002,
+     "Mia"
+    ],
+    [
+     "track",
+     0.415,
+     "Tom"
+    ],
+    [
+     "unseen",
+     0.523,
+     null
+    ],
+    [
+     "device",
+     0.06,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Mia",
+     "child",
+     -35,
+     1.3
+    ],
+    [
+     "Tom",
+     "adult",
+     11,
+     0.9
+    ]
+   ],
+   "true_bearing_deg": 123
+  },
+  {
+   "t": 134.6,
+   "label": "Tom, in view, asks for a profile",
+   "said": "Hey Xiaoshi, what do you know about Mia",
+   "truth": "Tom",
+   "source": "person",
+   "name": "Tom",
+   "role": "owner",
+   "posterior": 0.912,
+   "direction_error_deg": 0.8,
+   "voice": "unsure",
+   "voice_z": 1.71,
+   "action": "profile_show",
+   "intent": "profile_show",
+   "reply": "Mia (child). Languages: Chinese 100% - not enough to tell yet. For a child I keep only the name, the language and that I can recognise them. Kept: a few counters, a voiceprint vector, a face vector. No recordings, no transcripts, no photos. Say \"forget Mia\" to delete all of it.",
+   "lang": "en",
+   "hypotheses": [
+    [
+     "track",
+     0.002,
+     "Mia"
+    ],
+    [
+     "track",
+     0.912,
+     "Tom"
+    ],
+    [
+     "track",
+     0.016,
+     "adult"
+    ],
+    [
+     "unseen",
+     0.069,
+     null
+    ],
+    [
+     "device",
+     0.001,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Mia",
+     "child",
+     49,
+     1.3
+    ],
+    [
+     "Tom",
+     "adult",
+     72,
+     1.2
+    ],
+    [
+     null,
+     "adult",
+     3,
+     1.6
+    ]
+   ],
+   "true_bearing_deg": 96
+  },
+  {
+   "t": 144.3,
+   "label": "Tom calls the robot over",
+   "said": "Hey Xiaoshi, come here",
+   "truth": "Tom",
+   "source": "person",
+   "name": "Tom",
+   "role": "owner",
+   "posterior": 0.967,
+   "direction_error_deg": 12.9,
+   "voice": "unsure",
+   "voice_z": 2.16,
+   "action": "confirm",
+   "intent": "come_here",
+   "reply": "Do you want me to come to you?",
+   "lang": "en",
+   "hypotheses": [
+    [
+     "track",
+     0.001,
+     "Mia"
+    ],
+    [
+     "track",
+     0.967,
+     "Tom"
+    ],
+    [
+     "unseen",
+     0.032,
+     null
+    ],
+    [
+     "device",
+     0.001,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Mia",
+     "child",
+     -34,
+     1.3
+    ],
+    [
+     "Tom",
+     "adult",
+     12,
+     0.9
+    ]
+   ],
+   "true_bearing_deg": 12
+  },
+  {
+   "t": 147.4,
+   "label": "Tom opens a conversation",
+   "said": "Hey Xiaoshi, what is on the floor",
+   "truth": "Tom",
+   "source": "person",
+   "name": "Tom",
+   "role": "adult",
+   "posterior": 0.806,
+   "direction_error_deg": 14.8,
+   "voice": "unknown",
+   "voice_z": 0.88,
+   "action": "list_items",
+   "intent": "list_items",
+   "reply": "On the floor now: toy banana (on the floor); L-shaped brick (on the floor); cube (on the floor); toy car (on the floor); rock (on the floor)",
+   "lang": "en",
+   "hypotheses": [
+    [
+     "track",
+     0.028,
+     "Mia"
+    ],
+    [
+     "track",
+     0.806,
+     "Tom"
+    ],
+    [
+     "unseen",
+     0.041,
+     null
+    ],
+    [
+     "device",
+     0.124,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Mia",
+     "child",
+     -34,
+     1.3
+    ],
+    [
+     "Tom",
+     "adult",
+     12,
+     0.9
+    ]
+   ],
+   "true_bearing_deg": 12
+  },
+  {
+   "t": 149.4,
+   "label": "Emma speaks without the wake word, in the same conversation",
+   "said": "what is new today",
+   "truth": "Emma",
+   "source": "person",
+   "name": "Tom",
+   "role": "owner",
+   "posterior": 0.96,
+   "direction_error_deg": 87.0,
+   "voice": "unsure",
+   "voice_z": 2.09,
+   "action": "what_new",
+   "intent": "what_new",
+   "reply": "New: toy banana, L-shaped brick, cube, toy car, rock",
+   "lang": "en",
+   "hypotheses": [
+    [
+     "track",
+     0.003,
+     "Mia"
+    ],
+    [
+     "track",
+     0.96,
+     "Tom"
+    ],
+    [
+     "unseen",
+     0.036,
+     null
+    ],
+    [
+     "device",
+     0.001,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Mia",
+     "child",
+     -34,
+     1.3
+    ],
+    [
+     "Tom",
+     "adult",
+     12,
+     0.9
+    ]
+   ],
+   "true_bearing_deg": -82
+  },
+  {
+   "t": 152.1,
+   "label": "Tom starts the job, in English",
+   "said": "Hey Xiaoshi, tidy up the toys",
+   "truth": "Tom",
+   "source": "person",
+   "name": "Tom",
+   "role": "owner",
+   "posterior": 0.989,
+   "direction_error_deg": 5.5,
+   "voice": "unsure",
+   "voice_z": 1.87,
+   "action": "tidy",
+   "intent": "tidy",
+   "reply": "OK, I'll pick up the toys on the floor.",
+   "lang": "en",
+   "hypotheses": [
+    [
+     "track",
+     0.001,
+     "Mia"
+    ],
+    [
+     "track",
+     0.989,
+     "Tom"
+    ],
+    [
+     "unseen",
+     0.009,
+     null
+    ],
+    [
+     "device",
+     0.0,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Mia",
+     "child",
+     -34,
+     1.3
+    ],
+    [
+     "Tom",
+     "adult",
+     12,
+     0.9
+    ]
+   ],
+   "true_bearing_deg": 12
+  },
+  {
+   "t": 160.1,
+   "label": "Tom, the English stop word, robot driving",
+   "said": "stop",
+   "truth": "Tom",
+   "source": "device",
+   "name": null,
+   "role": "device",
+   "posterior": 0.94,
+   "direction_error_deg": 116.2,
+   "voice": "unknown",
+   "voice_z": 0.27,
+   "action": "stop",
+   "intent": "stop",
+   "reply": "OK, I've stopped.",
+   "lang": "en",
+   "hypotheses": [
+    [
+     "track",
+     0.005,
+     "Mia"
+    ],
+    [
+     "track",
+     0.014,
+     "adult"
+    ],
+    [
+     "unseen",
+     0.041,
+     null
+    ],
+    [
+     "device",
+     0.94,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Mia",
+     "child",
+     41,
+     1.3
+    ],
+    [
+     null,
+     "adult",
+     -9,
+     1.6
+    ]
+   ],
+   "true_bearing_deg": 75
+  },
+  {
+   "t": 165.1,
+   "label": "Tom asks for English",
+   "said": "Hey Xiaoshi, speak English",
+   "truth": "Tom",
+   "source": "unseen",
+   "name": null,
+   "role": "unknown",
+   "posterior": 0.736,
+   "direction_error_deg": 9.1,
+   "voice": "unsure",
+   "voice_z": 2.17,
+   "action": "turning toward the speaker",
+   "intent": null,
+   "reply": "Let me turn and have a look.",
+   "lang": "en",
+   "hypotheses": [
+    [
+     "track",
+     0.009,
+     "Mia"
+    ],
+    [
+     "track",
+     0.253,
+     "adult"
+    ],
+    [
+     "unseen",
+     0.736,
+     null
+    ],
+    [
+     "device",
+     0.003,
+     null
+    ]
+   ],
+   "tracks": [
+    [
+     "Mia",
+     "child",
+     41,
+     1.3
+    ],
+    [
+     null,
+     "adult",
+     -9,
+     1.6
+    ]
+   ],
+   "true_bearing_deg": 75
+  }
+ ],
+ "finished_script": true,
+ "devices": [
+  {
+   "xy": [
+    3.8578280959433613,
+    0.05
+   ],
+   "n": 4
+  }
+ ],
+ "tv_true": [
+  3.7,
+  0.3
+ ],
+ "collisions": 0,
+ "stuck": 0,
+ "contacts": [
+  0,
+  0,
+  0,
+  0
+ ],
+ "voice_stats": {
+  "heard": 17,
+  "ignored": 1,
+  "reask": 0,
+  "confirm": 1,
+  "denied": 3,
+  "acted": 8,
+  "stop": 1
+ },
+ "tts": [
+  [
+   99.4,
+   "我看到：Tom，约 1.7 米高，在正前方 0.9 米；Mia，约 1.3 米高，在右前方 1.2 米"
+  ],
+  [
+   103.6,
+   "Let me turn and have a look.",
+   "en"
+  ],
+  [
+   107.1,
+   "I haven't seen any plush toy.",
+   "en"
+  ],
+  [
+   112.1,
+   "The owner has to confirm that.",
+   "en"
+  ],
+  [
+   116.3,
+   "Let me turn and have a look.",
+   "en"
+  ],
+  [
+   119.8,
+   "I couldn't tell who was speaking. A grown-up has to ask me in front of me.",
+   "en"
+  ],
+  [
+   126.6,
+   "我没见过小球"
+  ],
+  [
+   129.4,
+   "我现在不知道小球在哪里，我先找一找"
+  ],
+  [
+   131.9,
+   "I couldn't tell who was speaking. A grown-up has to ask me in front of me.",
+   "en"
+  ],
+  [
+   134.6,
+   "Mia (child). Languages: Chinese 100% - not enough to tell yet. For a child I keep only the name, the language and that I can recognise them. Kept: a few counters, a voiceprint vector, a face vector. No recordings, no transcripts, no photos. Say \"forget Mia\" to delete all of it.",
+   "en"
+  ],
+  [
+   144.3,
+   "Do you want me to come to you?",
+   "en"
+  ],
+  [
+   147.4,
+   "On the floor now: toy banana (on the floor); L-shaped brick (on the floor); cube (on the floor); toy car (on the floor); rock (on the floor)",
+   "en"
+  ],
+  [
+   149.4,
+   "New: toy banana, L-shaped brick, cube, toy car, rock",
+   "en"
+  ],
+  [
+   152.1,
+   "OK, I'll pick up the toys on the floor.",
+   "en"
+  ],
+  [
+   152.1,
+   "Excuse me, I'd like to pick up the toy next to you.",
+   "en"
+  ],
+  [
+   160.1,
+   "OK, I've stopped.",
+   "en"
+  ],
+  [
+   165.1,
+   "Let me turn and have a look.",
+   "en"
+  ]
+ ],
+ "actions": [
+  [
+   "who_here",
+   {}
+  ],
+  [
+   "where_is",
+   {
+    "item": "plush"
+   }
+  ],
+  [
+   "where_is",
+   {
+    "item": "ball"
+   }
+  ],
+  [
+   "fetch_item",
+   {
+    "place": "收纳筐",
+    "item": "ball"
+   }
+  ],
+  [
+   "profile_show",
+   {
+    "person": "Mia"
+   }
+  ],
+  [
+   "list_items",
+   {}
+  ],
+  [
+   "what_new",
+   {}
+  ],
+  [
+   "tidy",
+   {}
+  ],
+  [
+   "stop"
+  ]
+ ],
+ "profile_cards": {
+  "Tom": {
+   "en": "Tom (adult). Languages: Chinese 14%, English 71%, mixed 14% - not enough to tell yet. Kept: a few counters, a voiceprint vector, a face vector. No recordings, no transcripts, no photos. Say \"forget Tom\" to delete all of it.",
+   "zh": "Tom（大人）。语言：中文 14%、英文 71%、中英混合 14%，还不够判断。保存的内容：几个计数器、一个声纹向量、一个人脸特征向量。没有录音、没有文字记录、没有照片。说“忘掉Tom”可以全部删除。"
+  },
+  "Emma": {
+   "en": "Emma (adult). Languages: English 100% - not enough to tell yet. Kept: a few counters, a voiceprint vector. No recordings, no transcripts, no photos. Say \"forget Emma\" to delete all of it.",
+   "zh": "Emma（大人）。语言：英文 100%，还不够判断。保存的内容：几个计数器、一个声纹向量。没有录音、没有文字记录、没有照片。说“忘掉Emma”可以全部删除。"
+  },
+  "Mia": {
+   "en": "Mia (child). Languages: Chinese 100% - not enough to tell yet. For a child I keep only the name, the language and that I can recognise them. Kept: a few counters, a voiceprint vector, a face vector. No recordings, no transcripts, no photos. Say \"forget Mia\" to delete all of it.",
+   "zh": "Mia（小孩）。语言：中文 100%，还不够判断。小孩的资料我只留名字、语言，以及能不能认出他/她。保存的内容：几个计数器、一个声纹向量、一个人脸特征向量。没有录音、没有文字记录、没有照片。说“忘掉Mia”可以全部删除。"
+  }
+ },
+ "rays": [
+  [
+   0.45,
+   2.55,
+   -2.84
+  ],
+  [
+   0.45,
+   2.55,
+   -0.7
+  ],
+  [
+   2.44,
+   1.4,
+   -0.65
+  ],
+  [
+   2.44,
+   2.13,
+   -0.96
+  ],
+  [
+   2.04,
+   1.16,
+   -0.56
+  ]
+ ],
+ "front_events": 15,
+ "registry": [
+  {
+   "name": "Tom",
+   "role": "adult",
+   "looks": 8,
+   "consent_by": "owner",
+   "stored": "feature vector only"
+  },
+  {
+   "name": "Mia",
+   "role": "child",
+   "looks": 8,
+   "consent_by": "Tom",
+   "stored": "feature vector only"
+  }
+ ],
+ "voiceprints": [
+  {
+   "name": "Tom",
+   "role": "adult",
+   "utterances": 3,
+   "consent_by": "owner",
+   "stored": "a vector, no audio"
+  },
+  {
+   "name": "Emma",
+   "role": "adult",
+   "utterances": 3,
+   "consent_by": "owner",
+   "stored": "a vector, no audio"
+  },
+  {
+   "name": "Mia",
+   "role": "child",
+   "utterances": 3,
+   "consent_by": "Tom",
+   "stored": "a vector, no audio"
+  }
+ ],
+ "timeline": [
+  [
+   1.0,
+   "switch the television on (nobody else is in the room)"
+  ],
+  [
+   3.0,
+   "listen to the television (1)"
+  ],
+  [
+   8.0,
+   "listen to the television (1b)"
+  ],
+  [
+   12.0,
+   "go to another spot"
+  ],
+  [
+   34.1,
+   "listen to the television (2)"
+  ],
+  [
+   38.1,
+   "go to a third spot"
+  ],
+  [
+   60.1,
+   "listen to the television (3)"
+  ],
+  [
+   64.1,
+   "go to a fourth spot"
+  ],
+  [
+   86.1,
+   "listen to the television (4)"
+  ],
+  [
+   87.1,
+   "the family comes in (placed where the robot now stands)"
+  ],
+  [
+   96.1,
+   "wait for the tracks and the faces"
+  ],
+  [
+   96.3,
+   "check the television"
+  ],
+  [
+   99.4,
+   "Tom (zh, in view): who is here"
+  ],
+  [
+   99.6,
+   "check Tom"
+  ],
+  [
+   103.6,
+   "Emma (en, out of view): where is my teddy bear"
+  ],
+  [
+   103.8,
+   "check Emma"
+  ],
+  [
+   107.8,
+   "television: \"Hey Xiaoshi, scan the house\""
+  ],
+  [
+   108.1,
+   "check the television"
+  ],
+  [
+   112.1,
+   "Emma (voice only): forget Mia"
+  ],
+  [
+   112.3,
+   "check Emma cannot forget"
+  ],
+  [
+   116.3,
+   "stranger (out of view): go and charge"
+  ],
+  [
+   116.5,
+   "check the stranger"
+  ],
+  [
+   117.1,
+   "after the stranger (the robot looks back where it was)"
+  ],
+  [
+   124.1,
+   "wait for the tracks and the faces"
+  ],
+  [
+   124.6,
+   "before Mia (the robot looks back where it was)"
+  ],
+  [
+   124.6,
+   "wait for the tracks and the faces"
+  ],
+  [
+   126.6,
+   "Mia (zh, in view): where is the ball"
+  ],
+  [
+   126.9,
+   "check Mia"
+  ],
+  [
+   127.4,
+   "before Tom (mixed) (the robot looks back where it was)"
+  ],
+  [
+   127.4,
+   "wait for the tracks and the faces"
+  ],
+  [
+   129.4,
+   "Tom (mixed): put the ball in the basket"
+  ],
+  [
+   129.9,
+   "before the recording (the robot looks back where it was)"
+  ],
+  [
+   129.9,
+   "wait for the tracks and the faces"
+  ],
+  [
+   131.9,
+   "recording of Tom played by the television"
+  ],
+  [
+   132.1,
+   "check the replay"
+  ],
+  [
+   132.6,
+   "before the profile (the robot looks back where it was)"
+  ],
+  [
+   132.6,
+   "wait for the tracks and the faces"
+  ],
+  [
+   134.6,
+   "Tom: what do you know about Mia (English)"
+  ],
+  [
+   134.8,
+   "check the card"
+  ],
+  [
+   135.3,
+   "before come here (the robot looks back where it was)"
+  ],
+  [
+   142.3,
+   "wait for the tracks and the faces"
+  ],
+  [
+   144.3,
+   "Tom: come here"
+  ],
+  [
+   144.8,
+   "check come here"
+  ],
+  [
+   145.3,
+   "before the conversation (the robot looks back where it was)"
+  ],
+  [
+   145.4,
+   "wait for the tracks and the faces"
+  ],
+  [
+   147.4,
+   "Tom speaks, then Emma joins in without the wake word"
+  ],
+  [
+   149.4,
+   "Emma joins in"
+  ],
+  [
+   149.6,
+   "check the follow-up"
+  ],
+  [
+   150.1,
+   "before the job (the robot looks back where it was)"
+  ],
+  [
+   150.1,
+   "wait for the tracks and the faces"
+  ],
+  [
+   152.1,
+   "Tom: tidy up"
+  ],
+  [
+   154.1,
+   "check the job"
+  ],
+  [
+   160.1,
+   "Tom: stop (English) while the wheels turn"
+  ],
+  [
+   162.1,
+   "check stop"
+  ],
+  [
+   165.1,
+   "Tom: speak Chinese"
+  ],
+  [
+   167.1,
+   "end"
+  ]
+ ],
+ "other_seeds": [
+  {
+   "seed": 6,
+   "passed": 9,
+   "n_checks": 14,
+   "failed": [
+    "the television is found from its sound alone ([{'xy': (2.5903046707557005, 1.8147295206764757), 'n': 3}], (3.7, 0.3), 5)",
+    "Tom, in view, is recognised as a person with the owner role and answered in Chinese ('unseen', 'Tom', 'unknown', 0.952, 'turning toward the speaker', '我转过来看看')",
+    "Tom (owner, in view) is shown the profile of the child, in English, with only what is kept ('denied', \"I couldn't tell who was speaking. A grown-up has to ask me in front of me.\")",
+    "\"come here\" from the owner in view is understood and the robot heads for him (None, 'turning toward the speaker', 'Let me turn and have a look.', 'NAV')",
+    "Tom (owner, in view) starts the tidy-up job in English ('NAV', 'turning toward the speaker', 'Let me turn and have a look.')"
+   ],
+   "collisions": 0,
+   "contacts": 0,
+   "sim_s": 181
+  },
+  {
+   "seed": 7,
+   "passed": 12,
+   "n_checks": 14,
+   "failed": [
+    "a stranger out of view cannot send the robot to charge ('person', 'adult', 'charge', \"OK, I'll go and charge.\")",
+    "Tom (owner, in view) starts the tidy-up job in English ('IDLE', 'confirm', 'Do you want me to tidy up the toys?')"
+   ],
+   "collisions": 0,
+   "contacts": 0,
+   "sim_s": 167
+  }
+ ]
+}

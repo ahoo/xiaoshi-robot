@@ -25,6 +25,12 @@ LIDAR_NOISE = 0.01             # metres, 1 sigma
 ODOM_SCALE = 0.015             # 1 sigma: effective radius error of each omni wheel (calibration, roller wear)
 ODOM_SLIP = 0.03               # 1 sigma: per-step multiplicative slip noise on each wheel's travel
 FOOTPRINT = (-0.05, 0.27, 0.10)  # lidar self-filter box in the chassis frame (folded arm plus payload): x min, x max, |y| max
+IMU_NOISE = 0.004              # rad, 1 sigma per axis, of the fused attitude (gravity direction) the IMU driver reports
+IMU_BIAS = 0.008               # rad, 1 sigma of the fixed mounting/calibration bias of that direction (0.5 degrees)
+# Electrical model of the servos (estimates from the STS3215 datasheet: 12 V, 2.9 A stall at 2.94 N*m; see power.py and validation.md):
+SERVO_IDLE_W = 0.35            # W per servo holding position with no load
+SERVO_K_CU = 3.7               # W per (N*m)^2: copper loss, R/Kt^2 = (12/2.9)/(2.94/2.9)^2
+SERVO_ETA = 0.55               # mechanical output / electrical input while doing positive work
 
 Q_CARRY = np.array([0.002, -0.393, 0.733, 1.523, 0.002])   # pinch 0.16 m ahead, 0.19 m up; a held object clears the shoulder and the deck
 GRIP_OPEN, GRIP_CLOSED = 1.1, -0.17
@@ -64,6 +70,7 @@ class Robot:
         self.arm_cmd = self.arm_target.copy(); self.arm_vel = np.zeros(6)
         self.wheel_target = np.zeros(3); self.wheel_cmd = np.zeros(3)
         self.arm_speed = 1.6                     # rad/s joint-space speed limit used when interpolating targets
+        self.arm_acc = 8.0                       # rad/s^2 joint acceleration limit of the servo profile (the STS3215 register allows far more; self-righting raises it)
         # servo zero-point errors (perturb.py): each arm joint really sits this far from where it is commanded and read
         self.arm_offset = np.append(self.rng.normal(0, math.radians(perturb.get('arm_offset_deg', 0.0)), 5), 0.0) if perturb.get('arm_offset_deg', 0.0) else np.zeros(6)
         self.d.qpos[self.arm_qadr] = self.arm_cmd + self.arm_offset
@@ -77,7 +84,14 @@ class Robot:
         self.odom = np.zeros(3)                  # dead-reckoned pose from wheel encoders (starts at the true pose)
         self.wheel_scale = 1 + self.rng.normal(0, ODOM_SCALE * perturb.get('odom', 1.0), 3)   # each wheel's real radius differs from the nominal one
         self.peak_torque = np.zeros(9); self.torque_sq = np.zeros(9); self.n_steps = 0; self.sat_steps = np.zeros(9)
+        self.hold_arm = False                    # set by people.Guard: the arm (and gripper) stays where it is while someone is within reach
         self._flim = self.m.actuator_forcerange[:9, 1].copy()
+        self.servo_j = 0.0                       # electrical energy the nine servos have drawn so far (J)
+        self.imu_rng = np.random.default_rng(seed + 4321)      # its own stream: reading the IMU never disturbs the lidar/odometry noise
+        self.imu_bias = self.imu_rng.normal(0, IMU_BIAS, 3)
+        gid = lambda n: mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, n)
+        self.dock_nose, self.dock_pad, self.dock_plate = gid('dock_nose'), gid('dock_pad'), gid('dock_plate')      # -1 when the model has no dock
+        self._dock_t = -9.0
         mujoco.mj_forward(m, self.d)
         x, y, th = self.true_pose(); self.odom[:] = [x, y, th]
         self._last_wheel_q = self.d.qpos[self.wheel_qadr].copy()
@@ -89,6 +103,24 @@ class Robot:
 
     def tilt(self):
         return math.acos(max(-1.0, min(1.0, self.d.xmat[self.chassis][8])))
+
+    # ---- IMU and charging contact ----
+    def imu(self):
+        """What the IMU driver reports: the direction of 'up' in the body frame (unit vector; z is cos(tilt)), from fused accelerometer
+        and gyro, with noise and a fixed bias. At rest it is exact up to those; in a fall it follows the body."""
+        up = self.d.xmat[self.chassis].reshape(3, 3)[2] + self.imu_bias + self.imu_rng.normal(0, IMU_NOISE, 3)
+        return up / np.linalg.norm(up)
+
+    def dock_connected(self, hold=0.3):
+        """True while the charging probe on the rear of the chassis touches the dock's contact strip (the electrical contact; held for
+        `hold` s so the flicker of a gentle touch does not count as losing it). False on a model without a dock."""
+        if self.dock_pad < 0: return False
+        d = self.d
+        for i in range(d.ncon):
+            c = d.contact[i]
+            if (c.geom1 == self.dock_nose and c.geom2 == self.dock_pad) or (c.geom2 == self.dock_nose and c.geom1 == self.dock_pad):
+                if c.dist < 0.001: self._dock_t = d.time; break
+        return d.time - self._dock_t <= hold
 
     def obj_pos(self, i):
         return self.d.xpos[self.obj_body[i]].copy()
@@ -156,7 +188,8 @@ class Robot:
         # joint targets are approached with a velocity that ramps up (8 rad/s^2) and eases in, like the servo's own profile
         v_des = np.clip(5.0 * (self.arm_target - self.arm_cmd), -self.arm_speed, self.arm_speed)
         v_des[5] = np.clip(8.0 * (self.arm_target[5] - self.arm_cmd[5]), -3.0, 3.0)
-        self.arm_vel += np.clip(v_des - self.arm_vel, -8.0 * CTRL_DT, 8.0 * CTRL_DT)
+        if self.hold_arm: v_des[:] = 0.0
+        self.arm_vel += np.clip(v_des - self.arm_vel, -self.arm_acc * CTRL_DT, self.arm_acc * CTRL_DT)
         cmd0 = self.arm_cmd.copy()
         self.arm_cmd += self.arm_vel * CTRL_DT
         # wheel speed ramp (the servo's acceleration setting): without it a step command wheelies the chassis
@@ -168,6 +201,7 @@ class Robot:
             mujoco.mj_step(m, d)
             f = np.abs(d.actuator_force[:9]); self.peak_torque = np.maximum(self.peak_torque, f); self.torque_sq += f * f; self.n_steps += 1
             self.sat_steps += f > 0.8 * self._flim
+            self.servo_j += (9 * SERVO_IDLE_W + SERVO_K_CU * float(f @ f) + float(np.maximum(d.actuator_force[:9] * d.actuator_velocity[:9], 0.0).sum()) / SERVO_ETA) * m.opt.timestep
         # odometry from wheel encoders
         wq = d.qpos[self.wheel_qadr]
         dw = (wq - self._last_wheel_q) * self.wheel_scale * (1 + self.rng.normal(0, ODOM_SLIP * perturb.get('odom', 1.0), 3)); self._last_wheel_q = wq.copy()

@@ -1,0 +1,75 @@
+{
+ "n_rooms": 200,
+ "seed0": 40000,
+ "n_person_events": 426,
+ "enrolled_speaker": {
+  "n": 394,
+  "fused_right_name": 0.65,
+  "sight_only_right_name": 0.195,
+  "voice_only_right_name": 0.335,
+  "fused_wrong_name": 0.018,
+  "sight_only_wrong_name": 0.025,
+  "voice_only_wrong_name": 0.0,
+  "fused_no_name": 0.332
+ },
+ "enrolled_speaker_seen": {
+  "n": 110,
+  "fused_right_name": 0.782,
+  "sight_only_right_name": 0.7,
+  "voice_only_right_name": 0.309,
+  "fused_wrong_name": 0.0,
+  "owner_role": 0.695,
+  "adult_role": 0.2
+ },
+ "enrolled_speaker_out_of_view": {
+  "n": 284,
+  "fused_right_name": 0.599,
+  "sight_only_right_name": 0.0,
+  "voice_only_right_name": 0.345,
+  "fused_wrong_name": 0.025,
+  "owner_role": 0.016,
+  "adult_role": 0.008
+ },
+ "guest_speaker": {
+  "n": 32,
+  "named_as_enrolled": 0.188,
+  "owner_role": 0.0,
+  "role_counts": {
+   "owner": 0,
+   "adult": 11,
+   "child": 1,
+   "unknown": 20,
+   "device": 0
+  }
+ },
+ "with_television_on": {
+  "n": 196,
+  "fused_right_name": 0.526,
+  "sight_only_right_name": 0.168,
+  "person_wrongly_called_device": 0.092,
+  "person_wrongly_called_device_no_tv": 0.0
+ },
+ "direction_error_deg_median": 5.7,
+ "television_says_the_wake_word": {
+  "n": 100,
+  "learned_the_television_first": 0.98,
+  "rejected_as_device": 0.74,
+  "accepted_as_person_or_unseen": 0.22,
+  "owner_role": 0.0,
+  "only_with_learned_device_rejected": 0.755,
+  "sight_only_accepted": 0.04
+ },
+ "television_replays_an_enrolled_adult": {
+  "n": 100,
+  "voiceprint_fooled": 0.39,
+  "got_owner_role": 0.01,
+  "got_adult_role": 0.18,
+  "rejected_as_device": 0.04
+ },
+ "television_learning": {
+  "n": 100,
+  "learned": 0.98,
+  "position_error_m_median": 0.2
+ },
+ "seconds": 278
+}

@@ -1,0 +1,119 @@
+{
+ "takeover": [
+  {
+   "seed": 1,
+   "takeover": false,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 474.5,
+   "collisions": 0,
+   "stuck": 0,
+   "held_when_taken": null,
+   "takeovers": 0,
+   "finished": true
+  },
+  {
+   "seed": 1,
+   "takeover": true,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 502.3,
+   "collisions": 0,
+   "stuck": 0,
+   "held_when_taken": false,
+   "takeovers": 1,
+   "finished": true
+  },
+  {
+   "seed": 1,
+   "takeover": "held",
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 499.5,
+   "collisions": 0,
+   "stuck": 0,
+   "held_when_taken": true,
+   "takeovers": 1,
+   "finished": true
+  },
+  {
+   "seed": 3,
+   "takeover": false,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 455.9,
+   "collisions": 0,
+   "stuck": 0,
+   "held_when_taken": null,
+   "takeovers": 0,
+   "finished": true
+  },
+  {
+   "seed": 3,
+   "takeover": true,
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 486.2,
+   "collisions": 0,
+   "stuck": 0,
+   "held_when_taken": false,
+   "takeovers": 1,
+   "finished": true
+  },
+  {
+   "seed": 3,
+   "takeover": "held",
+   "delivered": 5,
+   "total": 5,
+   "sim_time": 490.8,
+   "collisions": 0,
+   "stuck": 0,
+   "held_when_taken": true,
+   "takeovers": 1,
+   "finished": true
+  }
+ ],
+ "safety_on": {
+  "safety": true,
+  "t_release": 16.0,
+  "x_final": 3.718,
+  "gap_to_wall_cm": 13.7,
+  "collisions": 0,
+  "speed_after_release": 0.0,
+  "max_speed": 0.149,
+  "events": [
+   "遥控开始（带安全层）",
+   "指令超时，停车（死人开关）"
+  ]
+ },
+ "safety_off": {
+  "safety": false,
+  "t_release": 16.0,
+  "x_final": 3.776,
+  "gap_to_wall_cm": 5.8,
+  "collisions": 14,
+  "speed_after_release": 0.0012,
+  "max_speed": 0.149,
+  "events": [
+   "遥控开始（直连，无安全层）",
+   "指令超时，停车（死人开关）"
+  ]
+ },
+ "deadman": {
+  "coast_cm": 10.4,
+  "stopped_after_s": 0.84,
+  "deadman_s": 0.5,
+  "travelled_before_release_cm": 27.1
+ },
+ "arm": {
+  "reachable": true,
+  "pinch_err_mm": 0.2,
+  "arm_busy_when_out": true,
+  "unreachable_refused": true,
+  "body_hit_refused": true,
+  "arm_moved_after_refusal": false,
+  "back_to_carry_err": 0.0,
+  "arm_busy_when_carry": false
+ },
+ "wall": 893
+}

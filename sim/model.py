@@ -37,6 +37,18 @@ P = dict(
     pad_friction=1.0,         # jaws with grip tape; bare PLA is about 0.35
 )
 
+# Cameras on the arm instead of a mast (build_xml(arm_cam='forearm' | 'periscope')): a small RGB-D camera (RealSense D435 / OAK-D Lite class, about 75 g, 90 x 25 x 25 mm) on a printed bracket.
+#   forearm     on top of the forearm, 6 cm from the elbow, looking along the forearm and tilted 45 degrees up from it: in the carry pose (the arm's pose while driving and carrying) that is
+#               0.38 m above the floor looking forward and 26 degrees up. Nothing has to move for it to look. While the arm reaches down to the floor it looks at the floor.
+#   periscope   on the outer face of the fixed jaw, looking sideways out of the gripper with the jaws pointing up; the arm has to be raised into `look` (joint angles) first:
+#               0.57 m above the floor, looking forward and 23-32 degrees up. The arm cannot do anything else while it looks.
+# `look`: the joint angles (5) at which the camera looks forward and up; None = the carry pose already does.
+ARM_CAMS = dict(
+    forearm=dict(body='lower_arm', pos=(-0.06, 0.04, 0.018), xyaxes=(0.0, 0.0, -1.0, 0.7071, 0.7071, 0.0), fovy=60.0, mass=0.075, look=None),
+    forearm_up=dict(body='lower_arm', pos=(-0.06, 0.04, 0.018), xyaxes=(0.0, 0.0, -1.0, 0.7880, 0.6157, 0.0), fovy=60.0, mass=0.075, look=None),                    # the same, tilted 52 degrees up from the forearm: 33 degrees above the horizontal
+    periscope=dict(body='gripper', pos=(-0.035, 0.0, -0.02), xyaxes=(0.0, -1.0, 0.0, 0.0, 0.0, -1.0), fovy=60.0, mass=0.075, look=(0.0, -0.20, -1.29, -0.50, 0.0)),
+)
+
 ROOM_W, ROOM_H = 4.0, 3.0
 # static furniture: (name, cx, cy, sx, sy, height, rgba); circles use sx as radius and sy=None
 FURNITURE = [
@@ -49,6 +61,12 @@ FURNITURE = [
 ]
 BASKET = dict(x=3.45, y=2.55, sx=0.30, sy=0.22, h=0.09, t=0.008)
 HOME = (0.45, 2.55, -math.pi / 2)
+# Charging dock (built only when asked for: build_xml(dock=True)). Wall-mounted: a back plate on the +y wall with one wide contact strip
+# at the height of the robot's rear "nose" (a charging probe on the rear of the chassis, above the rear wheel). The robot reverses
+# into it; any lateral position within the strip's width (+-HALF_W) makes contact, so the alignment needed is a few cm, not a few mm.
+DOCK = dict(x=0.45, wall_y=3.0, plate_half_w=0.12, plate_t=0.03, plate_h=0.30, pad_t=0.008, pad_z=0.122, pad_half_h=0.012, nose_len=0.175, nose_r=0.01, nose_z=0.122)
+DOCK['pad_y'] = DOCK['wall_y'] - DOCK['plate_t'] - DOCK['pad_t']          # y of the strip's front face
+DOCK_POSE = (DOCK['x'], DOCK['pad_y'] - DOCK['nose_len'], -math.pi / 2)    # chassis pose with the nose touching the strip
 
 def _quat_z(a):
     return f'{math.cos(a / 2):.6f} 0 0 {math.sin(a / 2):.6f}'
@@ -75,9 +93,11 @@ def _wheel_xml(i, ang_deg):
     return '\n'.join(s)
 
 
-def _arm_parts():
+def _arm_parts(arm_cam=None, arm_cam_collide=False):
     """Read the official SO-101 MJCF and return (defaults, assets, body, actuators) as XML strings,
-    with the gripper collision replaced by primitive pads (a convex hull of the jaw mesh fills the grip gap)."""
+    with the gripper collision replaced by primitive pads (a convex hull of the jaw mesh fills the grip gap).
+    arm_cam: a key of ARM_CAMS: a camera (and its 75 g) is added to that link. arm_cam_collide: the camera's box also collides with the floor and the world (not with the robot's own parts), which
+    is how the self-righting search finds out whether the camera is pressed against the ground (off by default: for the ordinary benches the camera is drawn only and nothing touches it)."""
     root = ET.parse(os.path.join(SO101_DIR, 'so101_new_calib.xml')).getroot()
     defaults = ''.join(ET.tostring(d, encoding='unicode') for dd in root.findall('default') for d in dd)
     assets = ''.join(ET.tostring(a, encoding='unicode') for a in root.find('asset'))
@@ -105,6 +125,17 @@ def _arm_parts():
     qinv = np.zeros(4); mujoco.mju_negQuat(qinv, jq)
     ET.SubElement(jaw, 'geom', dict(name='pad_moving', type='box', pos=' '.join(f'{v:.5f}' for v in c), quat=' '.join(f'{v:.6f}' for v in qinv),
                                     size='0.0045 0.007 0.0295')).attrib.update(_attrs(pad))
+    if arm_cam:
+        c = ARM_CAMS[arm_cam]; parent = next(b for b in base.iter('body') if b.get('name') == c['body'])
+        cb = ET.SubElement(parent, 'body', dict(name='armcam_body', pos=' '.join(str(v) for v in c['pos'])))
+        ET.SubElement(cb, 'inertial', dict(pos='0 0 0', mass=str(c['mass']), diaginertia='2e-5 2e-5 2e-5'))                      # the camera's weight is carried by the servos
+        ET.SubElement(cb, 'camera', dict(name='armcam', pos='0 0 0', xyaxes=' '.join(str(v) for v in c['xyaxes']), fovy=str(c['fovy'])))
+        za = np.cross(c['xyaxes'][:3], c['xyaxes'][3:])                                                                          # behind the lens; drawn only, no collision
+        ET.SubElement(cb, 'geom', dict(type='box', size='0.045 0.0125 0.0125', pos=' '.join(f'{0.0125 * v:.5f}' for v in za), xyaxes=' '.join(str(v) for v in c['xyaxes']),
+                                       contype='0', conaffinity='0', group='2', rgba='0.1 0.1 0.12 1', mass='0'))
+        if arm_cam_collide:
+            ET.SubElement(cb, 'geom', dict(name='armcam_col', type='box', size='0.045 0.0125 0.0125', pos=' '.join(f'{0.0125 * v:.5f}' for v in za), xyaxes=' '.join(str(v) for v in c['xyaxes']),
+                                           contype='2', conaffinity='1', group='3', rgba='0.5 0.5 0.5 0.3', mass='0', friction='0.6 0.005 0.0001'))
     acts = []
     for a in root.find('actuator'):
         lim = P['gripper_torque'] if a.get('name') == 'gripper' else P['servo_stall']
@@ -120,9 +151,12 @@ def _attrs(s):
     return out
 
 
-def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET):
-    """objects: list of (kind, x, y, yaw, spec) with spec from objects.sample(). Returns MJCF text. World frame: x right, y 'down' the room plan, z up."""
-    defaults, assets, arm_body, arm_acts = _arm_parts()
+def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET, dock=False, people=(), head_cam=False, arm_cam=None, arm_cam_collide=False):
+    """objects: list of (kind, x, y, yaw, spec) with spec from objects.sample(). Returns MJCF text. World frame: x right, y 'down' the room plan, z up.
+    people: keys of people.SPECS (mocap humans a script moves, body names p0_*, p1_*, ...). head_cam: a depth camera on a 0.5 m mast, tilted 28 degrees up
+    (the mast is drawn but has no mass or collision; people.HeadCam reads it). arm_cam: a key of ARM_CAMS, a camera on the arm instead (people.ArmCam reads it; use one of the two, not both).
+    All are off by default and then the model is exactly what it was."""
+    defaults, assets, arm_body, arm_acts = _arm_parts(arm_cam, arm_cam_collide)
     R = P['wheel_radius']
     lx, ly, lz = P['lidar_pos']
     furn = []
@@ -143,12 +177,29 @@ def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET):
     for k, (dx, dy, hx, hy) in enumerate([(0, -(b['sy'] / 2 - t / 2), b['sx'] / 2, t / 2), (0, b['sy'] / 2 - t / 2, b['sx'] / 2, t / 2),
                                           (-(b['sx'] / 2 - t / 2), 0, t / 2, b['sy'] / 2), (b['sx'] / 2 - t / 2, 0, t / 2, b['sy'] / 2)]):
         bk.append(f'<geom name="basket_w{k}" type="box" pos="{b["x"] + dx} {b["y"] + dy} {hh}" size="{hx} {hy} {hh}" rgba="1 0.42 0.17 1"/>')
+    nose = ''
+    if dock:
+        D = DOCK
+        furn.append(f'<geom name="dock_plate" type="box" pos="{D["x"]} {D["wall_y"] - D["plate_t"] / 2} {D["plate_h"] / 2}" size="{D["plate_half_w"]} {D["plate_t"] / 2} {D["plate_h"] / 2}" rgba="0.25 0.28 0.32 1"/>')
+        furn.append(f'<geom name="dock_pad" type="box" pos="{D["x"]} {D["wall_y"] - D["plate_t"] - D["pad_t"] / 2} {D["pad_z"]}" size="{D["plate_half_w"]} {D["pad_t"] / 2} {D["pad_half_h"]}" rgba="0.85 0.65 0.2 1" friction="0.3 0.005 0.0001"/>')
+        zc = D['nose_z'] - (P['wheel_radius'] + 0.0005)          # nose height in the chassis frame
+        nose = (f'<geom name="dock_nose" type="capsule" fromto="-0.10 0 {zc} {-(D["nose_len"] - D["nose_r"])} 0 {zc}" size="{D["nose_r"]}" contype="2" conaffinity="1" group="4" friction="0.3 0.005 0.0001" mass="0"/>'
+                f'<geom class="rvis" type="capsule" fromto="-0.10 0 {zc} {-(D["nose_len"] - D["nose_r"])} 0 {zc}" size="{D["nose_r"]}" rgba="0.85 0.65 0.2 1" mass="0"/>')
     parts = [objects_lib.xml(f'obj{i}', spec, x, y, yaw) for i, (k, x, y, yaw, spec) in enumerate(objects)]
     objs = '\n'.join(b for _, b in parts); obj_assets = ''.join(a for a, _ in parts)
     wheels = '\n'.join(_wheel_xml(i, a) for i, a in enumerate(P['wheel_angles']))
     wheel_acts = '\n'.join(f'<velocity name="wheel{i}" joint="wheel{i}" kv="3" ctrlrange="-7 7" forcerange="{-P["servo_stall"]} {P["servo_stall"]}"/>' for i in range(3))
     rx, ry, rth = robot_pose
     cm = P['chassis_com']
+    ppl = ''
+    if people:
+        import people as people_lib
+        ppl = people_lib.people_xml(list(people))
+    head = ''
+    if head_cam:
+        head = ('<camera name="head" pos="-0.08 0 0.45" xyaxes="0 -1 0 -0.469 0 0.883" fovy="60"/>'
+                '<geom class="rvis" type="cylinder" pos="-0.08 0 0.22" size="0.006 0.22" rgba="0.15 0.15 0.17 1"/>'
+                '<geom class="rvis" type="box" pos="-0.075 0 0.45" size="0.02 0.045 0.015" rgba="0.1 0.1 0.12 1"/>')
     return f'''<mujoco model="xiaoshi">
   <compiler angle="radian" meshdir="{os.path.join(SO101_DIR, 'assets')}" autolimits="true"/>
   <option timestep="0.002" integrator="implicitfast" cone="elliptic" impratio="10" noslip_iterations="4"/>
@@ -187,15 +238,20 @@ def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET):
       <geom class="rvis" type="box" pos="-0.06 0 0.1" size="0.045 0.032 0.012" rgba="0.2 0.5 0.3 1"/>
       <geom class="rvis" type="cylinder" pos="{lx} {ly} {lz - 0.004}" size="0.019 0.017" rgba="0.1 0.1 0.1 1"/>
       <geom class="rvis" type="cylinder" pos="{lx} {ly} {lz - 0.036}" size="0.004 0.016" rgba="0.7 0.7 0.7 1"/>
+      <geom name="lidar_head" type="cylinder" pos="{lx} {ly} {lz - 0.004}" size="0.0195 0.017" contype="2" conaffinity="1" group="4" friction="0.5 0.005 0.0001" mass="0"/>
+      <geom name="lidar_post" type="cylinder" pos="{lx} {ly} {lz - 0.0385}" size="0.008 0.0215" contype="2" conaffinity="1" group="4" friction="0.5 0.005 0.0001" mass="0"/>
       <geom class="rvis" type="box" pos="0.1 0 0.07" size="0.006 0.02 0.012" rgba="0.1 0.1 0.1 1"/>
+      {nose}
       <site name="lidar" pos="{lx} {ly} {lz}" size="0.004" group="4"/>
       <site name="base_center" pos="0 0 0" size="0.004" group="4"/>
       <camera name="front" pos="0.108 0 0.075" xyaxes="0 -1 0 0.42 0 0.91" fovy="72"/>
       <camera name="chase" mode="trackcom" pos="-0.9 -0.9 0.9" xyaxes="0.707 -0.707 0 0.42 0.42 0.8" fovy="50"/>
+      {head}
       {wheels}
       {arm_body}
     </body>
     {objs}
+    {ppl}
   </worldbody>
   <actuator>
     {wheel_acts}

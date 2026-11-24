@@ -2,6 +2,6 @@ __pycache__/
 *.pyc
 .DS_Store
 results/frames/
-web/dist/
 results/.trials_cache/
 cache/
+third_party/sherpa-kws/

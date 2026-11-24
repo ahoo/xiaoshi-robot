@@ -21,7 +21,7 @@ from model import BASKET, HOME, P
 from robot import LIDAR_RANGE
 from skills import ELONG, PULL_MAX, PULL_REACH, best_band, carry_pose, grasp, holding, place, plan_grasp, pull, wait, wait_arm
 from localization import Localizer
-from perception import FrontCamera, WristCamera
+from perception import FrontCamera, WristCamera, clear_detection
 
 CS, GX, GY = 0.05, 80, 60
 CCS, CGX, CGY = 0.25, 16, 12
@@ -54,6 +54,26 @@ STANDOFFS = (0.235, 0.25, 0.265)   # robot centre to the middle of the strip the
 KEEP = 0.19                  # m: on the way to a target, the robot centre keeps this far from its outline
 ASSOC = 0.10                 # m: a detection this close to a remembered object is taken to be that object
 T_MAX = 600.0
+BLIND_PAD = 0.05             # m: a thing known only by a no-reading cluster, seen end-on, may be longer than it looks: the
+                             # outline kept for the planner and the safety layer is padded this much all round
+BLIND_CONFIRM = 2            # sightings (camera frames) of a cluster before it becomes something to go and get
+BLIND_OBJ_FRAC = 0.35       # a cluster with more than this many real above-floor readings beside it, per no-reading pixel, is a black or
+                             # shiny thing with holes in it, not clear plastic (bench: clear 0.13-0.22 up to 1 m, black 0.2-1.8, shiny 0.7-3)
+FRAG_RATIO = 1.5              # a detection with this many times more no-reading pixels beside it than its own is a piece of a clear thing
+                             # (black things: about 1.2 times, clear plastic: 6 or more)
+BLIND_DRIFT = 0.0005         # m/s: how fast the certainty about where a no-reading thing lies fades while it is not looked at (the wheels
+                             # can push it and nothing but the camera would tell); after 100 s a look from 1 m may correct a close-look position
+BLIND_LOOK_WIDE = 0.25       # m: after a close look that saw nothing where the thing should be, accept a cluster this far from it
+BLIND_MIN_RANGE = 0.14        # m from the camera foot: nearer clusters are only used by the close look in fetch
+BLIND_GONE = 3               # looks at the spot with no no-reading pixels there before the memory of it is dropped
+SLIP_WINDOW = 1.5            # s: lidar and odometry are compared over this long
+SLIP_MIN_PATH = 0.12         # m of odometry path in the window before a mismatch counts (below that: standing, or creeping)
+SLIP_RATIO = 0.5             # the scan matcher pulled the pose back by more than this share of the odometry path: the wheels
+                             # turn but the robot does not follow (a wheel on a thing it cannot see, or pressed against it)
+GHOST_R = 0.04               # m: radius of the invisible obstacle remembered where the robot got stuck
+GHOST_LIFE = 60.0            # s: a preference, not a wall: goto forgets it when it leaves no way through (see there)
+SLIP_ON = True               # lidar/odometry mismatch -> back off and remember an invisible obstacle
+CLEAR_CUE = True             # no-reading clusters in the depth image -> things the camera cannot measure (clear plastic)
 
 
 def wrap(a):
@@ -75,6 +95,15 @@ class Agent:
         self.path = None; self.scan = None; self.state = '启动'; self.target = None; self.log_lines = []
         self.stats = dict(pulls=0, grasp_attempts=0, grasp_fail=0, dropped=0, missed_place=0, replans=0, stuck=0, collisions=0, floor_touch=0, max_tilt=0.0, dist=0.0)
         self._tick = 0; self._last_xy = np.array(robot.true_pose()[:2]); self._coll_t = -9.0; self._floor_t = -9.0
+        self.ghosts = []; self._slip_hist = []; self.slip_flag = False; self._cmd_w = np.zeros(2); self._slip_t = -99.0
+        self.pause = None          # set by modes.Supervisor: a callable that says "stop at the next safe point" (low battery); None = never
+        self.arm_busy = False      # set by modes.Supervisor while an operator has the arm out in front of the lidar
+        self.freeze = False        # set by modes.Supervisor while the robot is tilted or lying down: the lidar and camera see the room at the wrong angle, so no mapping, matching or detecting
+        self.pose_before_fall = None
+        self.dyn_zones = []        # set by people.Guard: [(x, y, r)] where people are right now; a lidar hit inside one is a person, not a wall: it goes neither into the map nor into the scan matching
+        self.zone_skip_t = -99.0   # when pick() last skipped an object because someone stands by it
+        self.person_zones = []     # set by people.Guard: [(x, y, r)] around the people in the room; an object inside one is not started on (looked at again in 10 s)
+        self.depth_hook = None     # set by home.py: called as hook(agent, x, y, th) with every front-camera frame, after detection (3D scan, object records)
         m = robot.m
         self._floor = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, 'floor')
         # Where the basket is, in the robot's own map. It starts from where the user said it is, and is then corrected
@@ -94,18 +123,32 @@ class Agent:
         return float(x), float(y), float(th)
 
     def sense(self):
+        if self.freeze == 2: return                    # tilted or lying: nothing from the sensors is usable
         r = self.r
+        if self.freeze == 1:                            # upright again but the pose is unknown: only what is near the robot, for the safety layer
+            ang, rng_ = r.lidar(); rng_ = self._scan_filter(ang, rng_); f = np.isfinite(rng_)
+            x, y, th = self.pose(); sx, sy = P['lidar_pos'][0] + rng_[f] * np.cos(ang[f]), rng_[f] * np.sin(ang[f])
+            wx_, wy_ = x + math.cos(th) * sx - math.sin(th) * sy, y + math.sin(th) * sx + math.cos(th) * sy
+            near = np.hypot(wx_ - x, wy_ - y) < SAFE_R
+            self.scan_pts = np.stack([wx_[near], wy_[near]], 1); self.map_pts = np.zeros((0, 2)); return
         self._ncam += 1
         cam_now = self._ncam % 3 == 1                 # camera at 3.3 Hz, lidar at 10 Hz
         # --- lidar: correct the pose against the map, then update the map from the corrected pose
-        if self.state in ('抓取', '放置', '放下'):   # the arm is out in front of the lidar: neither match nor map
+        if self.arm_busy or self.state in ('抓取', '放置', '放下'):   # the arm is out in front of the lidar: neither match nor map
             if cam_now: self._sense_camera()
             return
         ang, rng_ = r.lidar()
         rng_ = self._scan_filter(ang, rng_)
         f = np.isfinite(rng_)
         spx, spy = P['lidar_pos'][0] + rng_[f] * np.cos(ang[f]), rng_[f] * np.sin(ang[f])
-        self.loc.correct(spx, spy)
+        if self.dyn_zones:                           # people are not walls: their legs stay out of the scan matching and out of the map (they would be left behind as ghost obstacles)
+            ex, ey, eth = self.loc.est; wx0 = ex + math.cos(eth) * spx - math.sin(eth) * spy; wy0 = ey + math.sin(eth) * spx + math.cos(eth) * spy
+            dyn = np.zeros(len(spx), bool)
+            for zx, zy, zr in self.dyn_zones: dyn |= np.hypot(wx0 - zx, wy0 - zy) < zr
+            if dyn.any(): spx, spy = spx[~dyn], spy[~dyn]
+        pre = self.loc.est[:2].copy(); path = self.loc._moved
+        moved_ok = self.loc.correct(spx, spy)
+        if SLIP_ON and moved_ok: self._track_slip(pre, self.loc.est[:2] - pre, path)
         good = self.loc.map_ok
         if good: self.loc.add_scan(spx, spy)
         else: self.stats['scans_unmapped'] = self.stats.get('scans_unmapped', 0) + 1
@@ -123,6 +166,7 @@ class Agent:
             lo[flat] = np.maximum(lo[flat] - 1, -3)
             hi = np.floor((lx + np.cos(a) * (rr + 0.015)) / CS).astype(int); hj = np.floor((ly + np.sin(a) * (rr + 0.015)) / CS).astype(int)
             ok = (hi >= 0) & (hi < GX) & (hj >= 0) & (hj < GY)
+            for zx, zy, zr in self.dyn_zones: ok &= np.hypot(lx + np.cos(a) * rr - zx, ly + np.sin(a) * rr - zy) >= zr      # a hit on a person marks nothing (the free space in front of him is still cleared)
             flat = np.unique(hj[ok] * GX + hi[ok])
             lo[flat] = np.minimum(lo[flat].astype(int) + MAP_HIT, 20).astype(np.int8)
         if len(rr):                                   # the safety layer always gets this scan's points
@@ -138,6 +182,53 @@ class Agent:
         jj, ii = np.nonzero(self.lo[j0:j1, i0:i1] > MAP_OCC)
         self.map_pts = np.stack([(ii + i0 + 0.5) * CS, (jj + j0 + 0.5) * CS], 1)
         if cam_now: self._sense_camera()
+
+    def _track_slip(self, pre, corr, path):
+        """Compare what the wheels say with what the lidar says. Each scan: `path` is how far the odometry moved the
+        pose since the last scan matched, `corr` what the matcher then changed. Over a window, if the corrections point
+        back along the motion and add up to more than SLIP_RATIO of the path, the wheels are turning without the
+        robot following: raise the flag (acted on in goto)."""
+        t = self.r.t
+        mv = pre - self._slip_prev if getattr(self, '_slip_prev', None) is not None else np.zeros(2)
+        self._slip_prev = pre + corr
+        n = float(np.hypot(*mv))
+        back = -float(corr @ mv) / n if n > 1e-4 else 0.0
+        self._slip_hist.append((t, path, back))
+        self._slip_hist = [h for h in self._slip_hist if t - h[0] <= SLIP_WINDOW]
+        P = sum(h[1] for h in self._slip_hist); B = sum(h[2] for h in self._slip_hist)
+        self.slip_ratio = B / P if P > 1e-6 else 0.0
+        if (P >= SLIP_MIN_PATH and self.slip_ratio > SLIP_RATIO and t - self._slip_t > 4.0
+                and self.state in ('导航', '搬运', '巡视', '回位') and float(np.hypot(*self._cmd_w)) > 0.05):
+            self.slip_flag = t                        # when it was raised: only acted on while fresh (goto)
+
+    def _slip_recover(self):
+        """The wheels turned and the robot did not follow: something it cannot see (a clear bottle, a cable) is under or
+        against a wheel. Stop, back away from it, and remember an invisible obstacle just ahead of the body in the
+        direction it was driving, so the next plan goes round it."""
+        self.slip_flag = False; self._slip_t = self.r.t; self._slip_hist = []
+        x, y, th = self.pose(); d = self._cmd_w / max(float(np.hypot(*self._cmd_w)), 1e-6)
+        c_ = np.array([x, y]) + d * (BODY_R + GHOST_R - 0.01)
+        ang = np.linspace(0, 2 * math.pi, 12, endpoint=False)
+        # Only something nothing else explains is remembered: not where a known thing (to be picked up, being carried, the
+        # basket) or mapped furniture already is. The robot is often pressed against the very thing it is going to; a
+        # remembered obstacle on top of it would only make it unreachable.
+        known = any(float(np.min(np.hypot(e['outline'][:, 0] - c_[0], e['outline'][:, 1] - c_[1]))) < GHOST_R + 0.10 for e in self.memory.values() if e['status'] in ('pending', 'held'))
+        known = known or self._in_basket((c_[0], c_[1], 0.0), margin=GHOST_R + 0.05)
+        gi_, gj_ = int(c_[0] / CS), int(c_[1] / CS)
+        known = known or (0 <= gi_ < GX and 0 <= gj_ < GY and self.lo[max(0, gj_ - 1):gj_ + 2, max(0, gi_ - 1):gi_ + 2].max() > MAP_OCC)
+        if not known:
+            self.ghosts.append(dict(x=float(c_[0]), y=float(c_[1]), t=self.r.t, outline=np.stack([c_[0] + GHOST_R * np.cos(ang), c_[1] + GHOST_R * np.sin(ang)], 1)))
+        self.stats['slips'] = self.stats.get('slips', 0) + 1
+        self.stats['ghosts'] = self.stats.get('ghosts', 0) + (0 if known else 1)
+        self.log('轮子转了、车没跟上（雷达和里程计对不上）：停下后退' + ('，前方已经有已知的东西，不另记' if known else '，前方记一个看不见的障碍'))
+        self.stop()
+        c, s = math.cos(th), math.sin(th)
+        for _ in range(60): self.cmd(-0.08 * (c * d[0] + s * d[1]), -0.08 * (-s * d[0] + c * d[1]), 0.0); yield
+        self.stop()
+
+    def _live_ghosts(self):
+        self.ghosts = [g for g in self.ghosts if self.r.t - g['t'] < GHOST_LIFE]
+        return self.ghosts
 
     def _scan_filter(self, ang, rr):
         """Drop lidar returns that are neither backed by a neighbour in this scan nor seen at the same spot one scan
@@ -164,7 +255,7 @@ class Agent:
     def _sense_camera(self):
         """Front RGB-D camera: which floor cells it has looked at, and object detections put on the map."""
         x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th)
-        dets = self.cam.detect(self.basket_rect())
+        dets = self._drop_fragments(self.cam.detect(self.basket_rect()))
         # Low obstacles the camera sees right now (basket walls, things on the floor), for the safety layer. They do
         # not depend on the map, so they still protect when localisation has drifted. Leave out the thing being
         # carried (it hangs in front of the camera) and the thing about to be grasped.
@@ -204,6 +295,7 @@ class Agent:
             gi_, gj_ = int(o['x'] / CS), int(o['y'] / CS)
             if 0 <= gi_ < GX and 0 <= gj_ < GY and self.lo[gj_, gi_] > MAP_OCC: continue     # inside mapped furniture: a sliver of it
             k = self._associate(o['x'], o['y'])
+            if k is not None and self.memory[k].get('blind') and k == self.target: seen.add(k); continue      # fetch looks at it itself
             if k is not None: seen.add(k)
             # only whole views are used to learn about an object: one cut by the image edge has a shifted outline
             if dt['cut'] or dt['n_px'] < 40: continue
@@ -216,16 +308,24 @@ class Agent:
                 e = self.memory[k]
                 if e['status'] == 'delivered':
                     self.log(f'{self._name(e)} 那里的地上还有东西，重新去拿'); e.update(status='pending', retry_at=0.0)
-                if sig <= e['sigma'] * 1.1: e.update(sigma=sig, **o)
+                if sig <= e['sigma'] * 1.1:
+                    e.update(sigma=sig, **o)
+                    if e.pop('blind', None):
+                        self.log(f'{self._name(e)} 走近后看清了，按普通物体处理')
+                        # everything that belonged to the no-reading estimate goes with it: the core outline (outline_core is what
+                        # standoffs, the safety layer and the cost map read for the thing being fetched) and the side-look state
+                        for k_ in ('ambiguous', 'outline_core', 'bad_span', 'side_gave_up', 'look_fail', 'looks', 'seen_t'): e.pop(k_, None)
             self.visible[k] = dt['dist']
         for k in seen:
             if k in self.memory: self.memory[k]['miss'] = 0
+        if self.depth_hook is not None: self.depth_hook(self, x, y, th)      # after this frame's objects are matched: agent.visible and agent.memory are current
+        found = self._sense_clear(dets, x, y, th)
         # Negative evidence: the floor where a remembered object should be is in plain view and nothing is there.
         # (Pushed away by a wheel, or a duplicate.) Only from 0.35 m (closer, a flat object hardly hides the floor
         # point under it) out to where the camera would surely have seen it: 1.2 m, but only 0.7 m for small flat
         # things (a 2 cm stone is seen 1 time in 6 at 1 m). The floor there is marked unseen again, to look later.
         for k, e in list(self.memory.items()):
-            if k in seen or e['status'] != 'pending' or k == self.target: continue
+            if k in seen or e['status'] != 'pending' or k == self.target or e.get('blind'): continue
             wx_, wy_ = e['x'] - x, e['y'] - y
             B = np.array([[c * wx_ + s_ * wy_, -s_ * wx_ + c * wy_, 0.0]])
             r_max = 0.7 if (e['top'] < 0.03 or max(e['size'][:2]) < 0.05) else 1.2
@@ -252,6 +352,119 @@ class Agent:
                 else: drop = k2 if len(e1['pts']) >= len(e2['pts']) else k1
                 del self.memory[drop]
                 if self.priority == drop: self.priority = None
+
+    @staticmethod
+    def _pad(outline, r):
+        """The outline grown by r all round (convex hull of eight shifted copies)."""
+        offs = np.array([[math.cos(a), math.sin(a)] for a in np.linspace(0, 2 * math.pi, 8, endpoint=False)]) * r
+        Pp = (outline[:, None, :] + offs[None]).reshape(-1, 2)
+        return Pp[ConvexHull(Pp).vertices]
+
+    def _drop_fragments(self, dets):
+        """Pieces of a clear thing that did return depth (cap, label, an edge) come out of the segmentation as small objects
+        of their own. A no-reading cluster that is clearly bigger than the detection on the same spot says so: the detection
+        is only a piece, and the thing is described by the cluster (perception.clear_detection). A cluster inside a
+        detection (a few holes in a black or shiny thing that is measured anyway) leaves the detection alone."""
+        if not CLEAR_CUE or not dets or not self.cam.holes: return dets
+        keep = []
+        for dt in dets:
+            frag = False
+            for h in self.cam.holes:
+                if h['n_px'] < 30 or h['obj_frac'] > BLIND_OBJ_FRAC: continue      # (no range limit here: close up is where the pieces are largest)
+                d = clear_detection(h, self.cam)
+                if math.hypot(dt['rel'][0] - d['rel'][0], dt['rel'][1] - d['rel'][1]) > 0.15: continue
+                H_ = np.asarray(dt['hull']); L_dt = max(float(np.hypot(*(a - b))) for a in H_ for b in H_)
+                if d['length'] > L_dt + 0.03 or h['n_px'] > FRAG_RATIO * dt['n_px']: frag = True; break
+            if not frag: keep.append(dt)
+        return keep
+
+    @staticmethod
+    def _reset_blind(e):
+        """After a fetch that did not end in a grasp, drop the flags that would keep the next try from working: the side look
+        that was given up on, the count of close looks that saw nothing, the sides cached for the old geometry. Kept: which
+        sides were tried (`bad`) and from where it was looked at (`looks`), without which the second try repeats the first, and
+        the position with its certainty, which fades with time since it was last seen (BLIND_DRIFT) rather than being thrown
+        away: wiping it made an end-on bottle in patchy depth repeat the same failing round three times, keeping it locked
+        lost a bottle that had been pushed (round 12, materials seed 303)."""
+        if not e.get('blind'): return
+        for k in ('side_gave_up', 'look_fail'): e.pop(k, None)
+        e['dirs'] = None
+
+    def _set_blind(self, e, o, ambiguous):
+        """Outlines of something known only by a no-reading cluster: `outline_core` as measured, `outline` (what the planner
+        and the safety layer keep away from) padded when its length is unknown. The thing being fetched is kept away
+        from by its core only: the stance has to be close enough to reach it."""
+        e['ambiguous'] = bool(ambiguous); e['outline_core'] = o['outline']
+        e['outline'] = self._pad(o['outline'], BLIND_PAD if ambiguous else 0.015)
+
+    def _sense_clear(self, dets, x, y, th):
+        """Things the depth camera cannot measure (clear plastic): a cluster of pixels without any reading in the middle
+        of floor that does return depth. Nothing else is known of such a thing, so it is handled as an object seen only
+        as far as perception.clear_detection can tell: a remembered object (status pending, flagged `blind`) that the
+        planner can go to, and, from its outline, something the wheels keep away from. A cluster has to be seen in
+        BLIND_CONFIRM frames before it counts, and a remembered one is dropped when the spot is in view and there are
+        no missing readings there any more. Returns the set of memory ids that were confirmed by a cluster this frame."""
+        c, s_ = math.cos(th), math.sin(th); found = set()
+        if not CLEAR_CUE: return found
+        cands = getattr(self, '_blind_cands', [])
+        cands = [q for q in cands if self.r.t - q['t'] < 2.0]
+        if not self.held:
+            for h in self.cam.holes:
+                if h['cut'] or h['n_px'] < 30: continue          # cut by the image edge: its extent is not whole
+                if h['obj_frac'] > BLIND_OBJ_FRAC: continue      # holes in a black or shiny thing that is measured anyway
+                if h['near'] - self.cam.t_bc[0] < BLIND_MIN_RANGE: continue     # right under the camera: the geometry is not reliable (fetch looks again from its stance)
+                d = clear_detection(h, self.cam)
+                if any(math.hypot(dt['rel'][0] - d['rel'][0], dt['rel'][1] - d['rel'][1]) < 0.15 for dt in dets): continue   # a thing with a few holes in it that is measured anyway
+                # sight line over the basket: what is seen there is in the basket (or behind it), not on the floor here
+                near_pt = np.array([h['near'], 0.5 * (h['y0'] + h['y1'])]); cam_xy = self.cam.t_bc[:2]
+                line = [cam_xy + (near_pt - cam_xy) * f_ for f_ in np.linspace(0.05, 1.0, 12)]
+                if any(self._in_basket((x + c * p[0] - s_ * p[1], y + s_ * p[0] + c * p[1], 0.0), margin=0.03) for p in line): continue
+                o = self._to_world(d, x, y, th)
+                if self._in_basket((o['x'], o['y'], 0.0), margin=0.03): continue
+                gi_, gj_ = int(o['x'] / CS), int(o['y'] / CS)
+                if 0 <= gi_ < GX and 0 <= gj_ < GY and self.lo[gj_, gi_] > MAP_OCC: continue
+                sig = 0.02 + 0.04 * d['dist']
+                k = self._associate(o['x'], o['y'])
+                if k is not None:
+                    e = self.memory[k]; found.add(k)
+                    if not e.get('blind'): continue
+                    e['miss'] = 0
+                    eff = e['sigma'] + BLIND_DRIFT * (self.r.t - e.get('seen_t', self.r.t))        # fades while it is out of sight
+                    e['seen_t'] = self.r.t
+                    if e['status'] == 'delivered':
+                        self.log(f'{self._name(e)} 那里的地上还有看不清的东西，重新去拿'); e.update(status='pending', retry_at=0.0, looks=[])
+                    # a close, whole look wins; a view that cannot tell the direction does not overwrite one that could
+                    if sig <= eff * 1.1 and not (d['ambiguous'] and not e['ambiguous']):
+                        e.update(sigma=sig, **o); self._set_blind(e, o, d['ambiguous'])
+                    continue
+                q = next((q for q in cands if math.hypot(q['x'] - o['x'], q['y'] - o['y']) < 0.10), None)
+                if q is None: cands.append(dict(x=o['x'], y=o['y'], n=1, t=self.r.t)); continue
+                q.update(x=o['x'], y=o['y'], n=q['n'] + 1, t=self.r.t)
+                if q['n'] < BLIND_CONFIRM: continue
+                cands.remove(q)
+                k = self._next_id; self._next_id += 1; found.add(k)
+                self.memory[k] = dict(id=k, status='pending', retry_at=0.0, fails=0, miss=0, sigma=sig, blind=True, looks=[], seen_t=self.r.t, **o)
+                self._set_blind(self.memory[k], o, d['ambiguous']); self.stats['blind_found'] = self.stats.get('blind_found', 0) + 1
+                self.log(f'发现{self._name(self.memory[k], True)}：深度图上一片没读数的地方，应该是透明的东西，距离 {d["dist"]:.2f} m')
+        self._blind_cands = cands
+        # gone? The spot is in view, close enough to judge, and nothing is missing from the depth there
+        for k, e in list(self.memory.items()):
+            if not e.get('blind') or e['status'] != 'pending' or k == self.target or k in found or self.held: continue
+            wx_, wy_ = e['x'] - x, e['y'] - y
+            B = np.array([c * wx_ + s_ * wy_, -s_ * wx_ + c * wy_, 0.0])
+            if not 0.35 < math.hypot(B[0], B[1]) < 1.0: continue
+            # the centre of a thing seen end-on can be several cm off along the line of sight: look over the whole core outline
+            pts_ = [B] + [np.array([c * (px_ - x) + s_ * (py_ - y), -s_ * (px_ - x) + c * (py_ - y), 0.0]) for px_, py_ in e.get('outline_core', e['outline'])]
+            fr_ = [self.cam.hole_fraction(q_, half=4) for q_ in pts_]
+            frac = None if all(f_ is None for f_ in fr_) else max(f_ for f_ in fr_ if f_ is not None)
+            if frac is not None and frac < 0.02:
+                e['miss'] += 1
+                if e['miss'] >= BLIND_GONE:
+                    self.log(f'{self._name(e)} 不在原处了，从记忆里去掉'); del self.memory[k]
+                    ci, cj = int(e['x'] / CCS), int(e['y'] / CCS)
+                    if 0 <= ci < CGX and 0 <= cj < CGY: self.cov[cj, ci] = False
+                    if self.priority == k: self.priority = None
+        return found
 
     def _to_world(self, dt, x, y, th):
         """A detection (chassis frame) as map-frame measurements of the object: centre, outline, surface points, size."""
@@ -317,10 +530,10 @@ class Agent:
         a = 0.5 if self.basket_seen == 0 else 0.2
         self._set_basket(b['x'] + a * dx, b['y'] + a * dy); self.basket_seen += 1
 
-    @staticmethod
-    def _outline(e):
+    def _outline(self, e):
         """Outline of a remembered floor object (map frame) as measured by the camera. The safety layer keeps the
         wheels off it: below the lidar, the object is otherwise invisible to it."""
+        if e.get('outline_core') is not None and e['id'] == self.target: return e['outline_core']
         return e['outline']
 
     def _in_basket(self, p, margin=0.0):
@@ -357,6 +570,7 @@ class Agent:
             if rob1 == rob2: continue
             other, mine = (c.geom2, c.geom1) if rob1 else (c.geom1, c.geom2)
             if r.m.geom_bodyid[other] != 0: continue                      # only static world geometry counts
+            if mine == r.dock_nose and other in (r.dock_pad, r.dock_plate): continue      # touching the charger is what docking is, not a collision
             is_roller = r.m.geom_group[mine] == 1
             if other == self._floor:
                 if not is_roller and r.t - self._floor_t > 1.0: self._floor_t = r.t; self.stats['floor_touch'] += 1
@@ -372,7 +586,7 @@ class Agent:
         self.D_furn = D
         # Objects on the floor are low: only the chassis can touch them, so the robot centre has to keep KEEP from
         # their outlines, not a full PASS from the cells they are in.
-        ol = [e['outline'] for k, e in self.memory.items() if k != ignore and e['status'] == 'pending']
+        ol = [e['outline'] for k, e in self.memory.items() if k != ignore and e['status'] == 'pending'] + [g['outline'] for g in self._live_ghosts()]
         if ol:
             ol = np.vstack(ol)
             D = np.minimum(D, np.min(np.hypot(self._cx[..., None] - ol[:, 0], self._cy[..., None] - ol[:, 1]), -1) + (PASS - KEEP))
@@ -380,7 +594,7 @@ class Agent:
         if ignore is not None and ignore in self.memory:
             # the target is not a wall, but the robot must not drive over it on the way to its far side:
             # keep the robot centre at least KEEP from its outline
-            ol = self.memory[ignore]['outline']
+            ol = self.memory[ignore].get('outline_core', self.memory[ignore]['outline'])
             dmin = np.min(np.hypot(self._cx[..., None] - ol[:, 0], self._cy[..., None] - ol[:, 1]), -1)
             D = np.minimum(D, dmin + (PASS - KEEP))
         return D
@@ -463,7 +677,7 @@ class Agent:
         than SAFE_GAP (or closer than it already is), it falls back to a gentler command, finally to standing still.
         Rotation matters as much as translation: the folded arm sweeps a wider circle than the body."""
         x, y, th = self.pose()
-        lowp = np.vstack([self.basket_pts] + [self._outline(e) for e in self.memory.values() if e['status'] == 'pending']
+        lowp = np.vstack([self.basket_pts] + [self._outline(e) for e in self.memory.values() if e['status'] == 'pending'] + [g['outline'] for g in self.ghosts]
                          + ([self.cam_low] if self.r.t - self.cam_low_t < 0.6 and len(self.cam_low) else []))
         bp = lowp[np.hypot(lowp[:, 0] - x, lowp[:, 1] - y) < SAFE_R]
         W = [self.scan_pts, self.map_pts, bp]
@@ -508,6 +722,7 @@ class Agent:
         self.r.set_twist(0.0, 0.0, 0.0); self.blocked += 1
 
     def drive_world(self, vwx, vwy, th_des):
+        self._cmd_w = np.array([vwx, vwy])
         x, y, th = self.pose()
         c, s = math.cos(th), math.sin(th)
         self.cmd(c * vwx + s * vwy, -s * vwx + c * vwy, float(np.clip(2.2 * wrap(th_des - th), -W_MAX, W_MAX)))
@@ -522,6 +737,9 @@ class Agent:
             if check:
                 why = check()
                 if why: self.stop(); self.abort = why; return None
+            if self.slip_flag and self.r.t - self.slip_flag > 1.0: self.slip_flag = False        # stale: raised somewhere else
+            if self.slip_flag:
+                yield from self._slip_recover(); t_plan = -9.0; path = None; prog_t, prog_xy = self.r.t, np.array(self.pose()[:2])
             if self.r.t - t_plan > 0.6:
                 t_plan = self.r.t; D = self.costmap(ignore); goals = goal_fn(D)
                 if goal is not None:                       # stick with the goal already chosen while it stays valid
@@ -530,6 +748,12 @@ class Agent:
                 all_goals = goal_fn(D) if goal is not None else goals
                 res = self.astar(D, goals) if goals else None
                 if res is None and len(all_goals) > len(goals): res = self.astar(D, all_goals)
+                if res is None and self.ghosts:
+                    # The invisible obstacles remembered after a slip are a preference, not a wall: a 4 cm thing blown up by the
+                    # robot's own size can shut a 0.8 m passage (round 12, materials seed 301: two objects out of reach for good).
+                    # If they leave no way through, forget them and plan again.
+                    self.log('绕不开记下的看不见的障碍，先不管它'); self.ghosts = []
+                    D = self.costmap(ignore); goals = goal_fn(D); res = self.astar(D, goals) if goals else None
                 if res is None:
                     fails += 1; self.stop(); path = None
                     if fails >= 3: self.abort = 'no_path'; return None
@@ -615,7 +839,7 @@ class Agent:
             if b is None: continue
             near, far, off, lw, sc = b
             for side, uu, bb in ((a, u, b), (a + math.pi, -u, (-far, -near, -off, lw, sc))):
-                if any(abs(wrap(side - b_)) < 0.35 for b_ in bad): continue      # tried from about here and could not
+                if any(abs(wrap(side - b_)) < e.get('bad_span', 0.35) for b_ in bad): continue      # tried from about here and could not
                 out.append((sc, wrap(side), uu, bb))
         if out:   # tier 0: the best sides (within 1 cm of score); tier 1: any side where some strip fits the gripper
             smin = min(o[0] for o in out); out = sorted([(0 if o[0] <= smin + 0.010 else 1,) + o for o in out], key=lambda o: o[:2])
@@ -625,7 +849,7 @@ class Agent:
     def standoffs(self, e, D, max_tier=0):
         """Grasp stances for the best sides (tier 0), or for every side where the gripper fits (max_tier=1; also used
         when no best side can be stood at). All of them go to A*, which picks whichever it can reach."""
-        out = []; ol = e['outline']
+        out = []; ol = e.get('outline_core', e['outline'])
         for tier, _, a, u, (near, far, off, _, _) in self.grasp_dirs(e):
             if tier > max_tier: break
             v = np.array([-u[1], u[0]])
@@ -701,6 +925,7 @@ class Agent:
         self.stats['pulls'] += 1
         x, y, th = self.pose(); sh = -self.PULL_BACK * np.array([math.cos(th), math.sin(th)])
         e.update(x=e['x'] + sh[0], y=e['y'] + sh[1], outline=e['outline'] + sh, pts=e['pts'] + np.append(sh, 0.0), dirs=None, sigma=0.03, retry_at=0.0)
+        if e.get('outline_core') is not None: e['outline_core'] = e['outline_core'] + sh
         e.pop('bad', None)
         self.log(f'把 {cn} 往外扒了约 {100 * self.PULL_BACK:.0f} cm')
         return True
@@ -723,10 +948,15 @@ class Agent:
         or None if there is nothing there."""
         x, y, th = self.pose(); c, s_ = math.cos(th), math.sin(th)
         ex, ey = c * (e['x'] - x) + s_ * (e['y'] - y), -s_ * (e['x'] - x) + c * (e['y'] - y)
-        cands = [d for d in self.cam.detect(self.basket_rect(), n_avg=CLOSE_FRAMES) if d['n_px'] >= 60 and d['bottom'] < 0.04]
+        blind = bool(e.get('blind'))
+        dets = self.cam.detect(self.basket_rect(), n_avg=CLOSE_FRAMES)
+        if blind:     # known only by the no-reading cluster it leaves in the depth image
+            cands = [clear_detection(h, self.cam) for h in self.cam.holes if h['n_px'] >= 60 and not h['cut']]
+        else:
+            cands = [d for d in dets if d['n_px'] >= 60 and d['bottom'] < 0.04]
         if not cands: return None
         d = min(cands, key=lambda d: math.hypot(d['rel'][0] - ex, d['rel'][1] - ey))
-        if math.hypot(d['rel'][0] - ex, d['rel'][1] - ey) > 0.08: return None
+        if math.hypot(d['rel'][0] - ex, d['rel'][1] - ey) > ((BLIND_LOOK_WIDE if e.get('look_fail') else 0.10) if blind else 0.08): return None
         if not (0.13 < d['rel'][0] < 0.42 and abs(d['rel'][1]) < 0.16): return None
         return d
 
@@ -742,21 +972,61 @@ class Agent:
             goal = yield from self.goto(lambda D: self.standoffs(e, D), ignore=k, timeout=75.0)
             if goal is None and self.abort == 'no_path':       # the best sides are cut off: try the others too
                 goal = yield from self.goto(lambda D: self.standoffs(e, D, 1), ignore=k, timeout=75.0)
-            if goal is None and self.abort in ('no_path', 'timeout') and e.get('pulls', 0) < 2:
+            if goal is None and self.abort in ('no_path', 'timeout') and e.get('pulls', 0) < 2 and not e.get('blind'):
                 # nowhere to stand to grasp it: drag it into the open, then try again
                 pulled = yield from self.pull_out(k)
                 if pulled: continue
                 if k not in self.memory: return False
+            if goal is None and e.get('blind') and e.get('bad_span') and not e.get('side_gave_up'):
+                # no way to the side we wanted to look from (against furniture, a wall): take it from where it can be reached
+                e['side_gave_up'] = True; e.pop('bad', None); e.pop('bad_span', None); e['dirs'] = None
+                self.log(f'{cn} 侧面站不进去，就从能站的一侧下手'); continue
             if goal is None:
                 e['fails'] += 1; e['retry_at'] = r.t + 30 * e['fails']; e['why'] = '够不到' if self.abort == 'no_path' else '导航超时'
                 self.log(f'{cn} {e["why"]}，先跳过'); return False
             self.state = '抓取'
             d = self.measure_close(e)
+            if d is None and e.get('blind') and e.get('look_fail', 0) < 2:
+                # a cluster this close can fall outside what the camera sees; step back and look again before giving up on it
+                e['look_fail'] = e.get('look_fail', 0) + 1
+                x, y, th = self.pose(); self.log(f'{cn} 近看没看到，退后一点再看')
+                yield from self.servo((x - 0.10 * math.cos(th), y - 0.10 * math.sin(th), th), timeout=4.0)
+                d = self.measure_close(e)
             if d is None:
                 self.log(f'{cn} 不在预期位置，重新找'); self.memory.pop(k, None); self.cov[:] = False; return False
+            e.pop('look_fail', None)
             o = self._to_world(d, *self.pose())
             moved = math.hypot(o['x'] - e['x'], o['y'] - e['y'])
             e.update(sigma=0.012, **o)
+            if d.get('blind'): e['seen_t'] = r.t
+            if d.get('blind'):
+                self._set_blind(e, o, d['ambiguous'])
+                x, y, _ = self.pose(); ang = math.atan2(y - e['y'], x - e['x'])
+                if d['ambiguous']:
+                    # Seen end-on, or short: the cluster is only as wide as the thing is thick, and does not say how long it
+                    # is. Look once more from the side (a stance 60 degrees or more round from this one); if that is
+                    # no better either, it is a short thing and is taken from where we are.
+                    looks = e.setdefault('looks', [])
+                    if restand < 4 and not e.get('side_gave_up') and all(abs(wrap(ang - a_)) < 1.0 for a_ in looks):
+                        looks.append(ang); restand += 1; e['bad'] = list(looks); e['bad_span'] = 1.0; e['dirs'] = None
+                        if self.grasp_dirs(e):
+                            self.log(f'{cn} 这个角度看不出多长，换到侧面再看'); continue
+                        e.pop('bad', None); e.pop('bad_span', None); e['dirs'] = None
+                    else:
+                        e.pop('bad_span', None)               # looked from two sides and it is short: no more looking round
+                else:
+                    # a whole look: the direction and length are known. Stand on one of the best sides, if this is not one.
+                    e.pop('bad', None); e.pop('bad_span', None); e['dirs'] = None
+                    dirs_ = self.grasp_dirs(e)
+                    if restand < 4 and dirs_:
+                        # Is the strip the jaws would close on from here (best_band along the line from this stance) more than
+                        # 1 cm wider than from the best side? The same test grasp_dirs uses for its best sides: a heading that
+                        # is off by 20-30 degrees only widens it by a few mm, and is no reason to move.
+                        relp = np.column_stack([e['pts'][:, 0] - e['x'], e['pts'][:, 1] - e['y'], e['pts'][:, 2]])
+                        cur = best_band(relp, np.array([-math.cos(ang), -math.sin(ang)]))
+                        if cur is None or cur[4] > min(o[1] for o in dirs_) + 0.010:
+                            restand += 1; e['bad'] = [ang]; e['dirs'] = None
+                            self.log(f'{cn} 看清了朝向，换到能夹窄边的一侧'); continue
             plan = plan_grasp(d)
             # the stance was chosen from a farther look; now that the object is seen up close, re-stand if it is off
             if restand < 4 and (moved > 0.04 or abs(d['rel'][1]) > 0.06 or plan is None):
@@ -766,7 +1036,7 @@ class Agent:
                     self.log('从这边下不了手，换个站位')
                     if not self.grasp_dirs(e): restand = 99
                 continue
-            if plan is None and e.get('pulls', 0) < 2:
+            if plan is None and e.get('pulls', 0) < 2 and not e.get('blind'):
                 pulled = yield from self.pull_out(k)
                 if pulled: restand = 0; continue
                 if k not in self.memory: return False
@@ -840,12 +1110,13 @@ class Agent:
         x, y, th = self.pose()
         nx, ny = x + 0.25 * math.cos(th), y + 0.25 * math.sin(th); sh = np.array([nx - e['x'], ny - e['y']])
         e.update(status='pending', x=nx, y=ny, outline=e['outline'] + sh, pts=e['pts'] + np.append(sh, 0.0), dirs=None, sigma=0.03, retry_at=r.t + 5)
+        if e.get('outline_core') is not None: e['outline_core'] = e['outline_core'] + sh
         self.basket_blocked_t = r.t
         # whatever sits closest to the basket is probably what blocks the way in: deal with that first
         cands = [(math.hypot(o['x'] - self.basket['x'], o['y'] - self.basket['y']), j) for j, o in self.memory.items() if o['status'] == 'pending' and j != k]
         if cands: self.priority = min(cands)[1]
 
-    def explore_step(self):
+    def explore_step(self, stop_on_find=True):
         x, y, th = self.pose(); D = self.costmap()
         cells = []
         for j in range(CGY):
@@ -861,7 +1132,7 @@ class Agent:
         # stop well inside camera range of the cell: standing 0.55 m off with a 0.6 m range (second sweep) meant each
         # spin barely saw the cell, and the sweep crept along 10 cm per spin
         rad = min(0.55, self.cam_range - 0.25)
-        goal = yield from self.goto(lambda D: [(cx, cy, None, rad)], check=lambda: 'found' if self.pick() is not None else None, timeout=60)
+        goal = yield from self.goto(lambda D: [(cx, cy, None, rad)], check=(lambda: 'found' if self.pick() is not None else None) if stop_on_find else None, timeout=60)
         if goal is None and self.abort == 'found': return True
         if goal is not None and not self.cov[j, i]: yield from self.spin()
         self.cov[j, i] = True
@@ -872,24 +1143,31 @@ class Agent:
         p = self.priority
         if p is not None:
             e = self.memory.get(p)
-            if e and e['status'] == 'pending' and e['retry_at'] <= self.r.t: return p
+            if e and e['status'] == 'pending' and e['retry_at'] <= self.r.t and not (self.person_zones and any(math.hypot(e['x'] - zx, e['y'] - zy) < zr for zx, zy, zr in self.person_zones)): return p
             if self.r.t - self.basket_blocked_t < 25.0: return None   # no point picking up anything else yet
             self.priority = None
         for k, e in self.memory.items():
             if e['status'] == 'pending' and e['retry_at'] <= self.r.t:
+                if self.person_zones and any(math.hypot(e['x'] - zx, e['y'] - zy) < zr for zx, zy, zr in self.person_zones):
+                    e['retry_at'] = self.r.t + 10.0; self.zone_skip_t = self.r.t; continue                 # someone is standing by it: another one first, and look again in a few seconds
                 d = math.hypot(e['x'] - x, e['y'] - y)
                 if best is None or d < best[0]: best = (d, k)
         return None if best is None else best[1]
 
-    def run(self):
+    def run(self, resume=False):
+        """The whole job. `resume`: pick it up again after the supervisor had the robot doing something else (charging, an operator, a
+        fall): the map, the memory and the clock carry on, so the look-round at start-up is skipped."""
         self.abort = None
-        yield from wait(self.r, 0.5)
-        self.state = '巡视'; self.log('开机，原地环顾建图')
-        yield from self.spin()
+        if not resume:
+            yield from wait(self.r, 0.5)
+            self.state = '巡视'; self.log('开机，原地环顾建图')
+            yield from self.spin()
         while True:
             yield from self._work()
             if self.help_needed:
                 self.stop(); self.state = '求助'; return
+            if self.pause is not None and self.pause():
+                self.stop(); self.state = '暂停'; return
             self.state = '回位'; self.log('没有待办，回起点')
             yield from self.goto(lambda D: [(HOME[0], HOME[1], HOME[2], 0.0)], check=lambda: 'found' if self.pick() is not None else None, timeout=90)
             if self.abort == 'found' and self.r.t < T_MAX:
@@ -900,9 +1178,11 @@ class Agent:
     def _work(self):
         """Fetch what is known, explore for more, wait for skipped things to come due; until nothing is left or time is up."""
         while self.r.t < T_MAX:
+            if self.pause is not None and self.pause(): return         # asked to stop at a safe point (nothing in the gripper, between jobs)
             k = self.pick()
             if k is not None:
                 yield from self.fetch(k); self.target = None
+                if k in self.memory and self.memory[k]['status'] == 'pending': self._reset_blind(self.memory[k])
                 if self.help_needed: return
                 self.held = False
                 continue

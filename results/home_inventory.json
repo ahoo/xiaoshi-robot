@@ -1,0 +1,640 @@
+{
+ "runs": [
+  {
+   "seed": 1,
+   "session1": {
+    "found": 5,
+    "items": 5
+   },
+   "rows": [
+    {
+     "kind": "car",
+     "role": "moved",
+     "expected_id": 5,
+     "got_id": 5,
+     "got_kind": "car",
+     "status": "on_floor",
+     "ok": true,
+     "moved_flag": true
+    },
+    {
+     "kind": "lbrick",
+     "role": "kept",
+     "expected_id": 1,
+     "got_id": 1,
+     "got_kind": "lbrick",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "sock",
+     "role": "kept",
+     "expected_id": 3,
+     "got_id": 3,
+     "got_kind": "sock",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "ball",
+     "role": "moved",
+     "expected_id": 4,
+     "got_id": 4,
+     "got_kind": "ball",
+     "status": "on_floor",
+     "ok": true,
+     "moved_flag": true
+    },
+    {
+     "kind": "rock",
+     "role": "new",
+     "expected_id": null,
+     "got_id": 6,
+     "got_kind": "rock",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "cube",
+     "role": "removed",
+     "expected_id": 2,
+     "status": "missing",
+     "ok": true,
+     "unchecked": false
+    }
+   ],
+   "ghosts": [],
+   "events": [
+    [
+     0.3,
+     4,
+     "从 (3.01, 0.71) 挪到了 (0.74, 2.13)"
+    ],
+    [
+     1.5,
+     5,
+     "从 (3.67, 1.53) 挪到了 (1.21, 2.63)"
+    ],
+    [
+     133.2,
+     2,
+     "本该在 (2.46, 2.23) 却不在了"
+    ]
+   ],
+   "new_ids": [
+    6
+   ],
+   "questions": {
+    "new": [
+     "石头"
+    ],
+    "moved": [
+     "小球",
+     "玩具车"
+    ],
+    "missing": [
+     "方块"
+    ]
+   },
+   "t": [
+    151,
+    152
+   ],
+   "collisions": 0
+  },
+  {
+   "seed": 2,
+   "session1": {
+    "found": 5,
+    "items": 5
+   },
+   "rows": [
+    {
+     "kind": "car",
+     "role": "kept",
+     "expected_id": 5,
+     "got_id": 5,
+     "got_kind": "car",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "cube",
+     "role": "moved",
+     "expected_id": 2,
+     "got_id": 2,
+     "got_kind": "cube",
+     "status": "on_floor",
+     "ok": true,
+     "moved_flag": true
+    },
+    {
+     "kind": "ball",
+     "role": "moved",
+     "expected_id": 3,
+     "got_id": 3,
+     "got_kind": "ball",
+     "status": "on_floor",
+     "ok": true,
+     "moved_flag": true
+    },
+    {
+     "kind": "plush",
+     "role": "kept",
+     "expected_id": 4,
+     "got_id": 4,
+     "got_kind": "plush",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "rock",
+     "role": "new",
+     "expected_id": null,
+     "got_id": 6,
+     "got_kind": "rock",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "banana",
+     "role": "removed",
+     "expected_id": 1,
+     "status": "on_floor",
+     "ok": false,
+     "unchecked": true
+    }
+   ],
+   "ghosts": [],
+   "events": [
+    [
+     2.7,
+     2,
+     "本该在 (0.98, 2.65) 却不在了"
+    ],
+    [
+     95.7,
+     3,
+     "从 (1.27, 2.65) 挪到了 (2.77, 2.59)"
+    ],
+    [
+     114.9,
+     2,
+     "从 (0.98, 2.65) 挪到了 (2.45, 2.06)"
+    ]
+   ],
+   "new_ids": [
+    6
+   ],
+   "questions": {
+    "new": [
+     "石头"
+    ],
+    "moved": [
+     "方块",
+     "小球"
+    ],
+    "missing": []
+   },
+   "t": [
+    145,
+    139
+   ],
+   "collisions": 0
+  },
+  {
+   "seed": 3,
+   "session1": {
+    "found": 5,
+    "items": 5
+   },
+   "rows": [
+    {
+     "kind": "ball",
+     "role": "kept",
+     "expected_id": 1,
+     "got_id": 1,
+     "got_kind": "ball",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "banana",
+     "role": "moved",
+     "expected_id": 2,
+     "got_id": 2,
+     "got_kind": "banana",
+     "status": "on_floor",
+     "ok": true,
+     "moved_flag": true
+    },
+    {
+     "kind": "sock",
+     "role": "moved",
+     "expected_id": 3,
+     "got_id": 3,
+     "got_kind": "sock",
+     "status": "on_floor",
+     "ok": true,
+     "moved_flag": true
+    },
+    {
+     "kind": "plush",
+     "role": "kept",
+     "expected_id": 5,
+     "got_id": 5,
+     "got_kind": "plush",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "lbrick",
+     "role": "new",
+     "expected_id": null,
+     "got_id": 6,
+     "got_kind": "lbrick",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "cube",
+     "role": "removed",
+     "expected_id": 4,
+     "status": "missing",
+     "ok": true,
+     "unchecked": false
+    }
+   ],
+   "ghosts": [],
+   "events": [
+    [
+     1.2,
+     3,
+     "从 (3.13, 1.30) 挪到了 (1.13, 2.54)"
+    ],
+    [
+     73.8,
+     2,
+     "本该在 (2.46, 0.98) 却不在了"
+    ],
+    [
+     76.2,
+     4,
+     "本该在 (2.79, 0.76) 却不在了"
+    ],
+    [
+     111.0,
+     2,
+     "从 (2.46, 0.98) 挪到了 (3.56, 1.26)"
+    ]
+   ],
+   "new_ids": [
+    6
+   ],
+   "questions": {
+    "new": [
+     "L 形积木"
+    ],
+    "moved": [
+     "香蕉玩具",
+     "袜子"
+    ],
+    "missing": [
+     "方块"
+    ]
+   },
+   "t": [
+    130,
+    146
+   ],
+   "collisions": 0
+  },
+  {
+   "seed": 4,
+   "session1": {
+    "found": 5,
+    "items": 5
+   },
+   "rows": [
+    {
+     "kind": "lbrick",
+     "role": "moved",
+     "expected_id": 4,
+     "got_id": 4,
+     "got_kind": "lbrick",
+     "status": "on_floor",
+     "ok": true,
+     "moved_flag": true
+    },
+    {
+     "kind": "car",
+     "role": "kept",
+     "expected_id": 1,
+     "got_id": 1,
+     "got_kind": "car",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "banana",
+     "role": "moved",
+     "expected_id": 3,
+     "got_id": 3,
+     "got_kind": "banana",
+     "status": "on_floor",
+     "ok": true,
+     "moved_flag": true
+    },
+    {
+     "kind": "plush",
+     "role": "kept",
+     "expected_id": 2,
+     "got_id": 2,
+     "got_kind": "plush",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "sock",
+     "role": "new",
+     "expected_id": null,
+     "got_id": 6,
+     "got_kind": "sock",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "rock",
+     "role": "removed",
+     "expected_id": 5,
+     "status": "missing",
+     "ok": true,
+     "unchecked": false
+    }
+   ],
+   "ghosts": [],
+   "events": [
+    [
+     1.2,
+     3,
+     "从 (2.42, 2.39) 挪到了 (1.02, 2.50)"
+    ],
+    [
+     39.0,
+     4,
+     "从 (3.17, 0.79) 挪到了 (2.37, 1.62)"
+    ],
+    [
+     85.5,
+     5,
+     "本该在 (3.55, 1.07) 却不在了"
+    ]
+   ],
+   "new_ids": [
+    6
+   ],
+   "questions": {
+    "new": [
+     "袜子"
+    ],
+    "moved": [
+     "香蕉玩具",
+     "L 形积木"
+    ],
+    "missing": [
+     "石头"
+    ]
+   },
+   "t": [
+    170,
+    139
+   ],
+   "collisions": 0
+  },
+  {
+   "seed": 5,
+   "session1": {
+    "found": 5,
+    "items": 5
+   },
+   "rows": [
+    {
+     "kind": "rock",
+     "role": "moved",
+     "expected_id": 3,
+     "got_id": 3,
+     "got_kind": "rock",
+     "status": "on_floor",
+     "ok": true,
+     "moved_flag": true
+    },
+    {
+     "kind": "car",
+     "role": "moved",
+     "expected_id": 5,
+     "got_id": 5,
+     "got_kind": "car",
+     "status": "on_floor",
+     "ok": true,
+     "moved_flag": true
+    },
+    {
+     "kind": "banana",
+     "role": "kept",
+     "expected_id": 1,
+     "got_id": 1,
+     "got_kind": "banana",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "cube",
+     "role": "kept",
+     "expected_id": 4,
+     "got_id": 4,
+     "got_kind": "cube",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "plush",
+     "role": "new",
+     "expected_id": null,
+     "got_id": 6,
+     "got_kind": "plush",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "lbrick",
+     "role": "removed",
+     "expected_id": 2,
+     "status": "missing",
+     "ok": true,
+     "unchecked": false
+    }
+   ],
+   "ghosts": [],
+   "events": [
+    [
+     1.5,
+     5,
+     "从 (3.28, 0.93) 挪到了 (1.17, 2.60)"
+    ],
+    [
+     7.2,
+     3,
+     "从 (2.47, 2.60) 挪到了 (0.74, 2.09)"
+    ],
+    [
+     52.8,
+     2,
+     "本该在 (2.07, 0.87) 却不在了"
+    ]
+   ],
+   "new_ids": [
+    6
+   ],
+   "questions": {
+    "new": [
+     "毛绒玩具"
+    ],
+    "moved": [
+     "石头",
+     "玩具车"
+    ],
+    "missing": [
+     "L 形积木"
+    ]
+   },
+   "t": [
+    149,
+    142
+   ],
+   "collisions": 0
+  },
+  {
+   "seed": 6,
+   "session1": {
+    "found": 5,
+    "items": 5
+   },
+   "rows": [
+    {
+     "kind": "sock",
+     "role": "moved",
+     "expected_id": 5,
+     "got_id": 5,
+     "got_kind": "sock",
+     "status": "on_floor",
+     "ok": true,
+     "moved_flag": true
+    },
+    {
+     "kind": "plush",
+     "role": "kept",
+     "expected_id": 1,
+     "got_id": 1,
+     "got_kind": "plush",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "banana",
+     "role": "moved",
+     "expected_id": 3,
+     "got_id": 3,
+     "got_kind": "banana",
+     "status": "on_floor",
+     "ok": true,
+     "moved_flag": true
+    },
+    {
+     "kind": "car",
+     "role": "kept",
+     "expected_id": 2,
+     "got_id": 2,
+     "got_kind": "car",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "lbrick",
+     "role": "new",
+     "expected_id": null,
+     "got_id": 6,
+     "got_kind": "lbrick",
+     "status": "on_floor",
+     "ok": true
+    },
+    {
+     "kind": "ball",
+     "role": "removed",
+     "expected_id": 4,
+     "status": "missing",
+     "ok": true,
+     "unchecked": false
+    }
+   ],
+   "ghosts": [],
+   "events": [
+    [
+     0.6,
+     5,
+     "从 (3.16, 0.96) 挪到了 (0.79, 2.20)"
+    ],
+    [
+     133.5,
+     3,
+     "从 (2.41, 1.63) 挪到了 (3.24, 0.92)"
+    ],
+    [
+     139.8,
+     4,
+     "本该在 (3.65, 1.64) 却不在了"
+    ]
+   ],
+   "new_ids": [
+    6
+   ],
+   "questions": {
+    "new": [
+     "L 形积木"
+    ],
+    "moved": [
+     "香蕉玩具",
+     "袜子"
+    ],
+    "missing": [
+     "小球"
+    ]
+   },
+   "t": [
+    143,
+    161
+   ],
+   "collisions": 0
+  }
+ ],
+ "totals": {
+  "kept": [
+   12,
+   12
+  ],
+  "moved": [
+   12,
+   12
+  ],
+  "new": [
+   6,
+   6
+  ],
+  "removed": [
+   5,
+   6
+  ]
+ },
+ "wrong_identity": 0,
+ "ghosts": 0,
+ "removed_unchecked": 1
+}

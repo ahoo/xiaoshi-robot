@@ -1,0 +1,47 @@
+{
+ "lidar": "ld19cal",
+ "runs": [
+  {
+   "seed": 1,
+   "done": true,
+   "t_end": 152.9,
+   "coverage": 1.0,
+   "mapped_free_cells": 3737,
+   "mapped_occupied_cells": 423,
+   "objects_found": 5,
+   "objects_total": 5,
+   "collisions": 0,
+   "stuck": 0,
+   "loc_err_max": 0.0245,
+   "delivered": 0
+  },
+  {
+   "seed": 2,
+   "done": true,
+   "t_end": 139.1,
+   "coverage": 1.0,
+   "mapped_free_cells": 3681,
+   "mapped_occupied_cells": 436,
+   "objects_found": 5,
+   "objects_total": 5,
+   "collisions": 0,
+   "stuck": 0,
+   "loc_err_max": 0.014,
+   "delivered": 0
+  },
+  {
+   "seed": 3,
+   "done": true,
+   "t_end": 143.5,
+   "coverage": 1.0,
+   "mapped_free_cells": 3712,
+   "mapped_occupied_cells": 398,
+   "objects_found": 5,
+   "objects_total": 5,
+   "collisions": 0,
+   "stuck": 0,
+   "loc_err_max": 0.0307,
+   "delivered": 0
+  }
+ ]
+}

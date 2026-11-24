@@ -1,0 +1,1 @@
+{"seed": 3, "clearance": 0.3, "objects": {"ball": {"mass_g": 37.2, "size_cm": 5.9}, "banana": {"mass_g": 36.7, "size_cm": 14.9}, "cube": {"mass_g": 34.9, "size_cm": 5.7}, "sock": {"mass_g": 55.2, "size_cm": 13.6}, "plush": {"mass_g": 11.1, "size_cm": 10.0}}, "delivered": 5, "total": 5, "sim_time": 610.6, "grasp_attempts": 7, "grasp_fail": 0, "collisions": 7}
