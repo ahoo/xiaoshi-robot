@@ -399,7 +399,7 @@ def dashboard_rows(report):
     for it in ITEMS:
         v = report['items'].get(it['id'], dict(verdict='NODATA', lines=[], why='还没跑'))
         items.append(dict(id=it['id'], group=GROUPS[it['group']], title=it['title'], verdict=word[v['verdict']], measured='；'.join(f'{c["label"]} {c["measured"]}' for c in v['lines'][:3]) or v.get('why', ''),
-                          criterion=it['criterion'], scenario=it['scenario'], not_shown=it['not_shown'], command='；'.join(JOBS[j][0] for j in it['jobs']), source=v.get('mode', '—') + (' ' + v['when'] if v.get('when') else '')))
+                          criterion=it['criterion'], scenario=it['scenario'], not_shown=it['not_shown'], real='第 ' + '、'.join(str(n) for n in REAL.get(it['id'], [])) + ' 项', command='；'.join(JOBS[j][0] for j in it['jobs']), source=v.get('mode', '—') + (' ' + v['when'] if v.get('when') else '')))
         for c in v['lines']: lines.append(dict(item=it['id'], line=c['label'], measured=c['measured'], need=c['need'], ok='✓' if c['ok'] else '✗'))
     return items, lines
 
@@ -440,9 +440,19 @@ def run_jobs(names, w, procs):
     return out
 
 
+# The items of the physical acceptance table (docs/validation.md) that check the same thing on the real robot: what to measure when the hardware is there.
+REAL = {
+    'A1': [3, 4, 5, 6], 'A2': [16, 17, 18, 19, 26], 'B1': [11, 20], 'B2': [19, 21, 22, 23], 'B3': [24, 25],
+    'C1': [35, 36, 67], 'C2': [35, 36, 37, 67], 'C3': [31, 32, 33], 'C4': [29, 30, 34], 'C5': [38, 39], 'C6': [11, 40],
+    'D1': [41, 42, 43], 'D2': [44, 45], 'E1': [46, 47, 64], 'E2': [47, 64], 'E3': [50, 66], 'E4': [48, 49, 65],
+    'F1': [51, 52], 'F2': [59], 'F3': [52], 'F4': [41, 48, 50, 52], 'F5': [51, 60, 69],
+    'G1': [53, 54, 55, 68], 'G2': [56], 'G3': [57, 58], 'G4': [62], 'H1': [49, 61], 'I1': [63], 'I2': [70],
+}
+
+
 # What was found out about an item that did not pass (only shown while it does not pass). Written by hand, after looking into it.
 KNOWN = {
-    'B1': ('4 号布局里第 2 件是毛绒玩具：抓取时夹爪合到底，固定指垫被楔进玩具的躯干和头之间（头的铰链到了限位，两边各顶着约 20 N，指垫陷进去 7.5 和 11.8 mm），松手后指垫仍卡在里面。'
+    'B1': ('4 号布局里第 2 件是毛绒玩具：抓取时夹爪合到底，固定指垫被楔进玩具的躯干和头之间（头的偏转铰链被顶到 0.79 rad，超出它的限位 ±0.60 rad；躯干和头各顶着指垫约 20 N，指垫陷进去 7.5 和 11.8 mm），松手后指垫仍卡在里面。'
            '控制器自带的“抖 3 次、按到筐底 2 次”没有把它弄下来；我另外试的 10 种动作（手腕转 45°/90°/180°、按在筐底再转、夹爪反复开合、腕关节抖动、在筐底拖、快速抬起、整只手翻过来）也都没有，所以控制器按设计停机求助。'
            '同样的代码、同样的种子，每次都在 149.8 s 停在这里；第十六轮的 12 个布局试验里这个布局也是唯一失败的（11/12）。'
            '单独拿毛绒玩具和袜子各做 40 次“抓起来放进筐里”（夹力 1.0 和 0.8 N·m）一次都没卡住，所以这是少见的几何组合，不是普遍问题；但一旦发生，整套任务就停在那里。'
@@ -478,7 +488,7 @@ def render_markdown(report):
         L.append('')
     L += ['## 每一项做了什么、标准是什么、仿真证明不了什么', '']
     for it in ITEMS:
-        L += [f'### {it["id"]} {it["title"]}', '', f'- **场景**：{it["scenario"]}', f'- **标准**：{it["criterion"]}', f'- **命令**（约 {sum(JOBS[j][1] for j in it["jobs"])} 分钟，{"quick" if it["tier"] == "quick" else "standard"}）：' + '；'.join(f'`{JOBS[j][0]}`' for j in it['jobs']), f'- **仿真证明不了的**：{it["not_shown"]}', '']
+        L += [f'### {it["id"]} {it["title"]}', '', f'- **场景**：{it["scenario"]}', f'- **标准**：{it["criterion"]}', f'- **命令**（约 {sum(JOBS[j][1] for j in it["jobs"])} 分钟，{"quick" if it["tier"] == "quick" else "standard"}）：' + '；'.join(f'`{JOBS[j][0]}`' for j in it['jobs']), f'- **仿真证明不了的**：{it["not_shown"]}', f'- **实物验收表里对应的**（[`validation.md`](validation.md)）：第 ' + '、'.join(str(n) for n in REAL.get(it['id'], [])) + ' 项', '']
     L += ['## 通过这份验收，说明什么、不说明什么', '',
           '**说明**：我们自己写的那部分（控制、感知、建图、对话、权限、隐私、模式切换、起身、充电、安全层）在仿真里按上面的标准做对了，而且每次改代码都能一条命令重新验。', '',
           '**不说明**：真机上也这样。仿真里声音是合成的、人脸识别是替身、深度相机和舵机是模型、大模型没有对真服务测过、物体和房间是简化的。验收表（[`validation.md`](validation.md)）里买了硬件以后要逐项量的，这里都标在“仿真证明不了的”里；其中风险最大的几项是：起身（实物最冒险）、真人脸模型和真声纹模型的准确率、唤醒词的命中率和误唤醒、透明瓶在真深度图上的信号。', '']

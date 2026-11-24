@@ -323,10 +323,17 @@
     }
    ],
    "why": "",
-   "jobs": {},
-   "source": "读 results/ 里已有的结果",
-   "mode": "已有结果",
-   "when": "2026-11-24 15:27"
+   "jobs": {
+    "lowbatt": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 692,
+     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/lowbatt.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-24 17:30"
   },
   "C5": {
    "verdict": "PASS",
