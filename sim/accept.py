@@ -249,8 +249,6 @@ def e1(R):
             C('孩子被判成大人（所有姿势）', f'{s["child_called_adult"]} 次', '0', s['child_called_adult'] == 0), C('空房间的假目标', f'{s["false_tracks_empty_room"]["with_a_track"]}/{s["false_tracks_empty_room"]["frames"]} 帧', '0', s['false_tracks_empty_room']['with_a_track'] == 0)]
 
 
-@item('E2', '孩子挨着大人站时，不会被当成大人而放松', '孩子和大人并排或一前一后，间隔 10、25、45、70 cm，各 32 次共 256 次（立杆相机，随机位置，看 2 秒）', '检出这一对的试验里，孩子被找到并按小孩办、或合并在一块里按小孩办的 ≥ 90%（拿不准按小孩处理）；孩子被判成大人 0 次', ['pairs'], 'standard',
-      '**前臂相机没有单独测这一项**；一前一后站、间隔很小时孩子被大人挡住，一台相机本来就看不到；只用深度图分不开挨着的两个人（真正的办法是 RGB 的人体检测，在路线图上）')
 def pair_stats(rows):
     """What a run of the pairs bench found: trials in which somebody was detected where the two people stand, in how many of them the child was dealt with as a child (found on its own and called child or unsure,
     or merged with the grown-up into one block that is called child or unsure), how often a child found on its own was called an adult, how many times both were found as two."""
@@ -262,6 +260,8 @@ def pair_stats(rows):
                 only_adult=sum(1 for r in seen if not r['child_found'] and r['adult_found'] and r['adult_cls'] == 'adult'), two=sum(1 for r in rows if r['child_found'] and r['adult_found']), none=len(rows) - len(seen))
 
 
+@item('E2', '孩子挨着大人站时，不会被当成大人而放松', '孩子和大人并排或一前一后，间隔 10、25、45、70 cm，各 32 次共 256 次（立杆相机，随机位置，看 2 秒）', '检出这一对的试验里，孩子被找到并按小孩办、或合并在一块里按小孩办的 ≥ 90%（拿不准按小孩处理）；孩子被判成大人 0 次', ['pairs'], 'standard',
+      '**前臂相机没有单独测这一项**；一前一后站、间隔很小时孩子被大人挡住，一台相机本来就看不到；只用深度图分不开挨着的两个人（真正的办法是 RGB 的人体检测，在路线图上）')
 def e2(R):
     st = pair_stats(R('home_people_pairs')['rows']); ok, seen, n = st['ok'], st['seen'], st['n']
     return [C('检出这一对的试验里，孩子被找到并按小孩办、或合并在一块里按小孩办', f'{ok}/{seen}（{100 * ok / max(seen, 1):.0f}%）', '≥ 90%', seen > 0 and ok / seen >= 0.9),
