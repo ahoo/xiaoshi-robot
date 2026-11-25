@@ -28,6 +28,8 @@ import time
 from contextlib import contextmanager
 
 import mujoco
+
+_GEOM_ID = int(mujoco.mjtObj.mjOBJ_GEOM)       # an int: comparing a whole image with the enum member costs 25 ms, with the int 0.1 ms
 import numpy as np
 from scipy import ndimage
 
@@ -269,7 +271,7 @@ class HeadCam:
         with _zfar(m, HEAD_RANGE + 0.5):
             self.dep.update_scene(d, self.name); depth = self.dep.render().astype(np.float64)
             self.seg.update_scene(d, self.name); s = self.seg.render()
-        lab = np.where(s[..., 1] == mujoco.mjtObj.mjOBJ_GEOM, s[..., 0], -1)
+        lab = np.where(s[..., 1] == _GEOM_ID, s[..., 0], -1)
         self.self_mask = np.isin(lab, self.self_geoms); self.self_share = float(self.self_mask.mean())
         depth = depth + self.rng.normal(0, 1, depth.shape) * (HEAD_SIGMA[0] + HEAD_SIGMA[1] * depth ** 2) * perturb.get('depth_noise', 1.0)
         far = depth >= HEAD_RANGE; depth[far] = 0.0                                   # nothing measured there
