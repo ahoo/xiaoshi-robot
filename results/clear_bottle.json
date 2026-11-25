@@ -40,7 +40,7 @@
     "grasp_attempts": 12,
     "grasp_fail": 0,
     "floor_touch": 0,
-    "mean_sim_t_delivered": 312.5,
+    "mean_sim_t_delivered": 312.2,
     "side_looks": 6
    }
   },
@@ -455,7 +455,7 @@
    },
    {
     "delivered": true,
-    "sim_t": 370.4,
+    "sim_t": 364.5,
     "bottle_touches": 0,
     "bottle_moved_cm": null,
     "grasp_attempts": 1,
@@ -472,7 +472,7 @@
    },
    {
     "delivered": true,
-    "sim_t": 322.5,
+    "sim_t": 332.8,
     "bottle_touches": 0,
     "bottle_moved_cm": null,
     "grasp_attempts": 1,
@@ -489,7 +489,7 @@
    },
    {
     "delivered": true,
-    "sim_t": 337.9,
+    "sim_t": 324.2,
     "bottle_touches": 0,
     "bottle_moved_cm": null,
     "grasp_attempts": 1,
@@ -506,7 +506,7 @@
    },
    {
     "delivered": true,
-    "sim_t": 307.2,
+    "sim_t": 280.1,
     "bottle_touches": 0,
     "bottle_moved_cm": null,
     "grasp_attempts": 1,
@@ -523,7 +523,7 @@
    },
    {
     "delivered": true,
-    "sim_t": 298.8,
+    "sim_t": 311.7,
     "bottle_touches": 0,
     "bottle_moved_cm": null,
     "grasp_attempts": 1,
@@ -540,7 +540,7 @@
    },
    {
     "delivered": true,
-    "sim_t": 298.6,
+    "sim_t": 291.8,
     "bottle_touches": 0,
     "bottle_moved_cm": null,
     "grasp_attempts": 1,
@@ -557,7 +557,7 @@
    },
    {
     "delivered": true,
-    "sim_t": 321.2,
+    "sim_t": 329.1,
     "bottle_touches": 0,
     "bottle_moved_cm": null,
     "grasp_attempts": 1,
@@ -574,7 +574,7 @@
    },
    {
     "delivered": true,
-    "sim_t": 320.3,
+    "sim_t": 321.1,
     "bottle_touches": 0,
     "bottle_moved_cm": null,
     "grasp_attempts": 1,
@@ -591,7 +591,7 @@
    },
    {
     "delivered": true,
-    "sim_t": 283.1,
+    "sim_t": 254.5,
     "bottle_touches": 0,
     "bottle_moved_cm": null,
     "grasp_attempts": 1,
@@ -608,7 +608,7 @@
    },
    {
     "delivered": true,
-    "sim_t": 233.5,
+    "sim_t": 290.4,
     "bottle_touches": 0,
     "bottle_moved_cm": null,
     "grasp_attempts": 1,
@@ -625,7 +625,7 @@
    },
    {
     "delivered": true,
-    "sim_t": 275.8,
+    "sim_t": 273.0,
     "bottle_touches": 0,
     "bottle_moved_cm": null,
     "grasp_attempts": 1,
@@ -642,7 +642,7 @@
    },
    {
     "delivered": true,
-    "sim_t": 380.4,
+    "sim_t": 373.1,
     "bottle_touches": 0,
     "bottle_moved_cm": null,
     "grasp_attempts": 1,

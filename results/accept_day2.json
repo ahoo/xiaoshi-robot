@@ -64,7 +64,7 @@
    ],
    "collisions": 0,
    "sim_s": 167,
-   "wall_s": 233
+   "wall_s": 139
   },
   {
    "seed": 6,
@@ -130,7 +130,7 @@
    ],
    "collisions": 0,
    "sim_s": 188,
-   "wall_s": 257
+   "wall_s": 153
   },
   {
    "seed": 7,
@@ -196,7 +196,7 @@
    ],
    "collisions": 0,
    "sim_s": 167,
-   "wall_s": 234
+   "wall_s": 139
   }
  ]
 }

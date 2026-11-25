@@ -235,9 +235,8 @@
   "z_gap_median": NaN
  },
  "anonymous_strangers": {
-  "n": 30,
-  "merge_cosine": 0.6,
-  "clusters_per_4_strangers": 4.37,
-  "purity": 0.907
+  "n": 20,
+  "clusters_per_4_strangers": 4.65,
+  "purity": 0.935
  }
 }

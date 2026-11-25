@@ -6,11 +6,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 511.7,
+   "sim_time": 570.3,
    "collisions": 0,
-   "stuck": 1,
+   "stuck": 0,
    "fault": null,
-   "wall_s": 396
+   "wall_s": 429
   },
   {
    "condition": "bare_jaws",
@@ -18,11 +18,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 467.1,
+   "sim_time": 438.2,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 294
+   "wall_s": 259
   },
   {
    "condition": "bare_jaws",
@@ -30,11 +30,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 386.2,
+   "sim_time": 398.4,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 239
+   "wall_s": 202
   },
   {
    "condition": "clutter",
@@ -42,11 +42,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 430.5,
+   "sim_time": 450.5,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 383
+   "wall_s": 343
   },
   {
    "condition": "clutter",
@@ -54,11 +54,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 506.3,
+   "sim_time": 412.8,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 336
+   "wall_s": 278
   },
   {
    "condition": "clutter",
@@ -66,11 +66,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 482.0,
+   "sim_time": 516.2,
    "collisions": 0,
-   "stuck": 0,
+   "stuck": 8,
    "fault": null,
-   "wall_s": 295
+   "wall_s": 239
   },
   {
    "condition": "materials",
@@ -78,11 +78,11 @@
    "camera": "forearm_up",
    "delivered": 6,
    "total": 6,
-   "sim_time": 583.5,
+   "sim_time": 579.5,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 557
+   "wall_s": 444
   },
   {
    "condition": "materials",
@@ -90,11 +90,11 @@
    "camera": "forearm_up",
    "delivered": 6,
    "total": 6,
-   "sim_time": 481.8,
+   "sim_time": 555.3,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 307
+   "wall_s": 322
   },
   {
    "condition": "materials",
@@ -102,11 +102,11 @@
    "camera": "forearm_up",
    "delivered": 6,
    "total": 6,
-   "sim_time": 566.8,
+   "sim_time": 515.7,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 323
+   "wall_s": 245
   },
   {
    "condition": "near_walls",
@@ -114,11 +114,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 434.4,
+   "sim_time": 440.9,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 468
+   "wall_s": 347
   },
   {
    "condition": "near_walls",
@@ -126,11 +126,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 566.8,
+   "sim_time": 491.0,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 399
+   "wall_s": 297
   },
   {
    "condition": "near_walls",
@@ -138,11 +138,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 402.6,
+   "sim_time": 421.1,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 278
+   "wall_s": 212
   },
   {
    "condition": "standard",
@@ -150,11 +150,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 438.9,
+   "sim_time": 586.6,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 253
+   "wall_s": 691
   },
   {
    "condition": "standard",
@@ -162,11 +162,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 464.1,
+   "sim_time": 472.0,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 258
+   "wall_s": 630
   },
   {
    "condition": "standard",
@@ -174,11 +174,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 421.5,
+   "sim_time": 417.9,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 236
+   "wall_s": 541
   },
   {
    "condition": "standard",
@@ -186,11 +186,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 451.0,
+   "sim_time": 438.1,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 278
+   "wall_s": 574
   },
   {
    "condition": "standard",
@@ -198,11 +198,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 441.4,
+   "sim_time": 442.5,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 261
+   "wall_s": 305
   },
   {
    "condition": "standard",
@@ -210,11 +210,11 @@
    "camera": "forearm_up",
    "delivered": 5,
    "total": 5,
-   "sim_time": 447.0,
+   "sim_time": 433.6,
    "collisions": 0,
    "stuck": 0,
    "fault": null,
-   "wall_s": 287
+   "wall_s": 311
   }
  ]
 }

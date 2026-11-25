@@ -299,7 +299,8 @@ def _static_job(args):
 
 def bench_people_static(procs=2, trials=150, cam='mast'):
     per = trials // procs
-    with mp.Pool(procs, maxtasksperchild=1) as p: out = p.map(_static_job, [(100 + i, per, cam) for i in range(procs)])
+    seed0 = int(os.environ.get('STATIC_SEED0', 100))                                                 # other seeds: to see how much the numbers move
+    with mp.Pool(procs, maxtasksperchild=1) as p: out = p.map(_static_job, [(seed0 + i, per, cam) for i in range(procs)])
     rows = [r for o in out for r in o[0]]; fp = [v for o in out for v in o[1]]; ms = float(np.mean([o[2] for o in out]))
     def stat(sel):
         a = [r for r in rows if sel(r)]
@@ -353,7 +354,8 @@ def _pair_job(args):
 
 
 def bench_pairs(procs=2, reps=8):
-    with mp.Pool(procs, maxtasksperchild=1) as p: out = p.map(_pair_job, [(300 + i, reps) for i in range(procs)])
+    seed0 = int(os.environ.get('PAIRS_SEED0', 300))                                                  # other seeds: to see how much the numbers move
+    with mp.Pool(procs, maxtasksperchild=1) as p: out = p.map(_pair_job, [(seed0 + i, reps) for i in range(procs)])
     rows = [r for o in out for r in o]; res = {}
     for gap in (0.10, 0.25, 0.45, 0.70):
         for arr in ('side', 'inline'):

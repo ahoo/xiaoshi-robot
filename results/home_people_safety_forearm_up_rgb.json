@@ -11,7 +11,7 @@
    "sim_time": 420.0,
    "collisions": 0,
    "stuck": 0,
-   "wall_s": 200,
+   "wall_s": 271,
    "mode_end": "TASK"
   },
   {
@@ -25,7 +25,7 @@
    "sim_time": 420.0,
    "collisions": 0,
    "stuck": 1,
-   "wall_s": 264,
+   "wall_s": 364,
    "mode_end": "TASK",
    "contacts": [
     0
@@ -45,7 +45,7 @@
    "cls_votes": [
     {}
    ],
-   "ms_per_frame": 34,
+   "ms_per_frame": 46,
    "cam_blind_share": 0.145,
    "face_out": 0,
    "events": []
@@ -61,7 +61,7 @@
    "sim_time": 420.0,
    "collisions": 0,
    "stuck": 0,
-   "wall_s": 264,
+   "wall_s": 375,
    "mode_end": "TASK",
    "contacts": [
     0
@@ -81,7 +81,7 @@
    "cls_votes": [
     {}
    ],
-   "ms_per_frame": 33,
+   "ms_per_frame": 47,
    "cam_blind_share": 0.118,
    "face_out": 7,
    "events": [
@@ -108,7 +108,7 @@
    "sim_time": 420.0,
    "collisions": 0,
    "stuck": 0,
-   "wall_s": 258,
+   "wall_s": 362,
    "mode_end": "TASK",
    "contacts": [
     0
@@ -128,7 +128,7 @@
    "cls_votes": [
     {}
    ],
-   "ms_per_frame": 33,
+   "ms_per_frame": 45,
    "cam_blind_share": 0.142,
    "face_out": 0,
    "events": []
@@ -144,7 +144,7 @@
    "sim_time": 420.0,
    "collisions": 0,
    "stuck": 0,
-   "wall_s": 264,
+   "wall_s": 466,
    "mode_end": "TASK",
    "contacts": [
     0
@@ -164,7 +164,7 @@
    "cls_votes": [
     {}
    ],
-   "ms_per_frame": 34,
+   "ms_per_frame": 58,
    "cam_blind_share": 0.121,
    "face_out": 0,
    "events": [
@@ -191,7 +191,7 @@
    "sim_time": 420.0,
    "collisions": 0,
    "stuck": 0,
-   "wall_s": 260,
+   "wall_s": 491,
    "mode_end": "TASK",
    "contacts": [
     0
@@ -213,7 +213,7 @@
      "child": 12
     }
    ],
-   "ms_per_frame": 34,
+   "ms_per_frame": 60,
    "cam_blind_share": 0.119,
    "face_out": 1,
    "events": []
@@ -229,7 +229,7 @@
    "sim_time": 420.0,
    "collisions": 0,
    "stuck": 0,
-   "wall_s": 254,
+   "wall_s": 474,
    "mode_end": "TASK",
    "contacts": [
     0
@@ -251,7 +251,7 @@
      "child": 10
     }
    ],
-   "ms_per_frame": 34,
+   "ms_per_frame": 61,
    "cam_blind_share": 0.119,
    "face_out": 1,
    "events": []
@@ -267,7 +267,7 @@
    "sim_time": 420.0,
    "collisions": 0,
    "stuck": 0,
-   "wall_s": 270,
+   "wall_s": 495,
    "mode_end": "TASK",
    "contacts": [
     0,
@@ -305,7 +305,7 @@
      "child": 13
     }
    ],
-   "ms_per_frame": 35,
+   "ms_per_frame": 61,
    "cam_blind_share": 0.118,
    "face_out": 14,
    "events": []
@@ -321,7 +321,7 @@
    "sim_time": 420.0,
    "collisions": 0,
    "stuck": 0,
-   "wall_s": 267,
+   "wall_s": 320,
    "mode_end": "TASK",
    "contacts": [
     0,
@@ -355,7 +355,7 @@
      "child": 30
     }
    ],
-   "ms_per_frame": 34,
+   "ms_per_frame": 41,
    "cam_blind_share": 0.133,
    "face_out": 9,
    "events": [

@@ -111,6 +111,26 @@
    "looks": 5,
    "who": "xiaoming",
    "enrolled": true,
+   "right": 0.9166666666666666,
+   "wrong_name": 0.0,
+   "unknown": 0.08333333333333333
+  },
+  {
+   "dist": 1.0,
+   "frontal": false,
+   "looks": 5,
+   "who": "xiaohong",
+   "enrolled": true,
+   "right": 0.8866666666666667,
+   "wrong_name": 0.0,
+   "unknown": 0.11333333333333333
+  },
+  {
+   "dist": 1.0,
+   "frontal": false,
+   "looks": 5,
+   "who": "baba",
+   "enrolled": true,
    "right": 0.9033333333333333,
    "wrong_name": 0.0,
    "unknown": 0.09666666666666666
@@ -119,26 +139,6 @@
    "dist": 1.0,
    "frontal": false,
    "looks": 5,
-   "who": "xiaohong",
-   "enrolled": true,
-   "right": 0.91,
-   "wrong_name": 0.0,
-   "unknown": 0.09
-  },
-  {
-   "dist": 1.0,
-   "frontal": false,
-   "looks": 5,
-   "who": "baba",
-   "enrolled": true,
-   "right": 0.8833333333333333,
-   "wrong_name": 0.0,
-   "unknown": 0.11666666666666667
-  },
-  {
-   "dist": 1.0,
-   "frontal": false,
-   "looks": 5,
    "who": "lele",
    "enrolled": false,
    "right": 0.0,
@@ -311,9 +311,9 @@
    "looks": 5,
    "who": "xiaoming",
    "enrolled": true,
-   "right": 0.2733333333333333,
+   "right": 0.29333333333333333,
    "wrong_name": 0.0,
-   "unknown": 0.7266666666666667
+   "unknown": 0.7066666666666667
   },
   {
    "dist": 2.0,
@@ -321,9 +321,9 @@
    "looks": 5,
    "who": "xiaohong",
    "enrolled": true,
-   "right": 0.31,
+   "right": 0.2966666666666667,
    "wrong_name": 0.0,
-   "unknown": 0.69
+   "unknown": 0.7033333333333334
   },
   {
    "dist": 2.0,
@@ -331,9 +331,9 @@
    "looks": 5,
    "who": "baba",
    "enrolled": true,
-   "right": 0.23,
+   "right": 0.2633333333333333,
    "wrong_name": 0.0,
-   "unknown": 0.77
+   "unknown": 0.7366666666666667
   },
   {
    "dist": 2.0,
@@ -361,9 +361,9 @@
    "looks": 12,
    "who": "xiaoming",
    "enrolled": true,
-   "right": 0.9033333333333333,
+   "right": 0.93,
    "wrong_name": 0.0,
-   "unknown": 0.09666666666666666
+   "unknown": 0.07
   },
   {
    "dist": 2.0,
@@ -371,9 +371,9 @@
    "looks": 12,
    "who": "xiaohong",
    "enrolled": true,
-   "right": 0.9133333333333333,
+   "right": 0.9166666666666666,
    "wrong_name": 0.0,
-   "unknown": 0.08666666666666667
+   "unknown": 0.08333333333333333
   },
   {
    "dist": 2.0,
@@ -381,9 +381,9 @@
    "looks": 12,
    "who": "baba",
    "enrolled": true,
-   "right": 0.9233333333333333,
+   "right": 0.9366666666666666,
    "wrong_name": 0.0,
-   "unknown": 0.07666666666666666
+   "unknown": 0.06333333333333334
   },
   {
    "dist": 2.0,
@@ -410,6 +410,26 @@
    "frontal": true,
    "looks": 5,
    "who": "xiaoming",
+   "enrolled": true,
+   "right": 0.9733333333333334,
+   "wrong_name": 0.0,
+   "unknown": 0.02666666666666667
+  },
+  {
+   "dist": 3.0,
+   "frontal": true,
+   "looks": 5,
+   "who": "xiaohong",
+   "enrolled": true,
+   "right": 0.97,
+   "wrong_name": 0.0,
+   "unknown": 0.03
+  },
+  {
+   "dist": 3.0,
+   "frontal": true,
+   "looks": 5,
+   "who": "baba",
    "enrolled": true,
    "right": 0.9633333333333334,
    "wrong_name": 0.0,
@@ -419,26 +439,6 @@
    "dist": 3.0,
    "frontal": true,
    "looks": 5,
-   "who": "xiaohong",
-   "enrolled": true,
-   "right": 0.9766666666666667,
-   "wrong_name": 0.0,
-   "unknown": 0.023333333333333334
-  },
-  {
-   "dist": 3.0,
-   "frontal": true,
-   "looks": 5,
-   "who": "baba",
-   "enrolled": true,
-   "right": 0.96,
-   "wrong_name": 0.0,
-   "unknown": 0.04
-  },
-  {
-   "dist": 3.0,
-   "frontal": true,
-   "looks": 5,
    "who": "lele",
    "enrolled": false,
    "right": 0.0,
@@ -511,9 +511,9 @@
    "looks": 5,
    "who": "xiaoming",
    "enrolled": true,
-   "right": 0.06,
+   "right": 0.06666666666666667,
    "wrong_name": 0.0,
-   "unknown": 0.94
+   "unknown": 0.9333333333333333
   },
   {
    "dist": 3.0,
@@ -531,9 +531,9 @@
    "looks": 5,
    "who": "baba",
    "enrolled": true,
-   "right": 0.06,
+   "right": 0.03666666666666667,
    "wrong_name": 0.0,
-   "unknown": 0.94
+   "unknown": 0.9633333333333334
   },
   {
    "dist": 3.0,
@@ -560,6 +560,26 @@
    "frontal": false,
    "looks": 12,
    "who": "xiaoming",
+   "enrolled": true,
+   "right": 0.5766666666666667,
+   "wrong_name": 0.0,
+   "unknown": 0.42333333333333334
+  },
+  {
+   "dist": 3.0,
+   "frontal": false,
+   "looks": 12,
+   "who": "xiaohong",
+   "enrolled": true,
+   "right": 0.5033333333333333,
+   "wrong_name": 0.0,
+   "unknown": 0.49666666666666665
+  },
+  {
+   "dist": 3.0,
+   "frontal": false,
+   "looks": 12,
+   "who": "baba",
    "enrolled": true,
    "right": 0.5266666666666666,
    "wrong_name": 0.0,
@@ -569,26 +589,6 @@
    "dist": 3.0,
    "frontal": false,
    "looks": 12,
-   "who": "xiaohong",
-   "enrolled": true,
-   "right": 0.55,
-   "wrong_name": 0.0,
-   "unknown": 0.45
-  },
-  {
-   "dist": 3.0,
-   "frontal": false,
-   "looks": 12,
-   "who": "baba",
-   "enrolled": true,
-   "right": 0.54,
-   "wrong_name": 0.0,
-   "unknown": 0.46
-  },
-  {
-   "dist": 3.0,
-   "frontal": false,
-   "looks": 12,
    "who": "lele",
    "enrolled": false,
    "right": 0.0,
@@ -611,9 +611,9 @@
    "looks": 5,
    "who": "xiaoming",
    "enrolled": true,
-   "right": 0.7033333333333334,
+   "right": 0.7133333333333334,
    "wrong_name": 0.0,
-   "unknown": 0.2966666666666667
+   "unknown": 0.2866666666666667
   },
   {
    "dist": 4.0,
@@ -621,9 +621,9 @@
    "looks": 5,
    "who": "xiaohong",
    "enrolled": true,
-   "right": 0.7566666666666667,
+   "right": 0.75,
    "wrong_name": 0.0,
-   "unknown": 0.24333333333333335
+   "unknown": 0.25
   },
   {
    "dist": 4.0,
@@ -711,9 +711,9 @@
    "looks": 5,
    "who": "xiaoming",
    "enrolled": true,
-   "right": 0.013333333333333334,
+   "right": 0.023333333333333334,
    "wrong_name": 0.0,
-   "unknown": 0.9866666666666667
+   "unknown": 0.9766666666666667
   },
   {
    "dist": 4.0,
@@ -721,9 +721,9 @@
    "looks": 5,
    "who": "xiaohong",
    "enrolled": true,
-   "right": 0.006666666666666667,
+   "right": 0.01,
    "wrong_name": 0.0,
-   "unknown": 0.9933333333333333
+   "unknown": 0.99
   },
   {
    "dist": 4.0,
@@ -761,9 +761,9 @@
    "looks": 12,
    "who": "xiaoming",
    "enrolled": true,
-   "right": 0.17333333333333334,
+   "right": 0.16666666666666666,
    "wrong_name": 0.0,
-   "unknown": 0.8266666666666667
+   "unknown": 0.8333333333333334
   },
   {
    "dist": 4.0,
@@ -771,9 +771,9 @@
    "looks": 12,
    "who": "xiaohong",
    "enrolled": true,
-   "right": 0.2,
+   "right": 0.21666666666666667,
    "wrong_name": 0.0,
-   "unknown": 0.8
+   "unknown": 0.7833333333333333
   },
   {
    "dist": 4.0,
@@ -781,9 +781,9 @@
    "looks": 12,
    "who": "baba",
    "enrolled": true,
-   "right": 0.19333333333333333,
+   "right": 0.21666666666666667,
    "wrong_name": 0.0,
-   "unknown": 0.8066666666666666
+   "unknown": 0.7833333333333333
   },
   {
    "dist": 4.0,
@@ -835,19 +835,19 @@
    "unknown": 0.0
   },
   "2.0": {
-   "right": 0.913,
+   "right": 0.928,
    "wrong_name": 0.0,
-   "unknown": 0.087
+   "unknown": 0.072
   },
   "3.0": {
-   "right": 0.539,
+   "right": 0.536,
    "wrong_name": 0.0,
-   "unknown": 0.461
+   "unknown": 0.464
   },
   "4.0": {
-   "right": 0.189,
+   "right": 0.2,
    "wrong_name": 0.0,
-   "unknown": 0.811
+   "unknown": 0.8
   }
  },
  "enrolled_5looks_vs_12": {

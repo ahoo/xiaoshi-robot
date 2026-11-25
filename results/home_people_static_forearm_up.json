@@ -89,7 +89,7 @@
    "with_a_track": 0
   },
   "extra_tracks_with_a_person": 6,
-  "ms_per_frame": 34,
+  "ms_per_frame": 33,
   "size_class": {
    "stand/child": {
     "child": 53,

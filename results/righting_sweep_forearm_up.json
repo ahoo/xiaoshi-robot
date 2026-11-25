@@ -45,7 +45,7 @@
     "kind": "roll_l",
     "strength": 1.8,
     "poses": [
-     "side_r",
+     "fwd",
      "upright"
     ],
     "up": true,
@@ -55,7 +55,7 @@
     "kind": "roll_l",
     "strength": 2.0,
     "poses": [
-     "side_l",
+     "unknown",
      "upright"
     ],
     "up": true,
@@ -65,8 +65,7 @@
     "kind": "roll_l",
     "strength": 2.4,
     "poses": [
-     "fwd_b",
-     "fwd_b",
+     "side_r",
      "upright"
     ],
     "up": true,
@@ -114,76 +113,6 @@
    },
    {
     "kind": "roll_r",
-    "strength": 1.8,
-    "poses": [
-     "side_l",
-     "side_r",
-     "upright"
-    ],
-    "up": true,
-    "fell": true
-   },
-   {
-    "kind": "roll_r",
-    "strength": 2.0,
-    "poses": [
-     "side_l",
-     "upright"
-    ],
-    "up": true,
-    "fell": true
-   },
-   {
-    "kind": "roll_r",
-    "strength": 2.4,
-    "poses": [
-     "side_l",
-     "side_r",
-     "upright"
-    ],
-    "up": true,
-    "fell": true
-   },
-   {
-    "kind": "pitch_f",
-    "strength": 1.0,
-    "poses": [
-     "fwd_b",
-     "upright"
-    ],
-    "up": true,
-    "fell": true
-   },
-   {
-    "kind": "pitch_f",
-    "strength": 1.2,
-    "poses": [
-     "fwd",
-     "upright"
-    ],
-    "up": true,
-    "fell": true
-   },
-   {
-    "kind": "pitch_f",
-    "strength": 1.4,
-    "poses": [
-     "upright"
-    ],
-    "up": true,
-    "fell": false
-   },
-   {
-    "kind": "pitch_f",
-    "strength": 1.6,
-    "poses": [
-     "upright"
-    ],
-    "up": true,
-    "fell": false
-   },
-   {
-    "kind": "pitch_f",
     "strength": 1.8,
     "poses": [
      "unknown",
@@ -193,10 +122,77 @@
     "fell": true
    },
    {
+    "kind": "roll_r",
+    "strength": 2.0,
+    "poses": [
+     "side_r",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "roll_r",
+    "strength": 2.4,
+    "poses": [
+     "side_l",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_f",
+    "strength": 1.0,
+    "poses": [
+     "fwd_b",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_f",
+    "strength": 1.2,
+    "poses": [
+     "fwd",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
+    "kind": "pitch_f",
+    "strength": 1.4,
+    "poses": [
+     "upright"
+    ],
+    "up": true,
+    "fell": false
+   },
+   {
+    "kind": "pitch_f",
+    "strength": 1.6,
+    "poses": [
+     "upright"
+    ],
+    "up": true,
+    "fell": false
+   },
+   {
+    "kind": "pitch_f",
+    "strength": 1.8,
+    "poses": [
+     "side_r",
+     "upright"
+    ],
+    "up": true,
+    "fell": true
+   },
+   {
     "kind": "pitch_f",
     "strength": 2.0,
     "poses": [
-     "fwd_b",
      "side_r",
      "upright"
     ],
@@ -207,8 +203,7 @@
     "kind": "pitch_f",
     "strength": 2.4,
     "poses": [
-     "fwd",
-     "fwd",
+     "side_r",
      "upright"
     ],
     "up": true,
@@ -256,6 +251,7 @@
     "strength": 1.8,
     "poses": [
      "side_r",
+     "side_r",
      "upright"
     ],
     "up": true,
@@ -265,7 +261,7 @@
     "kind": "pitch_b",
     "strength": 2.0,
     "poses": [
-     "side_l",
+     "side_r",
      "upright"
     ],
     "up": true,
@@ -275,7 +271,8 @@
     "kind": "pitch_b",
     "strength": 2.4,
     "poses": [
-     "unknown",
+     "side_l",
+     "side_l",
      "upright"
     ],
     "up": true,

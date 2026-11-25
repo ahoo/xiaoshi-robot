@@ -1,7 +1,7 @@
 {
- "when": "2026-11-25 02:20",
+ "when": "2026-11-25 04:23",
  "source": "重跑（standard）",
- "code": "623c68a",
+ "code": "62a94d1",
  "items": {
   "A1": {
    "verdict": "PASS",
@@ -36,13 +36,13 @@
     "base": {
      "ok": true,
      "rc": 0,
-     "seconds": 4,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/base.log"
+     "seconds": 3,
+     "log": "/tmp/accept_final/logs/base.log"
     }
    },
-   "source": "重跑（quick）",
-   "mode": "重跑 quick",
-   "when": "2026-11-24 15:27"
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 04:23"
   },
   "A2": {
    "verdict": "PASS",
@@ -65,13 +65,13 @@
     "grasp": {
      "ok": true,
      "rc": 0,
-     "seconds": 394,
-     "log": "/tmp/xiaoshi_accept_v6e20r1i/logs/grasp.log"
+     "seconds": 409,
+     "log": "/tmp/accept_final/logs/grasp.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 02:27"
+   "when": "2026-11-25 04:30"
   },
   "B1": {
    "verdict": "PASS",
@@ -106,13 +106,13 @@
     "job_standard": {
      "ok": true,
      "rc": 0,
-     "seconds": 548,
-     "log": "/tmp/xiaoshi_accept_v6e20r1i/logs/job_standard.log"
+     "seconds": 893,
+     "log": "/tmp/accept_final/logs/job_standard.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 02:36"
+   "when": "2026-11-25 04:45"
   },
   "B2": {
    "verdict": "PASS",
@@ -171,13 +171,13 @@
     "job_hard": {
      "ok": true,
      "rc": 0,
-     "seconds": 1492,
-     "log": "/tmp/xiaoshi_accept_v6e20r1i/logs/job_hard.log"
+     "seconds": 959,
+     "log": "/tmp/accept_final/logs/job_hard.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 03:01"
+   "when": "2026-11-25 05:01"
   },
   "B3": {
    "verdict": "PASS",
@@ -200,51 +200,57 @@
     "clear": {
      "ok": true,
      "rc": 0,
-     "seconds": 566,
-     "log": "/tmp/xiaoshi_accept_v6e20r1i/logs/clear.log"
+     "seconds": 421,
+     "log": "/tmp/accept_final/logs/clear.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 03:10"
+   "when": "2026-11-25 05:08"
   },
   "C1": {
    "verdict": "PASS",
    "lines": [
     {
      "label": "标准扰动：向左侧倒",
-     "measured": "23/24（相机压地力中位 9 N，最大 77 N）",
+     "measured": "24/24（相机压地力最大 0 N，挡条受力中位 26 N、最大 42 N）",
      "need": "≥ 22/24",
      "ok": true
     },
     {
      "label": "标准扰动：向右侧倒",
-     "measured": "24/24（相机压地力中位 17 N，最大 32 N）",
+     "measured": "24/24（相机压地力最大 0 N，挡条受力中位 21 N、最大 40 N）",
      "need": "≥ 22/24",
      "ok": true
     },
     {
      "label": "标准扰动：前倾",
-     "measured": "23/24（相机压地力中位 0 N，最大 0 N）",
+     "measured": "24/24（相机压地力最大 0 N，挡条受力中位 0 N、最大 0 N）",
      "need": "≥ 22/24",
      "ok": true
     },
     {
      "label": "苛刻扰动：向左侧倒",
-     "measured": "24/24（相机压地力中位 9 N，最大 17 N）",
+     "measured": "24/24（相机压地力最大 0 N，挡条受力中位 26 N、最大 58 N）",
      "need": "≥ 19/24",
      "ok": true
     },
     {
      "label": "苛刻扰动：向右侧倒",
-     "measured": "24/24（相机压地力中位 18 N，最大 31 N）",
+     "measured": "24/24（相机压地力最大 0 N，挡条受力中位 21 N、最大 29 N）",
      "need": "≥ 19/24",
      "ok": true
     },
     {
      "label": "苛刻扰动：前倾",
-     "measured": "21/24（相机压地力中位 0 N，最大 38 N）",
+     "measured": "20/24（相机压地力最大 0 N，挡条受力中位 0 N、最大 19 N）",
      "need": "≥ 19/24",
+     "ok": true
+    },
+    {
+     "label": "相机压地力（6 格里最大；挡条在位，相机自己不该碰地）",
+     "measured": "0 N（挡条受力最大 58 N）",
+     "need": "≤ 1 N",
      "ok": true
     },
     {
@@ -259,38 +265,38 @@
     "righting_std": {
      "ok": true,
      "rc": 0,
-     "seconds": 103,
-     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/righting_std.log"
+     "seconds": 76,
+     "log": "/tmp/accept_final/logs/righting_std.log"
     },
     "righting_harsh": {
      "ok": true,
      "rc": 0,
-     "seconds": 105,
-     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/righting_harsh.log"
+     "seconds": 71,
+     "log": "/tmp/accept_final/logs/righting_harsh.log"
     },
     "righting_sweep": {
      "ok": true,
      "rc": 0,
-     "seconds": 40,
-     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/righting_sweep.log"
+     "seconds": 27,
+     "log": "/tmp/accept_final/logs/righting_sweep.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 17:11"
+   "when": "2026-11-25 05:10"
   },
   "C2": {
    "verdict": "PASS",
    "lines": [
     {
      "label": "倒下后起来",
-     "measured": "14/15（93%）",
+     "measured": "12/13（92%）",
      "need": "≥ 90%",
      "ok": true
     },
     {
      "label": "找回位置误差中位数",
-     "measured": "1.7 cm",
+     "measured": "0.9 cm",
      "need": "≤ 3 cm",
      "ok": true
     },
@@ -306,13 +312,13 @@
     "fall_room": {
      "ok": true,
      "rc": 0,
-     "seconds": 446,
-     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/fall_room.log"
+     "seconds": 264,
+     "log": "/tmp/accept_final/logs/fall_room.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 17:18"
+   "when": "2026-11-25 05:15"
   },
   "C3": {
    "verdict": "PASS",
@@ -341,13 +347,13 @@
     "dock": {
      "ok": true,
      "rc": 0,
-     "seconds": 80,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/dock.log"
+     "seconds": 46,
+     "log": "/tmp/accept_final/logs/dock.log"
     }
    },
-   "source": "重跑（quick）",
-   "mode": "重跑 quick",
-   "when": "2026-11-24 15:29"
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:16"
   },
   "C4": {
    "verdict": "PASS",
@@ -376,13 +382,13 @@
     "lowbatt": {
      "ok": true,
      "rc": 0,
-     "seconds": 536,
-     "log": "/tmp/xiaoshi_accept_v6e20r1i/logs/lowbatt.log"
+     "seconds": 417,
+     "log": "/tmp/accept_final/logs/lowbatt.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 03:19"
+   "when": "2026-11-25 05:23"
   },
   "C5": {
    "verdict": "PASS",
@@ -423,19 +429,19 @@
     "teleop": {
      "ok": true,
      "rc": 0,
-     "seconds": 619,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/teleop.log"
+     "seconds": 391,
+     "log": "/tmp/accept_final/logs/teleop.log"
     },
     "server": {
      "ok": true,
      "rc": 0,
-     "seconds": 15,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/server.log"
+     "seconds": 9,
+     "log": "/tmp/accept_final/logs/server.log"
     }
    },
-   "source": "重跑（quick）",
-   "mode": "重跑 quick",
-   "when": "2026-11-24 15:39"
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:29"
   },
   "C6": {
    "verdict": "PASS",
@@ -470,13 +476,13 @@
     "nav": {
      "ok": true,
      "rc": 0,
-     "seconds": 146,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/nav.log"
+     "seconds": 98,
+     "log": "/tmp/accept_final/logs/nav.log"
     }
    },
-   "source": "重跑（quick）",
-   "mode": "重跑 quick",
-   "when": "2026-11-24 15:42"
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:31"
   },
   "D1": {
    "verdict": "PASS",
@@ -505,13 +511,13 @@
     "scan": {
      "ok": true,
      "rc": 0,
-     "seconds": 312,
-     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/scan.log"
+     "seconds": 226,
+     "log": "/tmp/accept_final/logs/scan.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 17:35"
+   "when": "2026-11-25 05:35"
   },
   "D2": {
    "verdict": "PASS",
@@ -558,20 +564,20 @@
     "inventory": {
      "ok": true,
      "rc": 0,
-     "seconds": 437,
-     "log": "/tmp/xiaoshi_accept_jedn4sq8/logs/inventory.log"
+     "seconds": 262,
+     "log": "/tmp/accept_final/logs/inventory.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 18:00"
+   "when": "2026-11-25 05:39"
   },
   "E1": {
    "verdict": "PASS",
    "lines": [
     {
      "label": "1–2.5 m 检出",
-     "measured": "97%（102 次）",
+     "measured": "96%（102 次）",
      "need": "≥ 90%",
      "ok": true
     },
@@ -583,13 +589,13 @@
     },
     {
      "label": "站着的孩子：判成孩子或拿不准",
-     "measured": "58/58（其中拿不准 5）",
+     "measured": "57/57（其中拿不准 4）",
      "need": "全部",
      "ok": true
     },
     {
      "label": "站着的孩子：明确判成孩子",
-     "measured": "91%",
+     "measured": "93%",
      "need": "≥ 80%",
      "ok": true
     },
@@ -611,20 +617,20 @@
     "people": {
      "ok": true,
      "rc": 0,
-     "seconds": 56,
-     "log": "/tmp/xiaoshi_accept_jedn4sq8/logs/people.log"
+     "seconds": 27,
+     "log": "/tmp/accept_final/logs/people.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 18:00"
+   "when": "2026-11-25 05:39"
   },
   "E2": {
    "verdict": "PASS",
    "lines": [
     {
      "label": "检出这一对的试验里，孩子被找到并按小孩办、或合并在一块里按小孩办",
-     "measured": "179/182（98%）",
+     "measured": "256/256（100%）",
      "need": "≥ 90%",
      "ok": true
     },
@@ -636,25 +642,32 @@
     },
     {
      "label": "只剩一条“大人”的轨迹、孩子没找到（只记录）",
-     "measured": "3 次",
+     "measured": "0 次",
      "need": "只记录",
      "ok": true
     },
     {
      "label": "这两个人身边什么都没检出的试验（只记录；只放一个大人的对照也只有 67% 检出，见 pairs_control.py）",
-     "measured": "74/256（29%）",
+     "measured": "0/256（0%）",
      "need": "只记录",
      "ok": true
     }
    ],
    "why": "",
-   "jobs": {},
-   "source": "读 /tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/sandbox_backup2/results 里的结果（一次重跑留下的）",
-   "mode": "重跑的结果，重新判",
-   "when": ""
+   "jobs": {
+    "pairs": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 35,
+     "log": "/tmp/accept_final/logs/pairs.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:40"
   },
   "E3": {
-   "verdict": "PASS",
+   "verdict": "FAIL",
    "lines": [
     {
      "label": "碰到人（安全层开）",
@@ -664,27 +677,27 @@
     },
     {
      "label": "有人走到 0.6 m 以内的场景，安全层停过",
-     "measured": "3/3（adult_cross 停 2 次、child_run 停 3 次、family 停 3 次）",
+     "measured": "3/3（adult_cross 停 2 次、child_run 停 4 次、family 停 3 次）",
      "need": "全部",
      "ok": true
     },
     {
      "label": "离人最近（只记录：孩子冲过来时人自己会跑到很近）",
-     "measured": "13.8 cm",
+     "measured": "12.6 cm",
      "need": "只记录",
      "ok": true
     },
     {
      "label": "对照：同样的场景关掉安全层，离人最近（只记录）",
-     "measured": "9.8 cm",
+     "measured": "9.6 cm",
      "need": "只记录",
      "ok": true
     },
     {
      "label": "送达",
-     "measured": "25/25",
+     "measured": "24/25",
      "need": "全部",
-     "ok": true
+     "ok": false
     },
     {
      "label": "碰撞",
@@ -694,10 +707,17 @@
     }
    ],
    "why": "",
-   "jobs": {},
-   "source": "读 /tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/sandbox_backup2/results 里的结果（一次重跑留下的）",
-   "mode": "重跑的结果，重新判",
-   "when": ""
+   "jobs": {
+    "safety": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 727,
+     "log": "/tmp/accept_final/logs/safety.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:52"
   },
   "E4": {
    "verdict": "PASS",
@@ -739,18 +759,161 @@
      "ok": true,
      "rc": 0,
      "seconds": 2,
-     "log": "/tmp/xiaoshi_accept_jedn4sq8/logs/identity.log"
+     "log": "/tmp/accept_final/logs/identity.log"
     },
     "faces": {
      "ok": true,
      "rc": 0,
-     "seconds": 47,
-     "log": "/tmp/xiaoshi_accept_jedn4sq8/logs/faces.log"
+     "seconds": 23,
+     "log": "/tmp/accept_final/logs/faces.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 18:25"
+   "when": "2026-11-25 05:53"
+  },
+  "E5": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "假定质量：检出这一对的试验里，孩子按小孩办",
+     "measured": "256/256（100%；纯深度 100%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "假定质量：孩子被判成大人",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "假定质量：两个人分别找到的试验（对比纯深度）",
+     "measured": "256/256（100%），纯深度 224/256（88%）",
+     "need": "多 ≥ 5 个百分点",
+     "ok": true
+    },
+    {
+     "label": "做差的检测器：检出这一对的试验里，孩子按小孩办",
+     "measured": "256/256（100%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "做差的检测器：孩子被判成大人",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "做差的检测器：两个人分别找到的试验（只记录）",
+     "measured": "238/256（93%）",
+     "need": "只记录",
+     "ok": true
+    },
+    {
+     "label": "站着的人（假定质量）：1–2.5 m 检出",
+     "measured": "96%（102 次）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "站着的人（假定质量）：大人判成大人",
+     "measured": "46/46（100%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "站着的人（假定质量）：孩子被判成大人（所有姿势）",
+     "measured": "0 次（站着的孩子里明确判成孩子 54、拿不准 3）",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "空房间的假目标（检测器有假框）",
+     "measured": "0/48 帧",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "站着的人（做差的检测器）：1–2.5 m 检出",
+     "measured": "96%（102 次）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "站着的人（做差的检测器）：大人判成大人",
+     "measured": "43/46（93%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "站着的人（做差的检测器）：孩子被判成大人（所有姿势）",
+     "measured": "0 次（站着的孩子里明确判成孩子 53、拿不准 4）",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "同场干活（假定质量）：碰到人",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "同场干活：有人走到 0.6 m 以内的场景，安全层停过",
+     "measured": "3/3",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "同场干活：送达 / 碰撞",
+     "measured": "25/25 / 0 次",
+     "need": "全部 / 0",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "pairs": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 35,
+     "log": "/tmp/accept_final/logs/pairs.log"
+    },
+    "pairs_rgb": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 52,
+     "log": "/tmp/accept_final/logs/pairs_rgb.log"
+    },
+    "pairs_rgb_weak": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 48,
+     "log": "/tmp/accept_final/logs/pairs_rgb_weak.log"
+    },
+    "people_rgb": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 39,
+     "log": "/tmp/accept_final/logs/people_rgb.log"
+    },
+    "people_rgb_weak": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 39,
+     "log": "/tmp/accept_final/logs/people_rgb_weak.log"
+    },
+    "safety_rgb": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 1062,
+     "log": "/tmp/accept_final/logs/safety_rgb.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:13"
   },
   "F1": {
    "verdict": "PASS",
@@ -791,13 +954,13 @@
     "voice": {
      "ok": true,
      "rc": 0,
-     "seconds": 66,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/voice.log"
+     "seconds": 58,
+     "log": "/tmp/accept_final/logs/voice.log"
     }
    },
-   "source": "重跑（quick）",
-   "mode": "重跑 quick",
-   "when": "2026-11-24 15:44"
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:14"
   },
   "F2": {
    "verdict": "PASS",
@@ -844,13 +1007,13 @@
     "lang": {
      "ok": true,
      "rc": 0,
-     "seconds": 200,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/lang.log"
+     "seconds": 168,
+     "log": "/tmp/accept_final/logs/lang.log"
     }
    },
-   "source": "重跑（quick）",
-   "mode": "重跑 quick",
-   "when": "2026-11-24 15:47"
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:17"
   },
   "F3": {
    "verdict": "PASS",
@@ -873,19 +1036,19 @@
     "lang": {
      "ok": true,
      "rc": 0,
-     "seconds": 200,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/lang.log"
+     "seconds": 168,
+     "log": "/tmp/accept_final/logs/lang.log"
     },
     "voice": {
      "ok": true,
      "rc": 0,
-     "seconds": 66,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/voice.log"
+     "seconds": 58,
+     "log": "/tmp/accept_final/logs/voice.log"
     }
    },
-   "source": "重跑（quick）",
-   "mode": "重跑 quick",
-   "when": "2026-11-24 15:47"
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:17"
   },
   "F4": {
    "verdict": "PASS",
@@ -914,13 +1077,13 @@
     "day": {
      "ok": true,
      "rc": 0,
-     "seconds": 602,
-     "log": "/tmp/xiaoshi_accept_jedn4sq8/logs/day.log"
+     "seconds": 375,
+     "log": "/tmp/accept_final/logs/day.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 18:35"
+   "when": "2026-11-25 06:23"
   },
   "F5": {
    "verdict": "PASS",
@@ -937,13 +1100,13 @@
     "wake": {
      "ok": true,
      "rc": 0,
-     "seconds": 22,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/wake.log"
+     "seconds": 24,
+     "log": "/tmp/accept_final/logs/wake.log"
     }
    },
-   "source": "重跑（quick）",
-   "mode": "重跑 quick",
-   "when": "2026-11-24 15:58"
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:24"
   },
   "G1": {
    "verdict": "PASS",
@@ -978,13 +1141,13 @@
     "ssl": {
      "ok": true,
      "rc": 0,
-     "seconds": 203,
-     "log": "/tmp/xiaoshi_accept_jedn4sq8/logs/ssl.log"
+     "seconds": 286,
+     "log": "/tmp/accept_final/logs/ssl.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 18:39"
+   "when": "2026-11-25 06:28"
   },
   "G2": {
    "verdict": "PASS",
@@ -1013,13 +1176,13 @@
     "voiceprint": {
      "ok": true,
      "rc": 0,
-     "seconds": 274,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/voiceprint.log"
+     "seconds": 351,
+     "log": "/tmp/accept_final/logs/voiceprint.log"
     }
    },
-   "source": "重跑（quick）",
-   "mode": "重跑 quick",
-   "when": "2026-11-24 16:03"
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:34"
   },
   "G3": {
    "verdict": "PASS",
@@ -1060,13 +1223,13 @@
     "assoc": {
      "ok": true,
      "rc": 0,
-     "seconds": 256,
-     "log": "/tmp/xiaoshi_accept_aq1_1o3h/logs/assoc.log"
+     "seconds": 310,
+     "log": "/tmp/accept_final/logs/assoc.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 18:59"
+   "when": "2026-11-25 06:39"
   },
   "G4": {
    "verdict": "PASS",
@@ -1095,13 +1258,13 @@
     "day2": {
      "ok": true,
      "rc": 0,
-     "seconds": 260,
-     "log": "/tmp/xiaoshi_accept_aq1_1o3h/logs/day2.log"
+     "seconds": 155,
+     "log": "/tmp/accept_final/logs/day2.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 19:03"
+   "when": "2026-11-25 06:42"
   },
   "H1": {
    "verdict": "PASS",
@@ -1124,13 +1287,13 @@
     "profile": {
      "ok": true,
      "rc": 0,
-     "seconds": 7,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/profile.log"
+     "seconds": 5,
+     "log": "/tmp/accept_final/logs/profile.log"
     }
    },
-   "source": "重跑（quick）",
-   "mode": "重跑 quick",
-   "when": "2026-11-24 16:03"
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:42"
   },
   "I1": {
    "verdict": "PASS",
@@ -1165,13 +1328,13 @@
     "pose": {
      "ok": true,
      "rc": 0,
-     "seconds": 7,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/pose.log"
+     "seconds": 6,
+     "log": "/tmp/accept_final/logs/pose.log"
     }
    },
-   "source": "重跑（quick）",
-   "mode": "重跑 quick",
-   "when": "2026-11-24 16:03"
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:42"
   },
   "I2": {
    "verdict": "PASS",
@@ -1189,12 +1352,12 @@
      "ok": true,
      "rc": 0,
      "seconds": 6,
-     "log": "/tmp/xiaoshi_accept_00dc_27z/logs/llm.log"
+     "log": "/tmp/accept_final/logs/llm.log"
     }
    },
-   "source": "重跑（quick）",
-   "mode": "重跑 quick",
-   "when": "2026-11-24 16:03"
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:42"
   }
  }
 }

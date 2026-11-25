@@ -10,7 +10,9 @@
 
 第十六轮把**相机从头部立杆挪到了机械臂上**（装在前臂上、向上翻到仰 32.5°，行进姿势下就朝前向上看，不用抬手臂，不要立杆；仿真里找人、分大人孩子、认人（替身识别器）、人和机器人同场干活都和立杆差不多，代价是手臂干活时约 12% 的时间看不到人，以及**相机会影响起身**（75 g 装上去，原来存着的起身动作向左侧倒就起不来了；已带着相机重搜，新场景上起身 23–24/24，机器人有前臂相机时自动用新动作；但侧倒时相机会压在地上，要加保护挡条；整机摔倒试验里还抓到并修了起身模式里一个等不完的等待，没有相机也会遇到），见 [`docs/status.md`](docs/status.md)）；接上了**大模型 API**（`sim/llm.py`，**不限哪一家**：Claude、任何 OpenAI 兼容的服务——DeepSeek、通义、Kimi、智谱、OpenAI、Azure……以及家里电脑上的 Ollama / LM Studio / vLLM，还能几个串起来；默认关，只发唤醒词之后这一句话的文字，孩子和认不出的人的话不发，动作仍要先口头确认；真服务没有测过）；唤醒词和停止词改成**在声音上直接听**（`sim/wakeword.py`，sherpa-onnx 的中英双语关键词模型，词用文字写进去；真录音上验证了流程，**真人喊“小拾小拾”有多灵没有测**）。
 
-- **先在仿真里做功能验收**：[`docs/acceptance_sim.md`](docs/acceptance_sim.md)（29 项功能，每项一个场景、一条通过标准；`cd sim && python accept.py --run quick`，约 40 分钟，逐项给出通过/没通过和数字；`--run standard` 全部重跑约 3 小时）。买物料等这份验收满意了再说。最近一次全部重跑的结果：**28 项通过，1 项没通过**（共 29 项；其中 28 项的数字是这一轮在仿真里重跑出来的，B2 读的是这一轮重跑留在 `results/accept_job.json` 里的数字）。没通过的：B1 整套任务：4×3 m 的房间里 5 件东西送进筐里（原因和查过什么见下面和 [`acceptance_sim.md`](acceptance_sim.md)）
+第十八轮做了四件事（都只在仿真里）：**修了毛绒玩具把指垫楔住的问题**（抓取最后一步分档加夹力、物体一松动就停，整套任务 B1 6/6 送到）；**彩色图人体检测**（接口、仿真替身和与深度的融合，默认关；检测器是替身，数字是假定的，真网络没有，见 [`docs/people_rgb.md`](docs/people_rgb.md)）；**前臂相机的保护挡条**（相机压地力最大 77 N → 0，可打印的 OpenSCAD/STL 文件在 `docs/cad/`，见 [`docs/camera_bumper.md`](docs/camera_bumper.md)，**安装和强度没在实物上试**）；**仿真提速**（整套任务快约 20%，结果不变）。验收从 29 项变成 30 项（加了 E5）。见 [`docs/status.md`](docs/status.md)。
+
+- **先在仿真里做功能验收**：[`docs/acceptance_sim.md`](docs/acceptance_sim.md)（30 项功能，每项一个场景、一条通过标准；`cd sim && python accept.py --run quick`，约 50 分钟，逐项给出通过/没通过和数字；`--run standard` 全部重跑约 2.5–3.5 小时）。买物料等这份验收满意了再说。最近一次全部重跑的结果：**29 项通过，1 项没通过**（共 30 项）。没通过的：E3 人走近时刹得住（一家三口的场景里 5 件只送到 4 件：妈妈走过时踢到一个球，球滚到家具边，机器人拿不回来；碰到人 0 次、碰撞 0 次，**不是安全问题**，原因和证据见 [`acceptance_sim.md`](docs/acceptance_sim.md)，接受还是先修由你定）。
 - 当前状态和已知限制：[`docs/status.md`](docs/status.md)；下一步计划：[`docs/roadmap.md`](docs/roadmap.md)
 - 试验结果和实物验收表（买了硬件以后做）：[`docs/validation.md`](docs/validation.md)
 - 要买的东西：[`docs/bom.md`](docs/bom.md)
@@ -20,7 +22,7 @@
 
 | 路径 | 内容 |
 |---|---|
-| `sim/accept.py`、`accept_job.py`、`accept_day2.py` | **仿真功能验收**：29 项功能的注册表（场景、通过标准、命令、仿真证明不了什么），`--report` 读已有结果下结论，`--run quick/standard` 在临时副本里重跑并下结论，写 `results/acceptance_sim.json` 和 `docs/acceptance_sim.md` |
+| `sim/accept.py`、`accept_job.py`、`accept_day2.py` | **仿真功能验收**：30 项功能的注册表（场景、通过标准、命令、仿真证明不了什么），`--report` 读已有结果下结论，`--run quick/standard` 在临时副本里重跑并下结论，写 `results/acceptance_sim.json` 和 `docs/acceptance_sim.md` |
 | `sim/model.py` | 整机物理模型：带滚子的全向轮、底盘、SO-101、房间。硬件参数集中在顶部的 `P` |
 | `sim/objects.py` | 物体库：方块、小球、玩具车、香蕉、L 形积木、随机形状的石头、袜子（软）、毛绒玩具（软）。每次出场尺寸和重量随机 |
 | `sim/robot.py` | 驱动层接口：底盘速度、关节目标、雷达、里程计 |
@@ -44,6 +46,9 @@
 | `sim/home.py` | `Home`：把三维地图和物件记录挂到前置相机的每一帧上（`Agent.depth_hook`，不挂的时候旧路径不变） |
 | `sim/inventory.py` | 物件记录：颜色直方图 + 尺寸 → 种类猜测；跨次会话再识别（挪过位置的认得出是同一件）；「不见了」「还没核实」；按名字问「在哪」；命名；存本机 JSON，不存图片 |
 | `sim/people.py` | 人和孩子：仿真里的人（五种身高、走、站、坐、追着机器人跑）；头部深度相机（立杆）；深度图检测、跟踪、身高 → 大人/小孩/不确定；激光雷达上会动的东西（相机看不到的方向）；登记簿（要大人同意、可删、只存特征向量）；安全层 `Guard`（放慢、停下、手臂不动）；**认人那一层是替身，见 `docs/privacy.md`** |
+| `sim/rgbdet.py` | 彩色图里的人体检测（第十八轮）：`SimBoxes`（**仿真替身**，找到率、框抖动、假框是假定的数字）、`OnnxBoxes`（接真模型，没有模型文件、没跑过）、`box_detections`（框和深度怎么合）；默认关，`PEOPLE_RGB=sim` 打开，见 [`docs/people_rgb.md`](docs/people_rgb.md) |
+| `sim/test_track.py`、`sim/cam_contact_probe.py` | 跟踪器“滑行”的小检查；相机壳体哪里碰地的探针（保护挡条的依据） |
+| `docs/cad/` | 前臂相机保护挡条（第十八轮）：`camera_bumper.scad`（OpenSCAD，参数在开头）和 `camera_bumper.stl`，见 [`docs/camera_bumper.md`](docs/camera_bumper.md) |
 | `sim/voice.py`、`sim/voice_data.py`、`sim/voice_data_en.py` | 中文和英文语音（第十五轮起两种语言和夹杂）：唤醒词和停止词、模拟的语音识别（中文：同音字、声调、平翘舌、前后鼻音、掉字；英文：同音词、差一个音素的词、中国人说英文的口音、掉词；夹杂时另一种语言的词会被写成对方的字）、拼音/音素模糊匹配的理解、多轮对话、谁能让它做什么、执行器、可选大模型的接口、声纹登记；`voice_data.py` 是带标注的中文说法，`voice_data_en.py` 是英文和夹杂的（开发集、第一次看过的保留集、没调过的测试集） |
 | `sim/lang.py` | 双语工具：语种判断、英文音素（CMU 词典）和音素距离匹配、英文唤醒词/停止词/意图/物品/地点/是否、句型（动词+东西）、拼音写的名字（`xiaoshi`）、英文识别错误模型 |
 | `sim/acoustics.py` | 声学仿真：长方体房间（镜像声源法 3 阶 + 扩散尾巴）、2/4/6 麦阵列、espeak-ng 合成的中英文说话声、电视、机器人自己的风扇和轮子声、背景和麦克风自噪声 |

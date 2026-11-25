@@ -195,18 +195,18 @@
  ],
  "status_after": {
   "ok": true,
-  "t": 6.1,
+  "t": 9.3,
   "mode": "TELEOP",
   "state": "遥控",
   "pose": [
-   2.396,
-   1.502,
-   -0.006
+   2.614,
+   1.501,
+   -0.005
   ],
-  "tilt": 0.3,
+  "tilt": 0.6,
   "fault": null,
   "warn": null,
-  "soc": 0.626,
+  "soc": 0.625,
   "volts": 11.25,
   "dock": false,
   "nav": [],
@@ -214,14 +214,14 @@
  },
  "nav": [
   {
-   "t": 20.7,
+   "t": 17.6,
    "goal": [
     3.0,
     1.0,
     0.0
    ],
    "result": "arrived",
-   "secs": 6.7
+   "secs": 6.1
   }
  ],
  "client_keys_ok": true,
