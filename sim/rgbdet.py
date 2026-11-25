@@ -98,13 +98,15 @@ def box_detections(cam, boxes, W, ok, pose, UPPER=0.5, TOP_BIAS=0.05, MIN_TOP=0.
     does not hide the one behind: that one's depth is measured on what is left."""
     out = []
     z = cam.depth; Hh, Ww = z.shape; pz = W[..., 2]; claimed = np.zeros(z.shape, bool)
+    rr = np.hypot(W[..., 0] - pose[0], W[..., 1] - pose[1])                                         # how far each point is from the robot, along the floor: the window below is on this, not on the depth along the
+                                                                                                    # optical axis, which grows with height when the camera looks up (a head would fall outside the window)
     def window(box):
         u0, v0, u1, v1, _ = box
         return int(max(0, math.floor(u0))), int(max(0, math.floor(v0))), int(min(Ww - 1, math.ceil(u1))), int(min(Hh - 1, math.ceil(v1)))
     def middle_depth(a, b, c, d, free):
         """The depth of the person in the box: the median of what is free (not taken by a nearer person) in the middle of the box; if too little of the middle is free (somebody stands in
         front of the body) the head and shoulders at the top of the box."""
-        sz = z[b:d + 1, a:c + 1]; sok = ok[b:d + 1, a:c + 1] & (sz > 0.1) & free[b:d + 1, a:c + 1]
+        sz = rr[b:d + 1, a:c + 1]; sok = ok[b:d + 1, a:c + 1] & (z[b:d + 1, a:c + 1] > 0.1) & free[b:d + 1, a:c + 1]
         for fr0, fr1, fc0, fc1 in ((0.2, 0.7, 0.2, 0.8), (0.0, 0.3, 0.25, 0.75)):
             r0, r1, c0, c1 = int(fr0 * (d - b)), int(fr1 * (d - b)) + 1, int(fc0 * (c - a)), int(fc1 * (c - a)) + 1
             mid = sok[r0:r1, c0:c1]

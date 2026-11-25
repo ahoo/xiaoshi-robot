@@ -376,13 +376,13 @@
     "lowbatt": {
      "ok": true,
      "rc": 0,
-     "seconds": 692,
-     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/lowbatt.log"
+     "seconds": 536,
+     "log": "/tmp/xiaoshi_accept_v6e20r1i/logs/lowbatt.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 17:30"
+   "when": "2026-11-25 03:19"
   },
   "C5": {
    "verdict": "PASS",

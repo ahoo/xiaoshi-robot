@@ -363,11 +363,11 @@ class Track:
     def __init__(self, t, x, y, h, cut, w, grp=False):
         Track._n += 1; self.grp = [grp]; self.id = Track._n; self.t0 = self.t = t; self.x, self.y = x, y; self.vx = self.vy = 0.0; self.hits = 1; self.misses = 0
         self.hs = [] if cut else [h]; self.hmax_cut = h if cut else 0.0; self.ws = [w] if w else []; self.cut = cut; self.emb = []; self.frontal = []; self.who = None; self.who_conf = 0.0; self.truth = None
-        self.cls = 'unsure'; self.coast = False; self.dist = 0.0; self.history = [(t, x, y)]
+        self.cls = 'unsure'; self.coast = False; self.dist = 0.0; self.history = [(t, x, y)]; self.t_adv = t; self.xm, self.ym = x, y         # xm, ym: where it was last seen; t_adv: the time up to which x, y have been carried along at the track's velocity
 
     def update(self, t, x, y, h, cut, w, grp=False):
-        self.grp = (self.grp + [grp])[-12:]; dt = max(t - self.t, 1e-3); vx, vy = (x - self.x) / dt, (y - self.y) / dt; a = 0.5
-        self.vx, self.vy = (1 - a) * self.vx + a * vx, (1 - a) * self.vy + a * vy; self.x, self.y = x, y; self.t = t; self.hits += 1; self.misses = 0; self.coast = False
+        self.grp = (self.grp + [grp])[-12:]; dt = max(t - self.t, 1e-3); vx, vy = (x - self.xm) / dt, (y - self.ym) / dt; a = 0.5
+        self.vx, self.vy = (1 - a) * self.vx + a * vx, (1 - a) * self.vy + a * vy; self.x, self.y = x, y; self.xm, self.ym = x, y; self.t = t; self.t_adv = t; self.hits += 1; self.misses = 0; self.coast = False
         if cut: self.hmax_cut = max(self.hmax_cut, h)
         else: self.hs = (self.hs + [h])[-12:]
         if w: self.ws = (self.ws + [w])[-12:]
@@ -384,7 +384,7 @@ class Track:
     def width(self): return float(np.median(self.ws)) if self.ws else None
 
     def predict(self, t):
-        dt = min(t - self.t, 1.5); return self.x + self.vx * dt, self.y + self.vy * dt
+        dt = min(t - self.t_adv, 1.5); return self.x + self.vx * dt, self.y + self.vy * dt
 
 
 class PersonDetector:
@@ -417,13 +417,15 @@ class PersonDetector:
 
     def _fuse(self, clusters, W, ok, pose):
         """Depth and the colour-image detector together: every box that has a person-like thing under it in the depth image is a detection of its own (so two people who stand close are two);
-        the depth points that no box explains are kept as one more detection that is only 'unsure' (a person the detector missed this frame is still slowed for)."""
+        the depth points that no box explains are kept as one more detection (a person the detector missed this frame is still slowed for): a cluster that no box touches as depth alone sees it, what is left of one that boxes took part of as 'unsure'."""
         import rgbdet
         self.last_boxes = boxes = self.boxes.detect(self.cam)
         dets, claimed = rgbdet.box_detections(self.cam, boxes, W, ok, pose, UPPER, TOP_BIAS, MIN_TOP, GROUP_FOOT)
         taken = ndimage.binary_dilation(claimed, iterations=2) if claimed.any() else claimed
         for c in clusters:
             x, y, z, v, u = c['pts']; o = ~taken[v, u]                                      # the depth points that no person's box took (not just: that lie inside some box's rectangle)
+            if o.all():                                                                     # no box touches it: the detector found nothing here, so this is what depth alone makes of it (a lone person is measured
+                dets.append(dict(x=c['x'], y=c['y'], h=c['h'], cut=c['cut'], w=c['w'], n=c['n'], grp=c['grp'], src='depth')); continue      # and sized as without boxes; two together are 'unsure')
             if o.sum() < 40 or o.mean() < 0.15: continue
             x, y, z, v = x[o], y[o], z[o], v[o]; top = float(np.percentile(z, 99)) + TOP_BIAS; foot = max(np.ptp(x), np.ptp(y))
             if top < MIN_TOP or foot > MAX_FOOT: continue
@@ -476,7 +478,7 @@ class PersonDetector:
         for k in self.tracks:
             if k not in used:
                 k.misses += 1; k.coast = True
-                if t - k.t < 1.5: k.x, k.y = k.predict(t)[0], k.predict(t)[1]
+                if t - k.t < 1.5: k.x, k.y = k.predict(t); k.t_adv = t                      # carried along from where it was last put (each frame by that frame's step: not by the time since the last sighting again)
         self.tracks = [k for k in self.tracks if t - k.t - min(self.blind_total - getattr(k, 'b0', self.blind_total), 6.0) < 3.0]      # time the camera was not looking is not held against a track (up to 6 s)
         for k in self.tracks:
             h, lb = k.height; k.cls = 'unsure' if any(k.grp) and sum(k.grp) * 2 >= len(k.grp) else classify(h, k.width, lb); k.dist = math.hypot(k.x - pose[0], k.y - pose[1])

@@ -16,7 +16,7 @@ python accept.py --run quick --only C3,F5  # 只跑指定的几项
 
 `--run` 会在临时目录里放一份仓库的副本再跑，所以 `results/` 里已有的结果不会被改；跑完把结论和数字写进 `results/acceptance_sim.json` 和这个文件（只有验收自己用的 `accept_job.json`、`accept_day2.json` 会留在 `results/` 里，这样 `--report` 才有东西可判）。标准写在 `sim/accept.py` 的 `ITEMS` 里，改一个数字，结论就跟着变。
 
-## 最近一次：2026-11-25 03:10（各项的来源不同，见每项的“来源”列：重跑 quick、重跑 standard、重跑的结果，重新判，代码 623c68a）
+## 最近一次：2026-11-25 03:19（各项的来源不同，见每项的“来源”列：重跑 quick、重跑 standard、重跑的结果，重新判，代码 623c68a）
 
 **29 项通过，0 项没通过，0 项没有数据或没跑成**（共 29 项）。
 
@@ -42,7 +42,7 @@ python accept.py --run quick --only C3,F5  # 只跑指定的几项
 | C1 | 站着被推倒，自己起来（装着前臂相机） | ✅ 通过 | ✓ 标准扰动：向左侧倒：23/24（相机压地力中位 9 N，最大 77 N）（≥ 22/24）<br>✓ 标准扰动：向右侧倒：24/24（相机压地力中位 17 N，最大 32 N）（≥ 22/24）<br>✓ 标准扰动：前倾：23/24（相机压地力中位 0 N，最大 0 N）（≥ 22/24）<br>✓ 苛刻扰动：向左侧倒：24/24（相机压地力中位 9 N，最大 17 N）（≥ 19/24）<br>✓ 苛刻扰动：向右侧倒：24/24（相机压地力中位 18 N，最大 31 N）（≥ 19/24）<br>✓ 苛刻扰动：前倾：21/24（相机压地力中位 0 N，最大 38 N）（≥ 19/24）<br>✓ 28 次推倒：倒下 23 次，起来 23 次（倒下的全部起来） | `RIGHTING_LIB=righting_maneuvers_armcam.json RIGHTING_OUT=righting_camera_searched python test_armcam.py righting_camera 24`<br>`RIGHTING_HARSH=1 RIGHTING_LIB=righting_maneuvers_armcam.json RIGHTING_OUT=righting_camera_searched_harsh python test_armcam.py righting_camera 24`<br>`SWEEP_CAM=forearm_up python test_righting.py` | 重跑 standard<br>2026-11-24 17:11 |
 | C2 | 房间里摔倒后起来，并找回自己在哪里（装着前臂相机） | ✅ 通过 | ✓ 倒下后起来：14/15（93%）（≥ 90%）<br>✓ 找回位置误差中位数：1.7 cm（≤ 3 cm）<br>✓ 找回的位置错了（> 20 cm）：0 次（0） | `FALL_CAM=forearm_up python test_modes.py fall 16` | 重跑 standard<br>2026-11-24 17:18 |
 | C3 | 没电了自己回充电座对接 | ✅ 通过 | ✓ 对上：10/10（100%）（全部）<br>✓ 第一次就对上：10/10（100%）（≥ 9/10）<br>✓ 碰撞：0 次（0） | `python test_modes.py dock 10` | 重跑 quick<br>2026-11-24 15:29 |
-| C4 | 电量低时：放好手里的、去充电、回来接着干完 | ✅ 通过 | ✓ 带低电量的局：去充电：4/4（100%）（全部）<br>✓ 全部局：5 件送完：6/6（100%）（全部）<br>✓ 故障：0 局（0） | `python test_modes.py lowbatt 2` | 重跑 standard<br>2026-11-24 17:30 |
+| C4 | 电量低时：放好手里的、去充电、回来接着干完 | ✅ 通过 | ✓ 带低电量的局：去充电：4/4（100%）（全部）<br>✓ 全部局：5 件送完：6/6（100%）（全部）<br>✓ 故障：0 局（0） | `python test_modes.py lowbatt 2` | 重跑 standard<br>2026-11-25 03:19 |
 | C5 | 遥控：死人开关、安全层、接管再交还、TCP 连得上 | ✅ 通过 | ✓ 松手到停下：0.84 s（≤ 1 s）<br>✓ 安全层开：碰撞：0 次，离墙 13.7 cm（0 次）<br>✓ 手臂指令：够得到的执行、够不到的拒绝：误差 0.2 mm，拒绝 True（执行且拒绝）<br>✓ 接管后交还：任务送完：4/4（100%）（全部）<br>✓ TCP 服务器：通过（通过） | `python test_modes.py teleop`<br>`python test_modes.py server` | 重跑 quick<br>2026-11-24 15:39 |
 | C6 | 自主导航：去指定的点，到不了的点拒绝 | ✅ 通过 | ✓ 可达的到达：36/36（100%）（全部）<br>✓ 到达的最大偏差：14.1 cm（≤ 15 cm）<br>✓ 到不了的被拒绝：12/12（100%）（全部）<br>✓ 碰撞：0 次（0） | `python test_modes.py nav 6` | 重跑 quick<br>2026-11-24 15:42 |
 

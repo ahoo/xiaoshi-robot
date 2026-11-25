@@ -241,6 +241,9 @@ def _teleport(r, x, y, yaw):
     mujoco.mj_forward(r.m, r.d)
 
 
+TRACK_OF_PERSON = 0.30          # m: a track this close to the person is the person (position error of the 400+ people found in the benches: median 8 cm, largest 17 cm)
+
+
 def _static_job(args):
     """Robot standing still, one person placed at a random spot 1-3 m ahead inside its field of view: is it found, how tall, which size class."""
     import mujoco
@@ -276,12 +279,12 @@ def _static_job(args):
         for j in range(len(names)): scripts[j] = P.Script([]) if j != i else scripts[j]
         place(i, px, py, pyaw, posture); _teleport(r, rx, ry, yaw); mujoco.mj_forward(r.m, r.d); ps.scripts = scripts
         run(10)
-        s = ps.truth()[i]; got = [k for k in det.confirmed(2) if math.hypot(k.x - px, k.y - py) < 0.6]
+        s = ps.truth()[i]; got = [k for k in det.confirmed(2) if math.hypot(k.x - px, k.y - py) < TRACK_OF_PERSON]          # (people who are found are found within 0.17 m; a cupboard next to somebody the camera does not see is not them)
         row = dict(person=names[i], posture=posture, dist=round(d, 2), bearing=round(math.degrees(b)), facing=face, truth_cls=s['cls'], truth_h=round(s['h'], 3), found=bool(got))
         if got:
             k = min(got, key=lambda k: math.hypot(k.x - px, k.y - py)); h, lb = k.height
             row.update(pos_err=round(math.hypot(k.x - px, k.y - py), 3), h=round(h, 3), lower_bound=lb, w=None if k.width is None else round(k.width, 3), cls=k.cls, true_w=s['w'])
-        extra = [k for k in det.confirmed(2) if math.hypot(k.x - px, k.y - py) >= 0.6]
+        extra = [k for k in det.confirmed(2) if math.hypot(k.x - px, k.y - py) >= TRACK_OF_PERSON]
         row['extra_tracks'] = len(extra); rows.append(row)
         scripts[i] = P.Script([])
     # no one in the room: anything found is false
@@ -321,6 +324,7 @@ def _pair_job(args):
     """A child and a grown-up standing close together, at different gaps and in two arrangements (side by side, one in front of the other): are both found, and what is the pair called?"""
     import mujoco
     import people as P
+    from episode import _furn_dist
     from robot import Robot
     seed, reps = args
     rng = np.random.default_rng(seed); names = ['adult_m', 'child_8']
@@ -329,20 +333,22 @@ def _pair_job(args):
     for gap in (0.10, 0.25, 0.45, 0.70):
         for arr in ('side', 'inline'):
             for rep in range(reps):
-                for _try in range(200):
+                for _try in range(3000):
                     rx, ry, yaw = rng.uniform(0.9, 3.0), rng.uniform(0.7, 2.3), rng.uniform(-math.pi, math.pi); d = rng.uniform(1.6, 2.6)
                     ux, uy = math.cos(yaw), math.sin(yaw); px, py = rx + d * ux, ry + d * uy                      # the adult, straight ahead
                     off = (0.23 + 0.16 + gap)                                                                       # shoulder to shoulder with the stated gap between the bodies
                     cx, cy = (px - uy * off, py + ux * off) if arr == 'side' else (px - ux * (0.14 + 0.14 + gap), py - uy * (0.14 + 0.14 + gap))
-                    if 0.3 < px < 3.7 and 0.3 < py < 2.7 and 0.3 < cx < 3.7 and 0.3 < cy < 2.7: break
+                    if 0.3 < px < 3.7 and 0.3 < py < 2.7 and 0.3 < cx < 3.7 and 0.3 < cy < 2.7 and min(_furn_dist(x, y) for x, y in ((rx, ry), (px, py), (cx, cy))) >= 0.3: break      # nobody on or inside the furniture, the robot neither
                 else: continue
                 scripts[0] = P.Script([('at', px, py, yaw + math.pi)]); scripts[1] = P.Script([('at', cx, cy, yaw + math.pi)]); ps.scripts = scripts
+                ps.update(); mujoco.mj_forward(r.m, r.d)                                                    # the two people first: put down where they stood last time, the robot would be shoved by them (and look crooked)
                 _teleport(r, rx, ry, yaw); mujoco.mj_forward(r.m, r.d); det.tracks = []; det._t = -9.0
-                for _ in range(100): ps.update(); r.step(); det.process()
+                tilt = 0.0
+                for _ in range(100): ps.update(); r.step(); det.process(); tilt = max(tilt, float(r.tilt()))
                 tr = det.confirmed(2); dA = lambda k: math.hypot(k.x - px, k.y - py); dC = lambda k: math.hypot(k.x - cx, k.y - cy)
-                ka = [k for k in tr if dA(k) < 0.6 and dA(k) <= dC(k)]; kc = [k for k in tr if dC(k) < 0.6 and dC(k) < dA(k)]                       # a track belongs to whichever of the two it is nearer to, if within 0.6 m (with a 10 cm gap the two are 0.49 m apart)
+                ka = sorted([k for k in tr if dA(k) < 0.6 and dA(k) <= dC(k)], key=dA); kc = sorted([k for k in tr if dC(k) < 0.6 and dC(k) < dA(k)], key=dC)      # the nearest one is theirs                       # a track belongs to whichever of the two it is nearer to, if within 0.6 m (with a 10 cm gap the two are 0.49 m apart)
                 rows.append(dict(gap=gap, arrangement=arr, tracks=len(tr), adult_found=bool(ka), child_found=bool(kc), adult_cls=ka[0].cls if ka else None, child_cls=kc[0].cls if kc else None,
-                                 pair_in_one=bool(len(tr) == 1)))
+                                 pair_in_one=bool(len(tr) == 1), tipped=bool(tilt > 0.2)))
     return rows
 
 
@@ -356,6 +362,7 @@ def bench_pairs(procs=2, reps=8):
             res[f'{arr} gap {int(gap * 100)} cm'] = dict(n=len(a), two_tracks=sum(1 for r in a if r['tracks'] >= 2 and r['adult_found'] and r['child_found']), merged_into_one=sum(1 for r in a if r['pair_in_one']),
                                                          child_called_child=sum(1 for r in a if r['child_cls'] in ('child', 'unsure')), child_called_adult_or_missing=sum(1 for r in a if r['child_cls'] not in ('child', 'unsure')),
                                                          pair_called=dict(sorted({c: sum(1 for r in a if r['pair_in_one'] and r['adult_cls'] == c) for c in ('adult', 'unsure', 'child')}.items())))
+    res['robot_tipped_trials'] = int(sum(1 for r in rows if r.get('tipped')))                    # a sanity check on the bench itself: the robot must stand still and upright
     print(json.dumps(res, ensure_ascii=False, indent=1)); _save('people_pairs', dict(summary=res, rows=rows))
 
 

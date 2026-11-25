@@ -11,6 +11,7 @@ def job(args):
     seed, reps = args
     import mujoco, people as P
     from robot import Robot
+    from episode import _furn_dist
     from test_home import _Stub, _teleport
     rng = np.random.default_rng(seed); names = ['adult_m']
     r = Robot([], seed=seed, people=names, head_cam=True, robot_pose=(2.0, 1.5, 0.0)); stub = _Stub(r)
@@ -18,14 +19,15 @@ def job(args):
     for gap in (0.10, 0.25, 0.45, 0.70):
         for arr in ('side', 'inline'):
             for rep in range(reps):
-                for _try in range(200):
+                for _try in range(3000):
                     rx, ry, yaw = rng.uniform(0.9, 3.0), rng.uniform(0.7, 2.3), rng.uniform(-math.pi, math.pi); d = rng.uniform(1.6, 2.6)
                     ux, uy = math.cos(yaw), math.sin(yaw); px, py = rx + d * ux, ry + d * uy
                     off = (0.23 + 0.16 + gap)
                     cx, cy = (px - uy * off, py + ux * off) if arr == 'side' else (px - ux * (0.14 + 0.14 + gap), py - uy * (0.14 + 0.14 + gap))
-                    if 0.3 < px < 3.7 and 0.3 < py < 2.7 and 0.3 < cx < 3.7 and 0.3 < cy < 2.7: break
+                    if 0.3 < px < 3.7 and 0.3 < py < 2.7 and 0.3 < cx < 3.7 and 0.3 < cy < 2.7 and min(_furn_dist(x, y) for x, y in ((rx, ry), (px, py), (cx, cy))) >= 0.3: break
                 else: continue
                 scripts[0] = P.Script([('at', px, py, yaw + math.pi)]); ps.scripts = scripts
+                ps.update(); mujoco.mj_forward(r.m, r.d)
                 _teleport(r, rx, ry, yaw); mujoco.mj_forward(r.m, r.d); det.tracks = []; det._t = -9.0
                 for _ in range(100): ps.update(); r.step(); det.process()
                 tr = det.confirmed(2); ka = [k for k in tr if math.hypot(k.x - px, k.y - py) < 0.5]
