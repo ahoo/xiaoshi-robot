@@ -26,6 +26,9 @@ RES = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'results')
 
 
 def _save(name, data):
+    """results/home_<name>.json; when the colour-image person detector is on (PEOPLE_RGB) the name gets `_rgb` (and PEOPLE_RGB_TAG if given), so that it never overwrites the depth-only run."""
+    rgb = os.environ.get('PEOPLE_RGB', '')
+    if rgb and rgb not in ('0', 'off'): name += '_rgb' + (('_' + os.environ['PEOPLE_RGB_TAG']) if os.environ.get('PEOPLE_RGB_TAG') else '')
     os.makedirs(RES, exist_ok=True); json.dump(data, open(os.path.join(RES, f'home_{name}.json'), 'w'), ensure_ascii=False, indent=1, default=float)
 
 
@@ -247,7 +250,7 @@ def _static_job(args):
     seed, n_trials = args[:2]; cam = args[2] if len(args) > 2 else 'mast'                  # 'mast' (round 14), or a camera on the arm: 'forearm', 'periscope' (model.ARM_CAMS)
     rng = np.random.default_rng(seed); names = list(P.SPECS)
     r = Robot([], seed=seed, people=names, robot_pose=(2.0, 1.5, 0.0), **(dict(head_cam=True) if cam == 'mast' else dict(arm_cam=cam))); stub = _Stub(r)
-    scripts = [P.Script([]) for _ in names]; ps = P.People(r, names, scripts); det = P.PersonDetector(r, stub, np.random.default_rng(seed + 3))
+    scripts = [P.Script([]) for _ in names]; ps = P.People(r, names, scripts); det = P.PersonDetector(r, stub, np.random.default_rng(seed + 3), boxes=P.make_boxes(r, names, np.random.default_rng(seed + 29)))
     look = None if cam == 'mast' else __import__('model').ARM_CAMS[cam]['look']
     if look is not None:                                                                       # the periscope: raise the arm and let it settle before anyone is looked at
         r.set_arm(q5=np.array(look))
@@ -322,7 +325,7 @@ def _pair_job(args):
     seed, reps = args
     rng = np.random.default_rng(seed); names = ['adult_m', 'child_8']
     r = Robot([], seed=seed, people=names, head_cam=True, robot_pose=(2.0, 1.5, 0.0)); stub = _Stub(r)
-    scripts = [P.Script([]) for _ in names]; ps = P.People(r, names, scripts); det = P.PersonDetector(r, stub, np.random.default_rng(seed + 3)); rows = []
+    scripts = [P.Script([]) for _ in names]; ps = P.People(r, names, scripts); det = P.PersonDetector(r, stub, np.random.default_rng(seed + 3), boxes=P.make_boxes(r, names, np.random.default_rng(seed + 29))); rows = []
     for gap in (0.10, 0.25, 0.45, 0.70):
         for arr in ('side', 'inline'):
             for rep in range(reps):
@@ -336,7 +339,8 @@ def _pair_job(args):
                 scripts[0] = P.Script([('at', px, py, yaw + math.pi)]); scripts[1] = P.Script([('at', cx, cy, yaw + math.pi)]); ps.scripts = scripts
                 _teleport(r, rx, ry, yaw); mujoco.mj_forward(r.m, r.d); det.tracks = []; det._t = -9.0
                 for _ in range(100): ps.update(); r.step(); det.process()
-                tr = det.confirmed(2); ka = [k for k in tr if math.hypot(k.x - px, k.y - py) < 0.5]; kc = [k for k in tr if math.hypot(k.x - cx, k.y - cy) < 0.5 and k not in ka]
+                tr = det.confirmed(2); dA = lambda k: math.hypot(k.x - px, k.y - py); dC = lambda k: math.hypot(k.x - cx, k.y - cy)
+                ka = [k for k in tr if dA(k) < 0.6 and dA(k) <= dC(k)]; kc = [k for k in tr if dC(k) < 0.6 and dC(k) < dA(k)]                       # a track belongs to whichever of the two it is nearer to, if within 0.6 m (with a 10 cm gap the two are 0.49 m apart)
                 rows.append(dict(gap=gap, arrangement=arr, tracks=len(tr), adult_found=bool(ka), child_found=bool(kc), adult_cls=ka[0].cls if ka else None, child_cls=kc[0].cls if kc else None,
                                  pair_in_one=bool(len(tr) == 1)))
     return rows

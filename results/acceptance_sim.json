@@ -1,7 +1,7 @@
 {
- "when": "2026-11-24 18:54",
+ "when": "2026-11-25 02:20",
  "source": "重跑（standard）",
- "code": "4bd9d26+未提交的改动",
+ "code": "623c68a",
  "items": {
   "A1": {
    "verdict": "PASS",
@@ -49,7 +49,7 @@
    "lines": [
     {
      "label": "总成功率",
-     "measured": "71/80（89%）",
+     "measured": "72/80（90%）",
      "need": "≥ 85%",
      "ok": true
     },
@@ -65,28 +65,28 @@
     "grasp": {
      "ok": true,
      "rc": 0,
-     "seconds": 568,
-     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/grasp.log"
+     "seconds": 394,
+     "log": "/tmp/xiaoshi_accept_v6e20r1i/logs/grasp.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 16:12"
+   "when": "2026-11-25 02:27"
   },
   "B1": {
-   "verdict": "FAIL",
+   "verdict": "PASS",
    "lines": [
     {
      "label": "全部送达的布局",
-     "measured": "5/6（83%）",
+     "measured": "6/6（100%）",
      "need": "≥ 80%",
      "ok": true
     },
     {
      "label": "送达的件数",
-     "measured": "26/30（87%）",
+     "measured": "30/30（100%）",
      "need": "≥ 90%",
-     "ok": false
+     "ok": true
     },
     {
      "label": "一局里最多碰撞",
@@ -96,9 +96,9 @@
     },
     {
      "label": "故障停机",
-     "measured": "4号布局：payload stuck",
+     "measured": "没有",
      "need": "没有",
-     "ok": false
+     "ok": true
     }
    ],
    "why": "",
@@ -106,13 +106,13 @@
     "job_standard": {
      "ok": true,
      "rc": 0,
-     "seconds": 682,
-     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/job_standard.log"
+     "seconds": 548,
+     "log": "/tmp/xiaoshi_accept_v6e20r1i/logs/job_standard.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 16:24"
+   "when": "2026-11-25 02:36"
   },
   "B2": {
    "verdict": "PASS",
@@ -143,7 +143,7 @@
     },
     {
      "label": "难材质：送达的件数",
-     "measured": "16/18（89%）",
+     "measured": "18/18（100%）",
      "need": "≥ 85%",
      "ok": true
     },
@@ -167,10 +167,17 @@
     }
    ],
    "why": "",
-   "jobs": {},
-   "source": "读 results/ 里已有的结果",
-   "mode": "已有结果",
-   "when": ""
+   "jobs": {
+    "job_hard": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 1492,
+     "log": "/tmp/xiaoshi_accept_v6e20r1i/logs/job_hard.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 03:01"
   },
   "B3": {
    "verdict": "PASS",
@@ -193,13 +200,13 @@
     "clear": {
      "ok": true,
      "rc": 0,
-     "seconds": 1104,
-     "log": "/tmp/xiaoshi_accept__0x3q7m1/logs/clear.log"
+     "seconds": 566,
+     "log": "/tmp/xiaoshi_accept_v6e20r1i/logs/clear.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-24 17:07"
+   "when": "2026-11-25 03:10"
   },
   "C1": {
    "verdict": "PASS",
@@ -1189,6 +1196,5 @@
    "mode": "重跑 quick",
    "when": "2026-11-24 16:03"
   }
- },
- "note": "这一遍验收跨了几个小时、几个代码状态：中间改过 `sim/people.py` 一行（E2，平手也算“不确定”）和 `sim/assoc.py` 一行（G3，“主人”要求人在声音方向的 2σ 以内），受它们影响的 E1–E4、F4、G3、G4 都在改完之后重跑过；其余各项不走这两处判断（人的大小分类里的平手、“主人”的方向检查）。“来源”列里“重跑的结果，重新判”是指数字来自这一轮重跑留下的结果文件，判定用的是改过的检查（E2、E3 的检查在重跑之后改过）。"
+ }
 }
