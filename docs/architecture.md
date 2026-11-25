@@ -105,6 +105,7 @@ python live.py --open          # 打开 http://127.0.0.1:8000
 
 | 办法 | 做什么 | 适合 |
 |---|---|---|
+| 网页沙盘（什么都不装） | 打开 `web/playground/index.html`（`cd web/playground && python -m http.server`）或会话里发布的页面：和上面的观察台差不多的按钮，再加每条验证自动打勾、真实仿真的录像回放、和真代码答案的逐项对照；**是 JavaScript 行为模型，没有物理**，见 [`playground.md`](playground.md) | 现在就想玩一玩、看一遍功能的规则对不对；想看真的 MuJoCo 画面还是用上面的观察台 |
 | 验收脚本 | `cd sim && python accept.py --list`（有哪些项、各自的标准）；`--run standard --only B1,E3`（只重跑这几项，在临时副本里，几分钟到几十分钟；`--run quick` 只跑标了 quick 的 14 项） | 要**数字和通过/没通过**，而不是“看着像”；见 [`acceptance_sim.md`](acceptance_sim.md) |
 | 录像 | `MUJOCO_GL=egl python render_video.py 4 0.3 out.mp4`；`VIDEO_STEP=5 VIDEO_FPS=30` 更流畅；`render_video.py modes 3` 一次任务里接管、摔倒、充电连着来 | 发给别人看 |
 | 遥控 TCP | `python live.py --tcp 9000`，另一个终端 `python teleop_client.py 127.0.0.1 9000`（键盘 w s a d q e，1 2 3 4 手臂，t 接管，r 交还，c 充电，p 状态）。我用一个 socket 客户端测过：`status` → `mode teleop` → `drive`，机器人真的动了 | 验证遥控协议和死人开关（`python test_modes.py server` 是它的自动测试） |

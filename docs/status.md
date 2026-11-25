@@ -25,6 +25,8 @@
 
 **6. 实时观察台（第十八轮之后加的）。** 你想“在虚拟环境里观察效果、了解系统架构和功能集成、交互验证”：加了 `sim/live.py`（浏览器里看、打字对它说话、点按钮让人进来/推倒/调低电量/关安全层、W A S D 遥控；用的是验收跑的那一套代码）和 [`architecture.md`](architecture.md)（分层、数据流、谁能打断谁、安全层的距离、逐功能怎么点一遍）。**只在 Linux 上测过**（无头浏览器点了一遍：打字、孩子冲过来安全层停住、孩子说“去充电”被拒、推倒后自己起来、低电量自己去充电、遥控、TCP 遥控）；macOS 和 Windows 没试。这个会话在云端，你的浏览器连不到它，所以要在你自己的电脑上跑；画面是由单独的进程离屏画的（没有显卡时画一张要四分之一秒，放在同一个进程里会把仿真拖到一半速度以下）。
 
+**7. 网页沙盘（第十八轮之后加的，不用装任何东西）。** 你说“暂时不必购买，我需要一个虚拟的可以玩、可验证的交互环境”，而观察台要在你自己的电脑上装 Python：加了 `web/playground/`（说明 [`playground.md`](playground.md)）。一个网页：对它说中文、让孩子冲过来、推倒它、调电量、遥控、点房间；验证页 15 条做对了自己打勾，每条附真实仿真里同一件事的验收结果；回放页放 7 段真实物理仿真的录像数据；对照页让沙盘的规则把真代码答过的情形再答一遍：**336 句话（4 种说话人）里沙盘做了的 327 句、10 段多轮对话、2304 种安全层情形，和真代码一样；电池的充电时间一样**。**它是 JavaScript 写的行为模型，不是真的机器人代码，没有物理**：走路、抓取、起身的用时是简化的，同一个剧本沙盘比真实仿真快 20%–40%（整套收玩具第 5 件放进筐 195 s 对 252 s），表在对照页和 `playground.md`。对照顺手查出真代码里一个听错的例子：“巡视一下”被听成“记一下”（记人的流程），没改，见 `playground.md`。Codespaces 的 `.devcontainer` 是备用路径，**没有在 Codespaces 里试过**。
+
 **仿真证明不了的**：每一项都写在 [`acceptance_sim.md`](acceptance_sim.md) 里。这一轮新增的：人体检测网络是替身（数字是假定的）、毛绒玩具是刚性球加弹簧铰链、挡条的强度和安装没有试、相机碰地的力还是刚性盒子上的数字。
 
 **改了哪些文件**：新增 `sim/rgbdet.py`、`sim/test_track.py`、`docs/people_rgb.md`、`sim/cam_contact_probe.py`、`docs/camera_bumper.md`、`docs/cad/camera_bumper.scad` 和 `.stl`；改了 `sim/skills.py`（抓取的最后一步）、`sim/people.py`（融合、滑行）、`sim/model.py`（挡条）、`sim/perception.py` 和 `sim/people.py`（提速）、`sim/test_home.py`、`sim/pairs_control.py`（台架）、`sim/accept.py`（E5、C1、`--adopt`）、`sim/render_video.py`、`sim/search_righting.py`、`sim/test_armcam.py`、`sim/righting_maneuvers_armcam.json`；`docs/validation.md` 加了第 71、72 项、改了第 67 项；`docs/bom.md` 加了挡条。
