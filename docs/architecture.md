@@ -83,7 +83,7 @@ python live.py --open          # 打开 http://127.0.0.1:8000
 
 不需要显示器或 OpenGL 窗口：画面由一个单独的进程离屏画好，用 MJPEG 推给浏览器。Linux 上默认用 EGL；如果报 EGL 的错，试 `MUJOCO_GL=glfw python live.py` 或 `MUJOCO_GL=osmesa python live.py`。macOS、Windows **我没试过**（我只在 Linux 上测了）。页面上能做的、该看到什么：
 
-| 想验证什么 | 在观察台里怎么做 | 该看到什么 | 对应的验收项（`python accept.py --run quick --only X` 会跑出数字） |
+| 想验证什么 | 在观察台里怎么做 | 该看到什么 | 对应的验收项（`python accept.py --run standard --only X` 会跑出数字，X 是这一列里的项；`--run quick` 只会跑标了 quick 的那几项） |
 |---|---|---|---|
 | 自己找东西、夹起来、放进筐 | 点“开始收拾”（或打“收拾一下玩具”） | 日志里一行行：发现物体 → 前往 → 夹住 → 已放进收纳筐；右下角地图上黄块是它量到的物体、橙线是规划的路；左上角“送进筐里”从 0 涨到 5 | B1、A2（`standard`，约 12 分钟）；`python episode.py 4` 单跑一次 |
 | 孩子冲过来，它会停 | 点“孩子冲过来” | 日志“有人在附近（… coming fast …），先停一下”；右边“安全层”变成“停住了”；孩子走后它接着干 | E3（安全层、碰到人 0 次） |
@@ -105,7 +105,7 @@ python live.py --open          # 打开 http://127.0.0.1:8000
 
 | 办法 | 做什么 | 适合 |
 |---|---|---|
-| 验收脚本 | `cd sim && python accept.py --list`（有哪些项、各自的标准）；`--run quick --only B1,E3`（只重跑几项，在临时副本里，几分钟到几十分钟） | 要**数字和通过/没通过**，而不是“看着像”；见 [`acceptance_sim.md`](acceptance_sim.md) |
+| 验收脚本 | `cd sim && python accept.py --list`（有哪些项、各自的标准）；`--run standard --only B1,E3`（只重跑这几项，在临时副本里，几分钟到几十分钟；`--run quick` 只跑标了 quick 的 14 项） | 要**数字和通过/没通过**，而不是“看着像”；见 [`acceptance_sim.md`](acceptance_sim.md) |
 | 录像 | `MUJOCO_GL=egl python render_video.py 4 0.3 out.mp4`；`VIDEO_STEP=5 VIDEO_FPS=30` 更流畅；`render_video.py modes 3` 一次任务里接管、摔倒、充电连着来 | 发给别人看 |
 | 遥控 TCP | `python live.py --tcp 9000`，另一个终端 `python teleop_client.py 127.0.0.1 9000`（键盘 w s a d q e，1 2 3 4 手臂，t 接管，r 交还，c 充电，p 状态）。我用一个 socket 客户端测过：`status` → `mode teleop` → `drive`，机器人真的动了 | 验证遥控协议和死人开关（`python test_modes.py server` 是它的自动测试） |
 | 只看模型 | `python -m mujoco.viewer`，把 `model.build_xml(...)` 写出的 XML 拖进去 | 看底盘、手臂、相机的几何；这个窗口**没有在这个环境里试过** |
