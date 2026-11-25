@@ -635,14 +635,13 @@ class Sim {
         const ok = yield* this._pickAndPlace(o, this.D.grasp); this.event(ok === true ? '拿到并送进了收纳筐' : '没拿成');
     }
     *_gen_teleop() {
-        const tc = this.tele, cfg = this.cfg; this.state = '遥控'; this.path = null; tc.vx = tc.vy = tc.wz = 0; this.event('遥控开始' + (tc.safety ? '（带安全层）' : '（直连，无安全层）'));
-        let stale = true; const sg = this.guardOn;
+        const tc = this.tele, cfg = this.cfg; this.state = '遥控'; this.path = null; tc.vx = tc.vy = tc.wz = 0; this.event('遥控开始' + (this.guardOn ? '（人靠近时安全层仍限速）' : '（安全层关着）'));
+        let stale = true;
         for (;;) {
             const live = this.t - tc.t < cfg.deadman; if (live) stale = false; else if (!stale) { stale = true; this.event('指令超时，停车（死人开关）'); }
             let vx = live ? tc.vx : 0, vy = live ? tc.vy : 0, wz = live ? tc.wz : 0; const sp = hypot(vx, vy), vm = this.D.limits.v_max;
             if (sp > vm) { vx *= vm / sp; vy *= vm / sp; } wz = clamp(wz, -this.D.limits.w_max, this.D.limits.w_max);
             this.cmd(vx, vy, wz);
-            this.teleSafety = tc.safety;
             yield;
         }
     }

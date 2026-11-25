@@ -172,7 +172,6 @@ label.ck { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5p
           <h3>遥控</h3>
           <div class="row">
             <button class="btn" id="btn-tele" type="button" aria-pressed="false">遥控 开</button>
-            <label class="ck"><input type="checkbox" id="o-telesafe" checked> 带安全层</label>
             <div class="keys" aria-label="方向键">
               <button class="btn" data-key="q" type="button">Q</button><button class="btn" data-key="w" type="button">W</button><button class="btn" data-key="e" type="button">E</button>
               <button class="btn" data-key="a" type="button">A</button><button class="btn" data-key="s" type="button">S</button><button class="btn" data-key="d" type="button">D</button>
@@ -1318,14 +1317,13 @@ class Sim {
         const ok = yield* this._pickAndPlace(o, this.D.grasp); this.event(ok === true ? '拿到并送进了收纳筐' : '没拿成');
     }
     *_gen_teleop() {
-        const tc = this.tele, cfg = this.cfg; this.state = '遥控'; this.path = null; tc.vx = tc.vy = tc.wz = 0; this.event('遥控开始' + (tc.safety ? '（带安全层）' : '（直连，无安全层）'));
-        let stale = true; const sg = this.guardOn;
+        const tc = this.tele, cfg = this.cfg; this.state = '遥控'; this.path = null; tc.vx = tc.vy = tc.wz = 0; this.event('遥控开始' + (this.guardOn ? '（人靠近时安全层仍限速）' : '（安全层关着）'));
+        let stale = true;
         for (;;) {
             const live = this.t - tc.t < cfg.deadman; if (live) stale = false; else if (!stale) { stale = true; this.event('指令超时，停车（死人开关）'); }
             let vx = live ? tc.vx : 0, vy = live ? tc.vy : 0, wz = live ? tc.wz : 0; const sp = hypot(vx, vy), vm = this.D.limits.v_max;
             if (sp > vm) { vx *= vm / sp; vy *= vm / sp; } wz = clamp(wz, -this.D.limits.w_max, this.D.limits.w_max);
             this.cmd(vx, vy, wz);
-            this.teleSafety = tc.safety;
             yield;
         }
     }
@@ -1405,7 +1403,6 @@ function buildStatic() {
     $('#o-guard').onchange = e => { app.sim.guardOn = e.target.checked; app.sim.say('系统', '安全层 ' + (e.target.checked ? '开' : '关了：现在它不会因为人靠近而减速、停下（对照用）')); };
     $('#o-failright').onchange = e => { app.sim.failRight = e.target.checked; };
     $('#btn-tele').onclick = () => setTele(!app.teleOn);
-    $('#o-telesafe').onchange = e => { app.sim.tele.safety = e.target.checked; app.sim.guardOn = e.target.checked && $('#o-guard').checked; };
     $$('.keys button').forEach(b => { const k = b.dataset.key; const down = e => { e.preventDefault(); app.keys.add(k); }; const up = () => app.keys.delete(k); b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up); });
     window.addEventListener('keydown', e => { if (/input|select|textarea/i.test(document.activeElement && document.activeElement.tagName)) return; const k = e.key.toLowerCase(); if ('wasdqe'.includes(k) && k.length === 1 && app.view === 'sim') { app.keys.add(k); if (document.activeElement === $('#room')) e.preventDefault(); } });
     window.addEventListener('keyup', e => app.keys.delete(e.key.toLowerCase()));
@@ -1434,7 +1431,7 @@ function showTab(name) {
     if (name === 'verify') renderChecks();
 }
 function setSoc(v) { const s = app.sim; s.bat.soc = Math.min(Math.max(v - s.bat.bias, 0.02), 1); s.say('系统', `真实电量设成 ${Math.round(s.bat.soc * 100)}%（机器人自己读到的是 ${Math.round(s.bat.est * 100)}%，有偏差）。它读到低于 20% 就会把手里的放好再去充电，低于 10% 马上去。`); }
-function setTele(on) { app.teleOn = on; const b = $('#btn-tele'); b.setAttribute('aria-pressed', String(on)); b.textContent = on ? '遥控 关' : '遥控 开'; if (app.sim) { if (on) { app.sim.tele.safety = $('#o-telesafe').checked; app.sim.teleop(); app.sim.say('系统', '遥控开了：W 前进 S 后退 A 左移 D 右移 Q 左转 E 右转（点一下画面再按）。松手它就停。'); } else if (app.sim.mode === 'TELEOP') app.sim.idle(); } }
+function setTele(on) { app.teleOn = on; const b = $('#btn-tele'); b.setAttribute('aria-pressed', String(on)); b.textContent = on ? '遥控 关' : '遥控 开'; if (app.sim) { if (on) { app.sim.teleop(); app.sim.say('系统', '遥控开了：W 前进 S 后退 A 左移 D 右移 Q 左转 E 右转（点一下画面再按）。松手它就停。人靠近时安全层照样限速（在“捣乱”里可以关）。'); } else if (app.sim.mode === 'TELEOP') app.sim.idle(); } }
 function speak(text, role) { speakAs(text, role || app.role, $('#o-raw').checked); }
 function speakAs(text, role, rawFlag) {
     const s = app.sim; if (app.view !== 'sim') setView('sim');
@@ -1605,7 +1602,7 @@ function hudTape(v) {
 }
 function renderPanels() {
     const s = app.sim; if (app.view !== 'sim') return;
-    const chat = $('#chat'), atEnd = chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 30; chat.innerHTML = s.chat.slice(-60).map(m => `<div><span class="t">${m.t.toFixed(0)}s</span><span class="w ${m.who === '机器人' ? 'r' : (m.who === '你' ? 'y' : 's')}">${m.who}</span><span>${esc(m.text)}</span></div>`).join(''); if (atEnd) chat.scrollTop = chat.scrollHeight;
+    const chat = $('#chat'), top0 = chat.scrollTop, atEnd = chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 30; chat.innerHTML = s.chat.slice(-60).map(m => `<div><span class="t">${m.t.toFixed(0)}s</span><span class="w ${m.who === '机器人' ? 'r' : (m.who === '你' ? 'y' : 's')}">${m.who}</span><span>${esc(m.text)}</span></div>`).join(''); chat.scrollTop = atEnd ? chat.scrollHeight : top0;
     $('#evlog').innerHTML = s.logLines.slice(-14).reverse().map(l => `<div>${l[0].toFixed(0)}s ${esc(l[1])}</div>`).join('');
     const truth = s.people.state.filter(p => p.inside), seen = s.tracks();
     $('#peopletable').innerHTML = (truth.length || seen.length) ? `<tr><th>真正在房间里</th><th class="num">离机器人</th><th>机器人看到了吗</th></tr>` + truth.map(p => { const d = hypot(p.x - s.x, p.y - s.y), k = seen.find(t => t.truth === p.i); return `<tr><td>${p.cn} ${p.h.toFixed(2)} m</td><td class="num">${d.toFixed(1)} m</td><td>${k ? (k.src === 'lidar' ? '雷达看到有东西在动（拿不准，按小孩办）' : `看到了，判成<b>${CLS_CN[k.cls]}</b>`) : '没看到（不在相机视野里，或还不到 0.4 秒）'}</td></tr>`; }).join('') : '<tr><td class="note">房间里现在没有人。点上面“让人走进来”。</td></tr>';
