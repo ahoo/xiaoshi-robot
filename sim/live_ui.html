@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小拾 · 仿真实时观察台</title>
+<style>
+  :root { --bg:#0f2a25; --panel:#14352f; --line:#25524a; --paper:#f1eee2; --dim:#a4bdb1; --orange:#ff6b2c; --warn:#ffd166; --ok:#7ad9a4; --bad:#ff7a6b; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--paper); font:15px/1.5 -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  header { display:flex; align-items:center; gap:12px; padding:10px 18px; border-bottom:1px solid var(--line); }
+  header h1 { font-size:18px; margin:0; font-weight:600; }
+  header .sub { color:var(--dim); font-size:13px; }
+  #conn { margin-left:auto; font-size:13px; color:var(--dim); }
+  main { display:grid; grid-template-columns: minmax(0, 1fr) 380px; gap:14px; padding:14px 18px; max-width:1760px; margin:0 auto; }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+  .stage { position:relative; background:#000; border:1px solid var(--line); border-radius:8px; overflow:hidden; line-height:0; aspect-ratio: 1280 / 600; }
+  .stage img { width:100%; height:auto; display:block; }
+  .cap { position:absolute; left:1.6%; bottom:1.2%; right:33%; line-height:1.35; }
+  .cap .mode { font-size:clamp(18px, 2.4vw, 30px); color:var(--orange); font-weight:700; }
+  .cap .line { font-size:clamp(12px, 1.5vw, 19px); color:var(--paper); }
+  .tag { position:absolute; right:1%; font-size:12px; color:var(--paper); background:rgba(15,42,37,.78); padding:1px 8px; border-radius:4px; line-height:1.5; }
+  .tag.a { top:1.5%; } .tag.b { top:51.5%; }
+  .bar { display:flex; flex-wrap:wrap; gap:6px 8px; margin:10px 0 0; align-items:center; }
+  .bar .grp { color:var(--dim); font-size:13px; margin-right:2px; }
+  button { background:var(--panel); color:var(--paper); border:1px solid var(--line); border-radius:6px; padding:5px 11px; font:inherit; cursor:pointer; }
+  button:hover { border-color:var(--orange); } button:active { background:#1b4a41; }
+  button.on { border-color:var(--orange); color:var(--orange); }
+  form { display:flex; gap:8px; margin:12px 0 0; }
+  input[type=text] { flex:1; background:#0b211d; color:var(--paper); border:1px solid var(--line); border-radius:6px; padding:8px 11px; font:inherit; }
+  input[type=text]:focus { outline:none; border-color:var(--orange); }
+  .hint { color:var(--dim); font-size:12.5px; margin:8px 0 0; }
+  aside { display:flex; flex-direction:column; gap:12px; min-width:0; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+  .card h2 { font-size:13px; margin:0 0 6px; color:var(--dim); font-weight:600; letter-spacing:.04em; }
+  .kv { display:grid; grid-template-columns: auto 1fr; gap:2px 12px; font-size:14px; }
+  .kv .k { color:var(--dim); }
+  .bat { height:8px; background:#0b211d; border-radius:4px; overflow:hidden; margin-top:3px; } .bat i { display:block; height:100%; background:var(--ok); }
+  .chat { max-height:260px; overflow:auto; display:flex; flex-direction:column; gap:6px; font-size:14px; }
+  .chat .m { padding:5px 9px; border-radius:6px; background:#0b211d; white-space:pre-wrap; word-break:break-word; }
+  .chat .you { background:#1d4a40; align-self:flex-end; max-width:92%; } .chat .robot { border-left:3px solid var(--orange); } .chat .sys { color:var(--dim); font-size:13px; }
+  .log { max-height:230px; overflow:auto; font-size:13px; color:var(--dim); }
+  .log div { padding:1px 0; border-bottom:1px dotted #1b4a41; } .log b { color:var(--paper); font-weight:500; margin-right:6px; }
+  .pill { display:inline-block; padding:0 8px; border-radius:10px; font-size:12.5px; margin:0 4px 3px 0; background:#0b211d; border:1px solid var(--line); }
+  .pill.child { border-color:var(--warn); color:var(--warn); } .pill.adult { border-color:var(--ok); color:var(--ok); } .pill.unsure { border-color:var(--bad); color:var(--bad); }
+  .halt { color:var(--bad); font-weight:600; } .ok { color:var(--ok); }
+</style>
+</head>
+<body>
+<header>
+  <h1>小拾 · 仿真实时观察台</h1><span class="sub">MuJoCo 里的机器人，用的是验收跑的那一套控制代码</span>
+  <span id="conn">连接中…</span>
+</header>
+<main>
+  <section>
+    <div class="stage">
+      <img id="stream" src="/stream" alt="仿真画面">
+      <div class="cap"><div class="mode" id="capMode">…</div><div class="line" id="capLine"></div></div>
+      <div class="tag a">跟拍</div><div class="tag b">机器人自己建的地图</div>
+    </div>
+
+    <div class="bar" id="bar1"><span class="grp">对它说</span></div>
+    <div class="bar" id="bar2"><span class="grp">让人来</span></div>
+    <div class="bar" id="bar3"><span class="grp">捣乱</span></div>
+    <div class="bar" id="bar4"><span class="grp">速度</span></div>
+    <form id="f"><input type="text" id="in" autocomplete="off" placeholder="对机器人说话，比如：收拾一下玩具（/help 看全部命令）"><button type="submit">发送</button></form>
+    <p class="hint" id="tele">遥控：先按“遥控 开”，再点一下画面，用 W A S D（前后左右）、Q E（转）开；松手它就停，安全层仍然看着人。</p>
+  </section>
+
+  <aside>
+    <div class="card"><h2>它现在</h2>
+      <div class="kv">
+        <span class="k">模式</span><span id="sMode">–</span>
+        <span class="k">在做</span><span id="sState">–</span>
+        <span class="k">仿真时间</span><span id="sT">–</span>
+        <span class="k">送进筐里</span><span id="sDone">–</span>
+        <span class="k">电量</span><span><span id="sBat">–</span><div class="bat"><i id="batBar" style="width:0"></i></div></span>
+        <span class="k">机身倾角</span><span id="sTilt">–</span>
+        <span class="k">故障/提示</span><span id="sWarn">–</span>
+      </div></div>
+    <div class="card"><h2>它看见的人（和房间里真正有的）</h2><div id="people">–</div>
+      <div class="kv" style="margin-top:6px"><span class="k">安全层</span><span id="sGuard">–</span></div></div>
+    <div class="card"><h2>对话</h2><div class="chat" id="chat"></div></div>
+    <div class="card"><h2>它的日志</h2><div class="log" id="log"></div></div>
+  </aside>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+$('stream').onerror = () => setTimeout(() => { $('stream').src = '/stream?' + Date.now(); }, 1000);          // the first picture takes a few seconds: try again
+const post = (path, body) => fetch(path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}).catch(() => {});
+const send = (text) => post('/cmd', {text});
+
+const BUTTONS = {
+  bar1: [['开始收拾', '收拾一下玩具'], ['扫描家里', '把家里扫描一遍'], ['去充电', '去充电'], ['停下', '停下'], ['继续', '继续'], ['现在有谁', '现在有谁'], ['孩子说：去充电（会被拒绝）', '孩子：去充电'], ['闲聊（没喊它，不该动）', '/raw 今天天气真不错，晚上吃什么'], ['遥控 开', '/teleop on'], ['遥控 关', '/teleop off']],
+  bar2: [['孩子冲过来', '/person kid'], ['大人走过来', '/person adult'], ['幼儿在筐边', '/person toddler'], ['一家三口', '/person family'], ['人都离开', '/person leave']],
+  bar3: [['推倒（左）', '/push left'], ['推倒（前）', '/push fwd'], ['电量调到 15%', '/battery 0.15'], ['安全层 关', '/guard off'], ['安全层 开', '/guard on']],
+  bar4: [['0.5×', '/speed 0.5'], ['1×', '/speed 1'], ['2×', '/speed 2'], ['4×', '/speed 4']],
+};
+for (const [bar, list] of Object.entries(BUTTONS)) for (const [label, cmd] of list) {
+  const b = document.createElement('button'); b.textContent = label; b.title = cmd; b.onclick = () => send(cmd); $(bar).appendChild(b);
+}
+$('f').onsubmit = (e) => { e.preventDefault(); const t = $('in').value.trim(); if (t) send(t); $('in').value = ''; };
+
+// keys: drive in teleop
+const down = new Set();
+const KEY = {w: [0.12, 0, 0], s: [-0.12, 0, 0], a: [0, 0.10, 0], d: [0, -0.10, 0], q: [0, 0, 0.5], e: [0, 0, -0.5]};
+addEventListener('keydown', (e) => { if (document.activeElement === $('in')) return; const k = e.key.toLowerCase(); if (k in KEY) { down.add(k); e.preventDefault(); } });
+addEventListener('keyup', (e) => { down.delete(e.key.toLowerCase()); });
+setInterval(() => {
+  if (!down.size) return; let v = [0, 0, 0]; for (const k of down) v = v.map((x, i) => x + KEY[k][i]);
+  post('/drive', {vx: v[0], vy: v[1], wz: v[2]});
+}, 150);
+
+const fmtT = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]));
+const CLS = {child: '小孩', adult: '大人', unsure: '拿不准（按小孩办）'};
+let lastChat = -1;
+
+async function poll() {
+  try {
+    const r = await fetch('/status', {cache: 'no-store'}); const s = await r.json();
+    $('conn').textContent = s.t === undefined ? '等第一帧…' : '已连接'; if (s.t === undefined) return;
+    $('capMode').textContent = s.mode; $('capLine').textContent = `${s.state}    仿真时间 ${fmtT(s.t)}    送进筐里 ${s.delivered}/${s.total}    速度 ${s.speed}×`;
+    $('sMode').textContent = s.mode + (s.tele ? '（遥控中）' : ''); $('sState').textContent = s.state; $('sT').textContent = fmtT(s.t); $('sDone').textContent = `${s.delivered} / ${s.total}`;
+    if (s.soc !== undefined) { $('sBat').textContent = `${Math.round(100 * s.soc)}%（机器人自己读到的）　真实 ${Math.round(100 * s.battery_true)}%　${s.volts} V${s.dock ? '　在充电座上' : ''}`; $('batBar').style.width = Math.round(100 * s.battery_true) + '%'; $('batBar').style.background = s.battery_true < 0.25 ? 'var(--bad)' : 'var(--ok)'; }
+    $('sTilt').textContent = `${s.tilt}°`; $('sWarn').textContent = [s.fault, s.warn].filter(Boolean).join(' / ') || '无';
+    const present = (s.present || []).map((p) => `<span class="pill ${p.cls}">${esc(p.who)}（真）</span>`).join('');
+    const seen = (s.tracks || []).map((k) => `<span class="pill ${k.cls}">${CLS[k.cls] || k.cls}　${k.dist} m　${k.h} m 高</span>`).join('');
+    $('people').innerHTML = (present || '<span class="k" style="color:var(--dim)">房间里没有人</span>') + '<br>' + (seen ? '它看到的：' + seen : '<span style="color:var(--dim)">它没看到人</span>');
+    const g = s.guard; $('sGuard').innerHTML = !s.guard_on ? '<span class="halt">关了（对照用）</span>' : (g ? (g.halted ? `<span class="halt">停住了：${esc(g.why || '')}</span>` : '<span class="ok">开着</span>') + `　停过 ${g.halts} 次 / ${g.halt_s} s，放慢 ${g.slow_s} s，手臂暂停 ${g.arm_pauses} 次` : '开着');
+    $('log').innerHTML = (s.log || []).map(([t, m]) => `<div><b>${fmtT(t)}</b>${esc(m)}</div>`).join('');
+    const chat = s.chat || []; if (chat.length !== lastChat) {
+      lastChat = chat.length; const box = $('chat'); const stick = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
+      box.innerHTML = chat.map((m) => `<div class="m ${m.who === '你' ? 'you' : m.who === '机器人' ? 'robot' : 'sys'}">${m.who === '你' || m.who === '机器人' ? '<b>' + esc(m.who) + '</b>　' : ''}${esc(m.text)}</div>`).join(''); if (stick) box.scrollTop = box.scrollHeight;
+    }
+  } catch (e) { $('conn').textContent = '断开了（仿真还在跑吗？）'; }
+}
+setInterval(poll, 300); poll();
+</script>
+</body>
+</html>

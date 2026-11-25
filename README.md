@@ -12,6 +12,7 @@
 
 第十八轮做了四件事（都只在仿真里）：**修了毛绒玩具把指垫楔住的问题**（抓取最后一步分档加夹力、物体一松动就停，整套任务 B1 6/6 送到）；**彩色图人体检测**（接口、仿真替身和与深度的融合，默认关；检测器是替身，数字是假定的，真网络没有，见 [`docs/people_rgb.md`](docs/people_rgb.md)）；**前臂相机的保护挡条**（相机压地力最大 77 N → 0，可打印的 OpenSCAD/STL 文件在 `docs/cad/`，见 [`docs/camera_bumper.md`](docs/camera_bumper.md)，**安装和强度没在实物上试**）；**仿真提速**（整套任务快约 20%，结果不变）。验收从 29 项变成 30 项（加了 E5）。见 [`docs/status.md`](docs/status.md)。
 
+- **想亲手看它干活、点一点验证**：[`docs/architecture.md`](docs/architecture.md)（系统怎么分层、一句话怎么变成动作、逐功能怎么验证）；`cd sim && python live.py --open` 在浏览器里实时观察和操作（**只在 Linux 上测过**）。
 - **先在仿真里做功能验收**：[`docs/acceptance_sim.md`](docs/acceptance_sim.md)（30 项功能，每项一个场景、一条通过标准；`cd sim && python accept.py --run quick`，约 50 分钟，逐项给出通过/没通过和数字；`--run standard` 全部重跑约 2.5–3.5 小时）。买物料等这份验收满意了再说。最近一次全部重跑的结果：**29 项通过，1 项没通过**（共 30 项）。没通过的：E3 人走近时刹得住（一家三口的场景里 5 件只送到 4 件：妈妈走过时踢到一个球，球滚到家具边，机器人拿不回来；碰到人 0 次、碰撞 0 次，**不是安全问题**，原因和证据见 [`acceptance_sim.md`](docs/acceptance_sim.md)，接受还是先修由你定）。
 - 当前状态和已知限制：[`docs/status.md`](docs/status.md)；下一步计划：[`docs/roadmap.md`](docs/roadmap.md)
 - 试验结果和实物验收表（买了硬件以后做）：[`docs/validation.md`](docs/validation.md)
@@ -72,6 +73,7 @@
 | `sim/test_clear.py` | 透明瓶台架：空洞簇给出的位置、粗细、朝向、长度准不准（远处、近处、下手站位，机身转着看），空房间误报，只凭空洞抓一次 → `results/clear_bench.json` |
 | `sim/run_clear.py` | 透明瓶单独在房间里：两个办法分开开关的对照、强制各种朝向、更苛刻的深度图、没参与开发的新种子（含整机难材质）→ `results/clear_bottle.json` |
 | `sim/render_video.py` | 把一次试验渲染成录像 |
+| `sim/live.py`、`sim/live_ui.html` | **实时观察台**（第十八轮后）：在你自己的电脑上 `python live.py --open`，浏览器里看机器人干活、打字对它说话、点按钮让孩子冲过来/推倒它/调低电量/关安全层、W A S D 遥控；用的是验收跑的那一套控制代码，见 [`docs/architecture.md`](docs/architecture.md) |
 | `third_party/so101/` | SO-101 官方 MuJoCo 模型（Apache-2.0，来自 TheRobotStudio/SO-ARM100） |
 | `web/` | 结果页面的模板和生成脚本；`web/concept-v0.1/` 是第一版概念演示，不是物理仿真 |
 | `web/dist/` | 页面的构建产物，由 `web/build_page.py` 生成：`index.html`（完整文档，可直接用浏览器打开）、`artifact.html`（同一份页面去掉外层文档标签，线上发布的逐字节就是它，平台再套自己的外壳）、两段录像和封面图（与 `results/` 里的是同一份文件） |
