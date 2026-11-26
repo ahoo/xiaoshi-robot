@@ -3,6 +3,7 @@
 Everything physical lives here so it can be checked against the real hardware:
 wheel/roller geometry, masses, friction, servo torque limits.
 """
+import json
 import math
 import os
 import xml.etree.ElementTree as ET
@@ -49,6 +50,11 @@ ARM_CAMS = dict(
     periscope=dict(body='gripper', pos=(-0.035, 0.0, -0.02), xyaxes=(0.0, -1.0, 0.0, 0.0, 0.0, -1.0), fovy=60.0, mass=0.075, look=(0.0, -0.20, -1.29, -0.50, 0.0)),
 )
 
+# The camera's bumper (printed in PLA/PETG; docs/camera_bumper.md): a cage round the camera body, 0.5 mm clear of it and 4.5 mm proud of it on every side but the lens side's view.
+# Four rails (4 x 4 mm, 100 mm long) at the corners of the 25 x 25 mm cross-section, and a square ring (34 x 34 mm outside, 4 mm wide and thick) at each end, 0.5 mm from the camera's ends.
+# Everything is behind the lens plane or outside the 60 degree view (it starts at the lens plane, the rails 15 mm off the axis), so the picture is the same. About 12 g.
+GUARD = dict(mass=0.012, rail=0.002, gap=0.0005, wall=0.002, ring_len=0.002, parts=('rails', 'rings'))           # half sizes in m: rail 2 mm, ring wall 2 mm, ring half length 2 mm
+if os.environ.get('GUARD_JSON'): GUARD.update(json.loads(os.environ['GUARD_JSON']))                                # (for trying other shapes: GUARD_JSON='{"rail": 0.0015, "parts": ["rings"]}')
 ROOM_W, ROOM_H = 4.0, 3.0
 # static furniture: (name, cx, cy, sx, sy, height, rgba); circles use sx as radius and sy=None
 FURNITURE = [
@@ -93,7 +99,7 @@ def _wheel_xml(i, ang_deg):
     return '\n'.join(s)
 
 
-def _arm_parts(arm_cam=None, arm_cam_collide=False):
+def _arm_parts(arm_cam=None, arm_cam_collide=False, arm_cam_guard=None):
     """Read the official SO-101 MJCF and return (defaults, assets, body, actuators) as XML strings,
     with the gripper collision replaced by primitive pads (a convex hull of the jaw mesh fills the grip gap).
     arm_cam: a key of ARM_CAMS: a camera (and its 75 g) is added to that link. arm_cam_collide: the camera's box also collides with the floor and the world (not with the robot's own parts), which
@@ -126,6 +132,7 @@ def _arm_parts(arm_cam=None, arm_cam_collide=False):
     ET.SubElement(jaw, 'geom', dict(name='pad_moving', type='box', pos=' '.join(f'{v:.5f}' for v in c), quat=' '.join(f'{v:.6f}' for v in qinv),
                                     size='0.0045 0.007 0.0295')).attrib.update(_attrs(pad))
     if arm_cam:
+        if arm_cam_guard is None: arm_cam_guard = True                    # the robot is built with the bumper (arm_cam_guard=False: without, to see what it does)
         c = ARM_CAMS[arm_cam]; parent = next(b for b in base.iter('body') if b.get('name') == c['body'])
         cb = ET.SubElement(parent, 'body', dict(name='armcam_body', pos=' '.join(str(v) for v in c['pos'])))
         ET.SubElement(cb, 'inertial', dict(pos='0 0 0', mass=str(c['mass']), diaginertia='2e-5 2e-5 2e-5'))                      # the camera's weight is carried by the servos
@@ -136,6 +143,25 @@ def _arm_parts(arm_cam=None, arm_cam_collide=False):
         if arm_cam_collide:
             ET.SubElement(cb, 'geom', dict(name='armcam_col', type='box', size='0.045 0.0125 0.0125', pos=' '.join(f'{0.0125 * v:.5f}' for v in za), xyaxes=' '.join(str(v) for v in c['xyaxes']),
                                            contype='2', conaffinity='1', group='3', rgba='0.5 0.5 0.5 0.3', mass='0', friction='0.6 0.005 0.0001'))
+        if arm_cam_guard:
+            g = GUARD; xa, ya = np.array(c['xyaxes'][:3]), np.array(c['xyaxes'][3:]); zb = np.cross(xa, ya)
+            gb = ET.SubElement(parent, 'body', dict(name='armcam_guard', pos=' '.join(str(v) for v in c['pos'])))
+            ET.SubElement(gb, 'inertial', dict(pos=' '.join(f'{0.0125 * v:.5f}' for v in zb), mass=str(g['mass']), diaginertia='3e-6 6e-6 6e-6'))                  # a bar about as long as the camera
+            ct, ca = ('2', '1') if arm_cam_collide else ('0', '0'); ax = ' '.join(str(v) for v in c['xyaxes'])
+            h = 0.0125 + g['gap'] + g['rail']                                                                                                                       # a rail's centre line is this far from the camera axis, sideways and in depth
+            def box(name, size, loc):
+                pos = 0.0125 * zb + loc[0] * xa + loc[1] * ya + loc[2] * zb
+                ET.SubElement(gb, 'geom', dict(name=name, type='box', size=' '.join(f'{v:.5f}' for v in size), pos=' '.join(f'{v:.5f}' for v in pos), xyaxes=ax, mass='0', group='3',
+                                               rgba='0.9 0.5 0.1 0.35', friction='0.6 0.005 0.0001', contype=ct, conaffinity=ca))
+            L = 0.045 + g['gap'] + 2 * g['ring_len'] + 0.0005                                                                                                       # a rail reaches the outside of the end rings
+            for iy, sy in enumerate((-1, 1) if 'rails' in g['parts'] else ()):
+                for iz, sz in enumerate((-1, 1)): box(f'armcam_guard_rail{iy}{iz}', (L, g['rail'], g['rail']), (0.0, sy * h, sz * h))
+            for ix, sx in enumerate((-1, 1) if 'rings' in g['parts'] else ()):                                                                                      # the end rings: four bars each
+                cx = sx * (0.045 + g['gap'] + g['ring_len']); R = h + g['rail']
+                box(f'armcam_guard_ring{ix}_a', (g['ring_len'], R, g['wall']), (cx, 0.0, -(h)))
+                box(f'armcam_guard_ring{ix}_b', (g['ring_len'], R, g['wall']), (cx, 0.0, h))
+                box(f'armcam_guard_ring{ix}_c', (g['ring_len'], g['wall'], R), (cx, -h, 0.0))
+                box(f'armcam_guard_ring{ix}_d', (g['ring_len'], g['wall'], R), (cx, h, 0.0))
     acts = []
     for a in root.find('actuator'):
         lim = P['gripper_torque'] if a.get('name') == 'gripper' else P['servo_stall']
@@ -151,12 +177,12 @@ def _attrs(s):
     return out
 
 
-def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET, dock=False, people=(), head_cam=False, arm_cam=None, arm_cam_collide=False):
+def build_xml(objects, robot_pose=HOME, extra_boxes=(), basket=BASKET, dock=False, people=(), head_cam=False, arm_cam=None, arm_cam_collide=False, arm_cam_guard=None):
     """objects: list of (kind, x, y, yaw, spec) with spec from objects.sample(). Returns MJCF text. World frame: x right, y 'down' the room plan, z up.
     people: keys of people.SPECS (mocap humans a script moves, body names p0_*, p1_*, ...). head_cam: a depth camera on a 0.5 m mast, tilted 28 degrees up
     (the mast is drawn but has no mass or collision; people.HeadCam reads it). arm_cam: a key of ARM_CAMS, a camera on the arm instead (people.ArmCam reads it; use one of the two, not both).
     All are off by default and then the model is exactly what it was."""
-    defaults, assets, arm_body, arm_acts = _arm_parts(arm_cam, arm_cam_collide)
+    defaults, assets, arm_body, arm_acts = _arm_parts(arm_cam, arm_cam_collide, arm_cam_guard)
     R = P['wheel_radius']
     lx, ly, lz = P['lidar_pos']
     furn = []

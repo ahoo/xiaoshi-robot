@@ -356,6 +356,7 @@ class NLU:
                 sc, a, b = match(p, ft)
                 thr = self._thr(len(p))
                 if intent == 'stop': thr = min(thr, 0.7 if len(p) > 1 else 0.5)
+                if intent in SENSITIVE: thr = max(thr, 0.99)           # remembering or forgetting somebody and switching the microphone off are never done on a near miss of the sound: '巡视一下' is not '记一下'
                 if sc >= thr:
                     v = sc * w * (0.62 + 0.13 * min(len(p), 3))
                     if v > best[0]: best = (v, phrase, 'zh')
@@ -910,21 +911,38 @@ class VoiceSystem:
         out = [it for it in inv.items.values() if it['kind'] == ref and it['kind_conf'] >= 0.2]
         return sorted(out, key=lambda it: -it['last_seen'])
 
+    def _has_place(self, name):
+        """Does the scanned map hold a piece of furniture the household calls `name`?"""
+        if self.home is None or self.home.analysis is None: return False
+        from inventory import furniture_name
+        return any(furniture_name(f) == name for f in self.home.analysis['furniture'])
+
     def _approach(self, name):
-        """A free spot 0.5 m from the named furniture, nearest to the robot (from the 3D map's furniture boxes and the dock)."""
+        """A free spot next to the named furniture, nearest to the robot (from the 3D map's furniture boxes): first the four spots 0.5 m from the middle of each side; when the room round the piece is so full
+        that none of those is free (a sofa between a table and a shelf), any free spot 0.4-0.75 m from its edge. None: there is no such furniture in the map, or no free spot at all."""
         if self.home is None or self.home.analysis is None: return None
         from inventory import furniture_name
         agent = self.home.a; x0, y0, _ = agent.pose(); D = agent.costmap(); best = None
+        free = lambda px, py: 0 <= int(py / 0.05) < D.shape[0] and 0 <= int(px / 0.05) < D.shape[1] and D[int(py / 0.05), int(px / 0.05)] >= 0.235
         boxes = [(furniture_name(f), f) for f in self.home.analysis['furniture']]
         for nm, f in boxes:
             if nm != name: continue
             c, s = math.cos(f['yaw']), math.sin(f['yaw'])
             for sx, sy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
                 px = f['centre'][0] + c * sx * (f['length'] / 2 + 0.5) - s * sy * (f['width'] / 2 + 0.5); py = f['centre'][1] + s * sx * (f['length'] / 2 + 0.5) + c * sy * (f['width'] / 2 + 0.5)
-                i, j = int(px / 0.05), int(py / 0.05)
-                if not (0 <= j < D.shape[0] and 0 <= i < D.shape[1]) or D[j, i] < 0.235: continue
+                if not free(px, py): continue
                 d = math.hypot(px - x0, py - y0)
                 if best is None or d < best[0]: best = (d, px, py)
+        if best is None:
+            for nm, f in boxes:
+                if nm != name: continue
+                cx, cy = f['centre'][0], f['centre'][1]; c, s = math.cos(f['yaw']), math.sin(f['yaw']); hl, hw = f['length'] / 2, f['width'] / 2; reach = max(hl, hw) + 0.8
+                for gx in np.arange(cx - reach, cx + reach, 0.1):
+                    for gy in np.arange(cy - reach, cy + reach, 0.1):
+                        u = c * (gx - cx) + s * (gy - cy); v = -s * (gx - cx) + c * (gy - cy); edge = math.hypot(max(abs(u) - hl, 0.0), max(abs(v) - hw, 0.0))
+                        if not (0.4 <= edge <= 0.75) or not free(gx, gy): continue
+                        d = math.hypot(gx - x0, gy - y0)
+                        if best is None or d < best[0]: best = (d, float(gx), float(gy))
         return None if best is None else (best[1], best[2])
 
     # ---- the records are kept in Chinese (inventory.py); these say them in English
@@ -1014,6 +1032,7 @@ class VoiceSystem:
             elif sup is not None: pt = self._approach(name)
             pe = self._pname(name, 'en')
             if sup is None: say((f'好的，我去{name}那边', f"OK, I'll go to the {pe}."))
+            elif pt is None and self._has_place(name): say((f'我找不到能站的位置去{name}那边，它旁边太挤了', f"I can't find a free spot to stand next to the {pe}: it is too crowded there."))
             elif pt is None: say((f'我还不知道{name}在哪里，要先扫描一下家里', f"I don't know where the {pe} is yet. I need to scan the house first."))
             else: sup.go_to(pt[0], pt[1]); self.ctx['place'] = name; say((f'好的，我去{name}那边', f"OK, I'll go to the {pe}."))
         elif intent == 'charge':

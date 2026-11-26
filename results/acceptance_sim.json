@@ -1,0 +1,1363 @@
+{
+ "when": "2026-11-26 03:55",
+ "source": "重跑（standard）",
+ "code": "65c4bb9+未提交的改动",
+ "items": {
+  "A1": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "前进速度 / 指令",
+     "measured": "0.954",
+     "need": "0.90–1.10",
+     "ok": true
+    },
+    {
+     "label": "横移速度 / 指令",
+     "measured": "0.954",
+     "need": "0.90–1.10",
+     "ok": true
+    },
+    {
+     "label": "原地转速度 / 指令",
+     "measured": "0.964",
+     "need": "0.90–1.10",
+     "ok": true
+    },
+    {
+     "label": "最大倾角",
+     "measured": "0.01°",
+     "need": "≤ 3°",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "base": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 3,
+     "log": "/tmp/accept_final/logs/base.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 04:23"
+  },
+  "A2": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "总成功率",
+     "measured": "72/80（90%）",
+     "need": "≥ 85%",
+     "ok": true
+    },
+    {
+     "label": "最差的一种",
+     "measured": "lbrick 6/10",
+     "need": "≥ 5/10",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "grasp": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 409,
+     "log": "/tmp/accept_final/logs/grasp.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 04:30"
+  },
+  "B1": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "全部送达的布局",
+     "measured": "6/6（100%）",
+     "need": "≥ 80%",
+     "ok": true
+    },
+    {
+     "label": "送达的件数",
+     "measured": "30/30（100%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "一局里最多碰撞",
+     "measured": "0 次",
+     "need": "≤ 1",
+     "ok": true
+    },
+    {
+     "label": "故障停机",
+     "measured": "没有",
+     "need": "没有",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "job_standard": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 893,
+     "log": "/tmp/accept_final/logs/job_standard.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 04:45"
+  },
+  "B2": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "贴边：送达的件数",
+     "measured": "15/15（100%）",
+     "need": "≥ 85%",
+     "ok": true
+    },
+    {
+     "label": "贴边：一局里最多碰撞",
+     "measured": "0 次",
+     "need": "≤ 2",
+     "ok": true
+    },
+    {
+     "label": "扎堆：送达的件数",
+     "measured": "15/15（100%）",
+     "need": "≥ 85%",
+     "ok": true
+    },
+    {
+     "label": "扎堆：一局里最多碰撞",
+     "measured": "0 次",
+     "need": "≤ 2",
+     "ok": true
+    },
+    {
+     "label": "难材质：送达的件数",
+     "measured": "18/18（100%）",
+     "need": "≥ 85%",
+     "ok": true
+    },
+    {
+     "label": "难材质：一局里最多碰撞",
+     "measured": "0 次",
+     "need": "≤ 2",
+     "ok": true
+    },
+    {
+     "label": "裸夹爪：送达的件数",
+     "measured": "15/15（100%）",
+     "need": "≥ 85%",
+     "ok": true
+    },
+    {
+     "label": "裸夹爪：一局里最多碰撞",
+     "measured": "0 次",
+     "need": "≤ 2",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "job_hard": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 959,
+     "log": "/tmp/accept_final/logs/job_hard.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:01"
+  },
+  "B3": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "送达",
+     "measured": "12/12",
+     "need": "≥ 10/12",
+     "ok": true
+    },
+    {
+     "label": "底盘压到瓶子的局数",
+     "measured": "0/12",
+     "need": "≤ 1",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "clear": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 421,
+     "log": "/tmp/accept_final/logs/clear.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:08"
+  },
+  "C1": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "标准扰动：向左侧倒",
+     "measured": "24/24（相机压地力最大 0 N，挡条受力中位 26 N、最大 42 N）",
+     "need": "≥ 22/24",
+     "ok": true
+    },
+    {
+     "label": "标准扰动：向右侧倒",
+     "measured": "24/24（相机压地力最大 0 N，挡条受力中位 21 N、最大 40 N）",
+     "need": "≥ 22/24",
+     "ok": true
+    },
+    {
+     "label": "标准扰动：前倾",
+     "measured": "24/24（相机压地力最大 0 N，挡条受力中位 0 N、最大 0 N）",
+     "need": "≥ 22/24",
+     "ok": true
+    },
+    {
+     "label": "苛刻扰动：向左侧倒",
+     "measured": "24/24（相机压地力最大 0 N，挡条受力中位 26 N、最大 58 N）",
+     "need": "≥ 19/24",
+     "ok": true
+    },
+    {
+     "label": "苛刻扰动：向右侧倒",
+     "measured": "24/24（相机压地力最大 0 N，挡条受力中位 21 N、最大 29 N）",
+     "need": "≥ 19/24",
+     "ok": true
+    },
+    {
+     "label": "苛刻扰动：前倾",
+     "measured": "20/24（相机压地力最大 0 N，挡条受力中位 0 N、最大 19 N）",
+     "need": "≥ 19/24",
+     "ok": true
+    },
+    {
+     "label": "相机压地力（6 格里最大；挡条在位，相机自己不该碰地）",
+     "measured": "0 N（挡条受力最大 58 N）",
+     "need": "≤ 1 N",
+     "ok": true
+    },
+    {
+     "label": "28 次推倒",
+     "measured": "倒下 23 次，起来 23 次",
+     "need": "倒下的全部起来",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "righting_std": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 76,
+     "log": "/tmp/accept_final/logs/righting_std.log"
+    },
+    "righting_harsh": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 71,
+     "log": "/tmp/accept_final/logs/righting_harsh.log"
+    },
+    "righting_sweep": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 27,
+     "log": "/tmp/accept_final/logs/righting_sweep.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:10"
+  },
+  "C2": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "倒下后起来",
+     "measured": "12/13（92%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "找回位置误差中位数",
+     "measured": "0.9 cm",
+     "need": "≤ 3 cm",
+     "ok": true
+    },
+    {
+     "label": "找回的位置错了（> 20 cm）",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "fall_room": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 264,
+     "log": "/tmp/accept_final/logs/fall_room.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:15"
+  },
+  "C3": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "对上",
+     "measured": "10/10（100%）",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "第一次就对上",
+     "measured": "10/10（100%）",
+     "need": "≥ 9/10",
+     "ok": true
+    },
+    {
+     "label": "碰撞",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "dock": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 46,
+     "log": "/tmp/accept_final/logs/dock.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:16"
+  },
+  "C4": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "带低电量的局：去充电",
+     "measured": "4/4（100%）",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "全部局：5 件送完",
+     "measured": "6/6（100%）",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "故障",
+     "measured": "0 局",
+     "need": "0",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "lowbatt": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 417,
+     "log": "/tmp/accept_final/logs/lowbatt.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:23"
+  },
+  "C5": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "松手到停下",
+     "measured": "0.84 s",
+     "need": "≤ 1 s",
+     "ok": true
+    },
+    {
+     "label": "安全层开：碰撞",
+     "measured": "0 次，离墙 13.7 cm",
+     "need": "0 次",
+     "ok": true
+    },
+    {
+     "label": "手臂指令：够得到的执行、够不到的拒绝",
+     "measured": "误差 0.2 mm，拒绝 True",
+     "need": "执行且拒绝",
+     "ok": true
+    },
+    {
+     "label": "接管后交还：任务送完",
+     "measured": "4/4（100%）",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "TCP 服务器",
+     "measured": "通过",
+     "need": "通过",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "teleop": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 391,
+     "log": "/tmp/accept_final/logs/teleop.log"
+    },
+    "server": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 9,
+     "log": "/tmp/accept_final/logs/server.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:29"
+  },
+  "C6": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "可达的到达",
+     "measured": "36/36（100%）",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "到达的最大偏差",
+     "measured": "14.1 cm",
+     "need": "≤ 15 cm",
+     "ok": true
+    },
+    {
+     "label": "到不了的被拒绝",
+     "measured": "12/12（100%）",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "碰撞",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "nav": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 98,
+     "log": "/tmp/accept_final/logs/nav.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:31"
+  },
+  "D1": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "覆盖（最差的一个布局）",
+     "measured": "0.948（3 个布局）",
+     "need": "≥ 0.93",
+     "ok": true
+    },
+    {
+     "label": "精度（最差的一个布局）",
+     "measured": "0.997",
+     "need": "≥ 0.99",
+     "ok": true
+    },
+    {
+     "label": "碰撞",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "scan": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 226,
+     "log": "/tmp/accept_final/logs/scan.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:35"
+  },
+  "D2": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "没动的认出",
+     "measured": "12/12（100%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "挪过的认出是同一件",
+     "measured": "12/12（100%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "新来的记成新的",
+     "measured": "6/6（100%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "拿走的标“不见了”",
+     "measured": "5/6（83%）",
+     "need": "≥ 75%",
+     "ok": true
+    },
+    {
+     "label": "认错成别的",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "凭空多出来的",
+     "measured": "0 条",
+     "need": "0",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "inventory": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 262,
+     "log": "/tmp/accept_final/logs/inventory.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:39"
+  },
+  "E1": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "1–2.5 m 检出",
+     "measured": "96%（102 次）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "站着的大人判成大人",
+     "measured": "100%",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "站着的孩子：判成孩子或拿不准",
+     "measured": "57/57（其中拿不准 4）",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "站着的孩子：明确判成孩子",
+     "measured": "93%",
+     "need": "≥ 80%",
+     "ok": true
+    },
+    {
+     "label": "孩子被判成大人（所有姿势）",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "空房间的假目标",
+     "measured": "0/48 帧",
+     "need": "0",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "people": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 27,
+     "log": "/tmp/accept_final/logs/people.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:39"
+  },
+  "E2": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "检出这一对的试验里，孩子被找到并按小孩办、或合并在一块里按小孩办",
+     "measured": "256/256（100%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "孩子被判成大人",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "只剩一条“大人”的轨迹、孩子没找到（只记录）",
+     "measured": "0 次",
+     "need": "只记录",
+     "ok": true
+    },
+    {
+     "label": "这两个人身边什么都没检出的试验（只记录；只放一个大人的对照也只有 67% 检出，见 pairs_control.py）",
+     "measured": "0/256（0%）",
+     "need": "只记录",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "pairs": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 35,
+     "log": "/tmp/accept_final/logs/pairs.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:40"
+  },
+  "E3": {
+   "verdict": "FAIL",
+   "lines": [
+    {
+     "label": "碰到人（安全层开）",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "有人走到 0.6 m 以内的场景，安全层停过",
+     "measured": "3/3（adult_cross 停 2 次、child_run 停 4 次、family 停 3 次）",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "离人最近（只记录：孩子冲过来时人自己会跑到很近）",
+     "measured": "12.6 cm",
+     "need": "只记录",
+     "ok": true
+    },
+    {
+     "label": "对照：同样的场景关掉安全层，离人最近（只记录）",
+     "measured": "9.6 cm",
+     "need": "只记录",
+     "ok": true
+    },
+    {
+     "label": "送达",
+     "measured": "24/25",
+     "need": "全部",
+     "ok": false
+    },
+    {
+     "label": "碰撞",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "safety": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 727,
+     "log": "/tmp/accept_final/logs/safety.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 05:52"
+  },
+  "E4": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "没有同意 / 看得太少不能登记",
+     "measured": "refused / refused",
+     "need": "refused / refused",
+     "ok": true
+    },
+    {
+     "label": "登记的人正对：叫对",
+     "measured": "100%（36 次）",
+     "need": "≥ 95%",
+     "ok": true
+    },
+    {
+     "label": "登记的人：叫错",
+     "measured": "0%",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "没登记的孩子被叫出名字",
+     "measured": "0",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "忘掉以后登记簿里还有",
+     "measured": "0 条，认得出 None",
+     "need": "0，认不出",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "identity": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 2,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/identity.log"
+    },
+    "faces": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 43,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/faces.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-26 03:56"
+  },
+  "E5": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "假定质量：检出这一对的试验里，孩子按小孩办",
+     "measured": "256/256（100%；纯深度 100%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "假定质量：孩子被判成大人",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "假定质量：两个人分别找到的试验（对比纯深度）",
+     "measured": "256/256（100%），纯深度 224/256（88%）",
+     "need": "多 ≥ 5 个百分点",
+     "ok": true
+    },
+    {
+     "label": "做差的检测器：检出这一对的试验里，孩子按小孩办",
+     "measured": "256/256（100%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "做差的检测器：孩子被判成大人",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "做差的检测器：两个人分别找到的试验（只记录）",
+     "measured": "238/256（93%）",
+     "need": "只记录",
+     "ok": true
+    },
+    {
+     "label": "站着的人（假定质量）：1–2.5 m 检出",
+     "measured": "96%（102 次）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "站着的人（假定质量）：大人判成大人",
+     "measured": "46/46（100%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "站着的人（假定质量）：孩子被判成大人（所有姿势）",
+     "measured": "0 次（站着的孩子里明确判成孩子 54、拿不准 3）",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "空房间的假目标（检测器有假框）",
+     "measured": "0/48 帧",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "站着的人（做差的检测器）：1–2.5 m 检出",
+     "measured": "96%（102 次）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "站着的人（做差的检测器）：大人判成大人",
+     "measured": "43/46（93%）",
+     "need": "≥ 90%",
+     "ok": true
+    },
+    {
+     "label": "站着的人（做差的检测器）：孩子被判成大人（所有姿势）",
+     "measured": "0 次（站着的孩子里明确判成孩子 53、拿不准 4）",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "同场干活（假定质量）：碰到人",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "同场干活：有人走到 0.6 m 以内的场景，安全层停过",
+     "measured": "3/3",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "同场干活：送达 / 碰撞",
+     "measured": "25/25 / 0 次",
+     "need": "全部 / 0",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "pairs": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 35,
+     "log": "/tmp/accept_final/logs/pairs.log"
+    },
+    "pairs_rgb": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 52,
+     "log": "/tmp/accept_final/logs/pairs_rgb.log"
+    },
+    "pairs_rgb_weak": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 48,
+     "log": "/tmp/accept_final/logs/pairs_rgb_weak.log"
+    },
+    "people_rgb": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 39,
+     "log": "/tmp/accept_final/logs/people_rgb.log"
+    },
+    "people_rgb_weak": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 39,
+     "log": "/tmp/accept_final/logs/people_rgb_weak.log"
+    },
+    "safety_rgb": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 1062,
+     "log": "/tmp/accept_final/logs/safety_rgb.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:13"
+  },
+  "F1": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "错误率 4% 时听懂（含先确认一次）",
+     "measured": "95.0%",
+     "need": "≥ 93%",
+     "ok": true
+    },
+    {
+     "label": "做成和说的不一样的移动命令",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "权限表里错的",
+     "measured": "0/76",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "没喊唤醒词的闲聊：被当成命令 / 误停",
+     "measured": "0 / 0",
+     "need": "0 / 0",
+     "ok": true
+    },
+    {
+     "label": "停止词（大人、孩子，安静、吵）最差",
+     "measured": "96.5%",
+     "need": "≥ 95%",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "voice": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 74,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/voice.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-26 03:57"
+  },
+  "F2": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "英文（没调过的测试集，识别完全正确）：听懂",
+     "measured": "84.1%（414 句）",
+     "need": "≥ 80%",
+     "ok": true
+    },
+    {
+     "label": "中英夹杂（同上）：听懂",
+     "measured": "71.9%（96 句）",
+     "need": "≥ 70%",
+     "ok": true
+    },
+    {
+     "label": "说错成别的意图（英文 / 夹杂）",
+     "measured": "3.9% / 9.4%",
+     "need": "≤ 10%",
+     "ok": true
+    },
+    {
+     "label": "做错事的移动命令（全部扫描）",
+     "measured": "0.0 次",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "英文回答的语言对",
+     "measured": "98.6%",
+     "need": "≥ 95%",
+     "ok": true
+    },
+    {
+     "label": "中文：4% 错字时听懂（含先确认）",
+     "measured": "94.4%",
+     "need": "≥ 93%",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "lang": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 191,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/lang.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-26 04:00"
+  },
+  "F3": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "对话检查",
+     "measured": "55/55",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "没通过的",
+     "measured": "没有",
+     "need": "没有",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "lang": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 191,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/lang.log"
+    },
+    "voice": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 74,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/voice.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-26 04:00"
+  },
+  "F4": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "检查",
+     "measured": "16/16",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "没通过的",
+     "measured": "没有",
+     "need": "没有",
+     "ok": true
+    },
+    {
+     "label": "脚本跑完",
+     "measured": "True",
+     "need": "True",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "day": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 311,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/day.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-26 04:06"
+  },
+  "F5": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "检查（含别人说话和静音的 141 秒素材里不误唤醒）",
+     "measured": "16/16（跳过 0）",
+     "need": "全部通过、无跳过",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "wake": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 24,
+     "log": "/tmp/accept_final/logs/wake.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:24"
+  },
+  "G1": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "安静：找到",
+     "measured": "100%（100 次）",
+     "need": "≥ 95%",
+     "ok": true
+    },
+    {
+     "label": "安静：中位误差",
+     "measured": "7.8°",
+     "need": "≤ 10°",
+     "ok": true
+    },
+    {
+     "label": "安静：20° 内",
+     "measured": "86%",
+     "need": "≥ 80%",
+     "ok": true
+    },
+    {
+     "label": "机器人在开：中位误差",
+     "measured": "9.4°",
+     "need": "≤ 15°",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "ssl": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 286,
+     "log": "/tmp/accept_final/logs/ssl.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:28"
+  },
+  "G2": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "登记的人被认成别人",
+     "measured": "0.0%",
+     "need": "≤ 1%",
+     "ok": true
+    },
+    {
+     "label": "访客被叫成家人",
+     "measured": "1.6%",
+     "need": "≤ 3%",
+     "ok": true
+    },
+    {
+     "label": "等错误率",
+     "measured": "9.1%",
+     "need": "≤ 12%",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "voiceprint": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 273,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/voiceprint.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-26 04:10"
+  },
+  "G3": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "访客拿到主人权限",
+     "measured": "0%",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "电视喊唤醒词：主人权限",
+     "measured": "0%",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "电视放主人的录音：主人权限",
+     "measured": "0%（声纹被骗 43%）",
+     "need": "0",
+     "ok": true
+    },
+    {
+     "label": "视野外的人被算到视野里的人头上",
+     "measured": "1.3%（4/320）",
+     "need": "≤ 5%",
+     "ok": true
+    },
+    {
+     "label": "其中拿到“主人”",
+     "measured": "1/320",
+     "need": "≤ 2%",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "assoc": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 269,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/assoc.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-26 04:15"
+  },
+  "G4": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "安全检查没过的",
+     "measured": "没有",
+     "need": "没有",
+     "ok": true
+    },
+    {
+     "label": "全部检查",
+     "measured": "34/42（5:13、6:9、7:12）",
+     "need": "≥ 75%",
+     "ok": true
+    },
+    {
+     "label": "碰撞",
+     "measured": "0 次",
+     "need": "0",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "day2": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 217,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/day2.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-26 04:18"
+  },
+  "H1": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "检查",
+     "measured": "24/24",
+     "need": "全部",
+     "ok": true
+    },
+    {
+     "label": "没通过的",
+     "measured": "没有",
+     "need": "没有",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "profile": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 5,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/profile.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-26 04:18"
+  },
+  "I1": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "离地",
+     "measured": "0.387 m",
+     "need": "0.35–0.45",
+     "ok": true
+    },
+    {
+     "label": "仰角",
+     "measured": "32.5°",
+     "need": "30–35°",
+     "ok": true
+    },
+    {
+     "label": "朝向误差平均 / 最大",
+     "measured": "0.74° / 1.17°",
+     "need": "≤ 1.5° / ≤ 3°",
+     "ok": true
+    },
+    {
+     "label": "位置误差最大",
+     "measured": "2.4 mm",
+     "need": "≤ 5",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "pose": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 6,
+     "log": "/tmp/accept_final/logs/pose.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-25 06:42"
+  },
+  "I2": {
+   "verdict": "PASS",
+   "lines": [
+    {
+     "label": "检查",
+     "measured": "145/145",
+     "need": "全部",
+     "ok": true
+    }
+   ],
+   "why": "",
+   "jobs": {
+    "llm": {
+     "ok": true,
+     "rc": 0,
+     "seconds": 5,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/llm.log"
+    }
+   },
+   "source": "重跑（standard）",
+   "mode": "重跑 standard",
+   "when": "2026-11-26 04:18"
+  }
+ }
+}

@@ -28,6 +28,8 @@ import time
 from contextlib import contextmanager
 
 import mujoco
+
+_GEOM_ID = int(mujoco.mjtObj.mjOBJ_GEOM)       # an int: comparing a whole image with the enum member costs 25 ms, with the int 0.1 ms
 import numpy as np
 from scipy import ndimage
 
@@ -261,6 +263,12 @@ class HeadCam:
 
     def ready(self): return True
 
+    def rgb(self):
+        """The colour picture of the same view (for a real person detector, rgbdet.OnnxBoxes; the depth pipeline never uses it)."""
+        if getattr(self, '_col', None) is None: self._col = mujoco.Renderer(self.r.m, HH, HW)
+        with _zfar(self.r.m, HEAD_RANGE + 0.5):
+            self._col.update_scene(self.r.d, self.name); return self._col.render().copy()
+
     @property
     def height(self): return float(self.t_bc[2])
 
@@ -269,7 +277,7 @@ class HeadCam:
         with _zfar(m, HEAD_RANGE + 0.5):
             self.dep.update_scene(d, self.name); depth = self.dep.render().astype(np.float64)
             self.seg.update_scene(d, self.name); s = self.seg.render()
-        lab = np.where(s[..., 1] == mujoco.mjtObj.mjOBJ_GEOM, s[..., 0], -1)
+        lab = np.where(s[..., 1] == _GEOM_ID, s[..., 0], -1); self.lab = lab                                       # (the colour-image person detector's stand-in reads the true outlines here)
         self.self_mask = np.isin(lab, self.self_geoms); self.self_share = float(self.self_mask.mean())
         depth = depth + self.rng.normal(0, 1, depth.shape) * (HEAD_SIGMA[0] + HEAD_SIGMA[1] * depth ** 2) * perturb.get('depth_noise', 1.0)
         far = depth >= HEAD_RANGE; depth[far] = 0.0                                   # nothing measured there
@@ -355,11 +363,11 @@ class Track:
     def __init__(self, t, x, y, h, cut, w, grp=False):
         Track._n += 1; self.grp = [grp]; self.id = Track._n; self.t0 = self.t = t; self.x, self.y = x, y; self.vx = self.vy = 0.0; self.hits = 1; self.misses = 0
         self.hs = [] if cut else [h]; self.hmax_cut = h if cut else 0.0; self.ws = [w] if w else []; self.cut = cut; self.emb = []; self.frontal = []; self.who = None; self.who_conf = 0.0; self.truth = None
-        self.cls = 'unsure'; self.coast = False; self.dist = 0.0; self.history = [(t, x, y)]
+        self.cls = 'unsure'; self.coast = False; self.dist = 0.0; self.history = [(t, x, y)]; self.t_adv = t; self.xm, self.ym = x, y         # xm, ym: where it was last seen; t_adv: the time up to which x, y have been carried along at the track's velocity
 
     def update(self, t, x, y, h, cut, w, grp=False):
-        self.grp = (self.grp + [grp])[-12:]; dt = max(t - self.t, 1e-3); vx, vy = (x - self.x) / dt, (y - self.y) / dt; a = 0.5
-        self.vx, self.vy = (1 - a) * self.vx + a * vx, (1 - a) * self.vy + a * vy; self.x, self.y = x, y; self.t = t; self.hits += 1; self.misses = 0; self.coast = False
+        self.grp = (self.grp + [grp])[-12:]; dt = max(t - self.t, 1e-3); vx, vy = (x - self.xm) / dt, (y - self.ym) / dt; a = 0.5
+        self.vx, self.vy = (1 - a) * self.vx + a * vx, (1 - a) * self.vy + a * vy; self.x, self.y = x, y; self.xm, self.ym = x, y; self.t = t; self.t_adv = t; self.hits += 1; self.misses = 0; self.coast = False
         if cut: self.hmax_cut = max(self.hmax_cut, h)
         else: self.hs = (self.hs + [h])[-12:]
         if w: self.ws = (self.ws + [w])[-12:]
@@ -376,14 +384,14 @@ class Track:
     def width(self): return float(np.median(self.ws)) if self.ws else None
 
     def predict(self, t):
-        dt = min(t - self.t, 1.5); return self.x + self.vx * dt, self.y + self.vy * dt
+        dt = min(t - self.t_adv, 1.5); return self.x + self.vx * dt, self.y + self.vy * dt
 
 
 class PersonDetector:
     """Head-camera depth -> tracked people with height and size class. Everything it uses is what the robot has on board: the depth image, its own pose estimate and,
     if it has scanned the room, the 3D map (to tell a tall cupboard it has already seen from a person)."""
-    def __init__(self, robot, agent, rng, static_map=None, period=0.2):
-        self.r, self.a = robot, agent; self.tracks = []; self.period = period; self._t = -9.0; self.static_map = static_map
+    def __init__(self, robot, agent, rng, static_map=None, period=0.2, boxes=None):
+        self.r, self.a = robot, agent; self.tracks = []; self.period = period; self._t = -9.0; self.static_map = static_map; self.boxes = boxes; self.last_boxes = []     # boxes: a person detector on the colour picture (rgbdet), or None: depth only
         self.cam = HeadCam(robot, rng) if mujoco.mj_name2id(robot.m, mujoco.mjtObj.mjOBJ_CAMERA, 'head') >= 0 else ArmCam(robot, rng)          # the mast camera, or else the one on the arm
         self.frames = 0; self.t_ms = 0.0; self.raw = []; self.rng = rng
         self.blind_total = 0.0; self._tb = None; self.blind_s = 0.0; self.seen_s = 0.0      # seconds the camera was not looking anywhere useful / was
@@ -403,8 +411,26 @@ class PersonDetector:
         if self.cam.self_share > getattr(self.cam, 'MAX_SELF', 1.0): return False
         pose = self.a.pose(); W, ok = self.cam.points(pose)
         det = self._cluster(W, ok, pose)
+        if self.boxes is not None: det = self._fuse(det, W, ok, pose)
         self._associate(t, det, pose); self.t_ms += (time.time() - t0) * 1000.0
         return True
+
+    def _fuse(self, clusters, W, ok, pose):
+        """Depth and the colour-image detector together: every box that has a person-like thing under it in the depth image is a detection of its own (so two people who stand close are two);
+        the depth points that no box explains are kept as one more detection (a person the detector missed this frame is still slowed for): a cluster that no box touches as depth alone sees it, what is left of one that boxes took part of as 'unsure'."""
+        import rgbdet
+        self.last_boxes = boxes = self.boxes.detect(self.cam)
+        dets, claimed = rgbdet.box_detections(self.cam, boxes, W, ok, pose, UPPER, TOP_BIAS, MIN_TOP, GROUP_FOOT)
+        taken = ndimage.binary_dilation(claimed, iterations=2) if claimed.any() else claimed
+        for c in clusters:
+            x, y, z, v, u = c['pts']; o = ~taken[v, u]                                      # the depth points that no person's box took (not just: that lie inside some box's rectangle)
+            if o.all():                                                                     # no box touches it: the detector found nothing here, so this is what depth alone makes of it (a lone person is measured
+                dets.append(dict(x=c['x'], y=c['y'], h=c['h'], cut=c['cut'], w=c['w'], n=c['n'], grp=c['grp'], src='depth')); continue      # and sized as without boxes; two together are 'unsure')
+            if o.sum() < 40 or o.mean() < 0.15: continue
+            x, y, z, v = x[o], y[o], z[o], v[o]; top = float(np.percentile(z, 99)) + TOP_BIAS; foot = max(np.ptp(x), np.ptp(y))
+            if top < MIN_TOP or foot > MAX_FOOT: continue
+            dets.append(dict(x=float(np.median(x)), y=float(np.median(y)), h=top, cut=bool((v[z > top - 0.12] <= 2).any()), w=None, n=int(o.sum()), grp=True, src='depth'))
+        return dets
 
     def _cluster(self, W, ok, pose):
         pz = W[..., 2]; sel = ok & (pz > UPPER) & (pz < 2.15)
@@ -429,7 +455,7 @@ class PersonDetector:
                 dx, dy = cx - pose[0], cy - pose[1]; n_ = math.hypot(dx, dy) + 1e-6; px, py = -dy / n_, dx / n_
                 s_ = x[band] * px + y[band] * py; w = float(np.percentile(s_, 97) - np.percentile(s_, 3))
             if self._is_furniture(x, y): continue
-            out.append(dict(x=cx, y=cy, h=top, cut=cut, w=w, n=int(m.sum()), grp=bool(foot > GROUP_FOOT)))
+            out.append(dict(x=cx, y=cy, h=top, cut=cut, w=w, n=int(m.sum()), grp=bool(foot > GROUP_FOOT), pts=(x, y, z, v, u)))
         return out
 
     def _is_furniture(self, x, y):
@@ -452,10 +478,10 @@ class PersonDetector:
         for k in self.tracks:
             if k not in used:
                 k.misses += 1; k.coast = True
-                if t - k.t < 1.5: k.x, k.y = k.predict(t)[0], k.predict(t)[1]
+                if t - k.t < 1.5: k.x, k.y = k.predict(t); k.t_adv = t                      # carried along from where it was last put (each frame by that frame's step: not by the time since the last sighting again)
         self.tracks = [k for k in self.tracks if t - k.t - min(self.blind_total - getattr(k, 'b0', self.blind_total), 6.0) < 3.0]      # time the camera was not looking is not held against a track (up to 6 s)
         for k in self.tracks:
-            h, lb = k.height; k.cls = 'unsure' if sum(k.grp) * 2 > len(k.grp) else classify(h, k.width, lb); k.dist = math.hypot(k.x - pose[0], k.y - pose[1])
+            h, lb = k.height; k.cls = 'unsure' if any(k.grp) and sum(k.grp) * 2 >= len(k.grp) else classify(h, k.width, lb); k.dist = math.hypot(k.x - pose[0], k.y - pose[1])
 
     def confirmed(self, min_hits=2): return [k for k in self.tracks if k.hits >= min_hits]
 
@@ -684,12 +710,25 @@ class Guard:
 
 
 
+def make_boxes(robot, names, rng, rgb=None):
+    """The colour-image person detector to use: `rgb` is None (decided by the environment variable PEOPLE_RGB: 'sim' = the stand-in), False/'off', True/'sim' (the stand-in of rgbdet.SimBoxes), a dict of its
+    parameters, or a detector object that has `detect(cam)`. None of it unless asked for: the depth-only detector of rounds 14-16 is what runs by default."""
+    import rgbdet
+    if rgb is None: rgb = os.environ.get('PEOPLE_RGB', '') or False
+    if isinstance(rgb, str) and rgb.startswith('{'): rgb = json.loads(rgb)                      # PEOPLE_RGB='{"recall": 0.8}': the stand-in with other numbers
+    if rgb in (False, 'off', '0', ''): return None
+    if rgb is True or rgb in ('sim', '1'): return rgbdet.SimBoxes(robot, names, rng)
+    if isinstance(rgb, dict): return rgbdet.SimBoxes(robot, names, rng, **rgb)
+    if isinstance(rgb, str): raise ValueError(f"PEOPLE_RGB / rgb={rgb!r}: expected 'sim', 'off', a JSON dict of the stand-in's parameters, or a detector object")
+    return rgb
+
+
 class PeopleSystem:
     """Everything about people on one object, hooked into the Supervisor (modes.py) by `sup.attach_people(system)`: it moves the simulated people, reads the head camera,
     tracks, sizes and (for enrolled people) names them, and runs the safety guard."""
-    def __init__(self, robot, agent, names, scripts, who=None, family=None, seed=0, registry_path=None, guard=True, static_map=None, period=0.2, guard_cfg=None, comply=None, strict_face=None):
+    def __init__(self, robot, agent, names, scripts, who=None, family=None, seed=0, registry_path=None, guard=True, static_map=None, period=0.2, guard_cfg=None, comply=None, strict_face=None, rgb=None):
         self.r, self.a = robot, agent; self.names = list(names); self.who = list(who) if who else [f'p{i}' for i in range(len(names))]
-        self.people = People(robot, names, scripts, comply=comply, seed=seed); self.det = PersonDetector(robot, agent, np.random.default_rng(seed + 11), static_map, period)
+        self.people = People(robot, names, scripts, comply=comply, seed=seed); self.det = PersonDetector(robot, agent, np.random.default_rng(seed + 11), static_map, period, boxes=make_boxes(robot, names, np.random.default_rng(seed + 23), rgb))
         self.face = FaceStandIn(self.who, family or [w for w in self.who], seed + 5); self.registry = Registry(registry_path)
         self.movers = LidarMovers(agent); self.guard = Guard(self.det, guard_cfg) if guard else None
         if self.guard: self.guard.extra = self.movers.confirmed; self.guard.on_ask = self.people.ask_to_move

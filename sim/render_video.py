@@ -8,10 +8,12 @@
                                                                     operator takes over and hands back, the robot is knocked over and gets up, goes
                                                                     to charge when the battery runs low, and carries on
 
-Frames are taken every 0.25 s of simulated time and played at 20 fps, i.e. 5x speed.
+Frames are taken every 0.24 s of simulated time and played at 20 fps, i.e. 4.8x speed. For a smoother picture (the arm moves a few degrees between frames instead of a dozen):
+VIDEO_STEP=5 VIDEO_FPS=30 (a frame every 0.1 s, played at 30 fps: 3x speed; three times as many frames to render and a bigger file).
 """
 import glob
 import math
+import os
 import sys
 
 import imageio
@@ -117,11 +119,12 @@ def run_modes_episode(seed, on_step, holder):
 def main(seed=4, clearance=0.30, out='../results/episode.mp4', clear=False, modes=False):
     f_big, f_mid, f_small = _font(34), _font(19), _font(15)
     state = dict(ren_main=None, ren_side=None, n=0); holder = {}
-    writer = imageio.get_writer(out, fps=20, codec='libx264', quality=None, macro_block_size=None, ffmpeg_params=['-crf', '27', '-preset', 'medium', '-pix_fmt', 'yuv420p'])
+    every, fps = int(os.environ.get('VIDEO_STEP', 12)), int(os.environ.get('VIDEO_FPS', 20)); speed = 0.02 * every * fps          # a physics step is 0.02 s of simulated time
+    writer = imageio.get_writer(out, fps=fps, codec='libx264', quality=None, macro_block_size=None, ffmpeg_params=['-crf', '27', '-preset', 'medium', '-pix_fmt', 'yuv420p'])
 
     def on_step(robot, agent):
         state['n'] += 1
-        if state['n'] % 12 != 1: return          # every 0.24 s
+        if state['n'] % every != 1 % every: return          # every 0.24 s (VIDEO_STEP physics steps)
         if state['ren_main'] is None:
             robot.m.vis.quality.shadowsize = 1024
             state['ren_main'] = mujoco.Renderer(robot.m, MAIN[1], MAIN[0]); state['ren_side'] = mujoco.Renderer(robot.m, SIDE[1], SIDE[0])
@@ -141,7 +144,7 @@ def main(seed=4, clearance=0.30, out='../results/episode.mp4', clear=False, mode
             s_ = holder['sup']; extra = f'   模式 {s_.mode}   电量 {100 * s_.bat.soc_est:.0f}%'
             bx, by, bw = 20, y0 + 44, 200; d.rectangle([bx, by, bx + bw, by + 8], outline=COL['dim']); d.rectangle([bx, by, bx + bw * s_.bat.soc_est, by + 8], fill=COL['orange'] if s_.bat.soc_est > 0.2 else COL['warn'])
         x_info = max(150, int(20 + d.textlength(agent.state, font=f_big) + 22))       # longer state names (离开充电座) must not run into the text beside them
-        d.text((x_info, y0 + 10), f'仿真时间 {int(robot.t // 60):02d}:{int(robot.t % 60):02d}   已送达 {done}/{len(robot.objects)}   5 倍速' + extra, font=f_mid, fill=COL['paper'])
+        d.text((x_info, y0 + 10), f'仿真时间 {int(robot.t // 60):02d}:{int(robot.t % 60):02d}   已送达 {done}/{len(robot.objects)}   {speed:.3g} 倍速' + extra, font=f_mid, fill=COL['paper'])
         for i, (t, msg) in enumerate(agent.log_lines[-5:][::-1]):
             d.text((20, y0 + 56 + i * 28), f'{int(t // 60):02d}:{int(t % 60):02d}  {msg}', font=f_mid, fill=COL['paper'] if i == 0 else COL['dim'])
         d.text((MAIN[0] + 8, 2 * SIDE[1] + 12), '白：障碍  绿：可通行  黄点：雷达回波', font=f_small, fill=COL['dim'])

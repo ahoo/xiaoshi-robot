@@ -11,6 +11,9 @@ IK = ArmIK()
 PINCH_MIN_Z = 0.025        # keeps the fingertips clear of the floor
 HOLD_MIN = GRIP_CLOSED + 0.03   # jaw stopped short of its end stop (~8 mm gap or more): something is between the jaws, even a squashed soft one
 SOFT_GRIP = 0.4               # N*m while closing on the floor
+RAMP_STEP = 0.1               # N*m: the squeeze goes up to the full torque in steps of this
+RAMP_TICKS = 3                # control ticks (20 ms) at each step
+YIELD = 0.011                 # rad: the thing gives if the jaw closes by more than this in one step (hard things: 0.002-0.009; a plush toy squeezed at its neck: 0.012-0.018)
 TILT_ABORT = 0.07             # rad of chassis tilt at which a grasp is abandoned
 CLEAR = 0.007              # gap left between the fixed jaw and the object before closing
 
@@ -231,14 +234,28 @@ def grasp(robot, plan, log=None, look=None):
         robot.set_grip_torque(P['gripper_torque'])
         robot.set_arm(q5=plan['lift'][1], grip=0.3, speed=1.0); yield from wait_arm(robot)
         return False
-    robot.set_grip_torque(P['gripper_torque'])   # both jaws are on the object now: squeeze properly before lifting
-    for _ in range(15):
-        yield
-        if robot.tilt() > TILT_ABORT:            # the jaw is sitting on top of the object and pushing the robot up
-            if log: log('机身被顶起，松手重来')
-            robot.set_arm(grip=0.5); yield from wait(robot, 0.3)
-            robot.set_arm(q5=plan['lift'][1], grip=0.3, speed=1.0); yield from wait_arm(robot)
-            return False
+    # Both jaws are on the object now: squeeze it up to the full torque before lifting, in steps, and stop as soon as it gives (the jaw closes by more than YIELD in one step): squeezing a plush toy
+    # at full torque pushes the finger pad into it until the pad sits wedged between its body and its head and cannot be shaken off (layout 4); a thing that is already squashed down to the jaw's
+    # end stop (soft and thin) is not squeezed any harder. Hard things do not give, so they get the full torque as before, a little later.
+    tq, ticks, tipped = SOFT_GRIP, 0, False
+    if not closed_full:
+        while tq < P['gripper_torque'] - 1e-9 and not tipped:
+            nxt = min(tq + RAMP_STEP, P['gripper_torque']); q0 = robot.joints()[5]; robot.set_grip_torque(nxt)
+            for _ in range(RAMP_TICKS):
+                yield; ticks += 1
+                if robot.tilt() > TILT_ABORT: tipped = True; break
+            if q0 - robot.joints()[5] > YIELD:
+                robot.set_grip_torque(tq); break         # it gave: keep the torque before this step
+            tq = nxt
+    while ticks < 15 and not tipped:
+        yield; ticks += 1
+        tipped = robot.tilt() > TILT_ABORT
+    if tipped:                                   # the jaw is sitting on top of the object and pushing the robot up
+        if log: log('机身被顶起，松手重来')
+        robot.set_arm(grip=0.5); yield from wait(robot, 0.3)
+        robot.set_grip_torque(P['gripper_torque'])         # (the ramp may have stopped part of the way up: the next thing the gripper does starts from the full limit, as after the other aborts)
+        robot.set_arm(q5=plan['lift'][1], grip=0.3, speed=1.0); yield from wait_arm(robot)
+        return False
     for q in plan['lift']:
         robot.set_arm(q5=q, speed=0.4); yield from wait_arm(robot)
     yield from wait(robot, 0.3)

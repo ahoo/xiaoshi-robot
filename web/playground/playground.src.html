@@ -1,0 +1,230 @@
+<title>小拾沙盘</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one stage (the room from above) on the left, a tabbed panel (play, verify, replay, compare, notes) on the right; stacked on a phone. */
+:root {
+  --bg: #f1f4f1; --panel: #ffffff; --panel2: #f6f8f6; --ink: #16211e; --muted: #596a65; --line: #d3dcd8; --accent: #0e7a67; --accent-ink: #ffffff; --accent-soft: #dcefe9;
+  --good: #1a7f4b; --good-soft: #dcf1e4; --warn: #a15c07; --warn-soft: #fbecd2; --bad: #b42318; --bad-soft: #fbe0dc; --info: #2459a6; --info-soft: #dde8f7;
+  --floor: #eef2ec; --grid: #dde5de; --wall: #3b4944; --shadow: 0 1px 2px rgba(20, 40, 35, .08), 0 6px 18px rgba(20, 40, 35, .06);
+  --font: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1715; --panel: #15211e; --panel2: #1a2825; --ink: #e3ece8; --muted: #93a49e; --line: #2b3b36; --accent: #3cc3a8; --accent-ink: #06231d; --accent-soft: #17352e;
+  --good: #5fd48e; --good-soft: #163626; --warn: #f0a35e; --warn-soft: #3b2a14; --bad: #ff8a7a; --bad-soft: #43201b; --info: #7fb0f2; --info-soft: #1a2c46;
+  --floor: #1a2723; --grid: #22332e; --wall: #8aa39b; --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px rgba(0, 0, 0, .3); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0e1715; --panel: #15211e; --panel2: #1a2825; --ink: #e3ece8; --muted: #93a49e; --line: #2b3b36; --accent: #3cc3a8; --accent-ink: #06231d; --accent-soft: #17352e;
+  --good: #5fd48e; --good-soft: #163626; --warn: #f0a35e; --warn-soft: #3b2a14; --bad: #ff8a7a; --bad-soft: #43201b; --info: #7fb0f2; --info-soft: #1a2c46;
+  --floor: #1a2723; --grid: #22332e; --wall: #8aa39b; --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px rgba(0, 0, 0, .3); color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.55; padding-block: 14px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button, input, select { font: inherit; color: inherit; }
+h1, h2, h3, p { margin: 0; text-wrap: balance; }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+header.top h1 { font-size: 22px; font-weight: 700; letter-spacing: .02em; }
+header.top p { color: var(--muted); font-size: 13px; min-width: 0; }
+.banner { background: var(--warn-soft); color: var(--ink); border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
+.banner b { font-weight: 700; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); min-width: 0; }
+.stage { padding: 10px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 8px; }
+@media (max-width: 900px) { .stage { position: static; } }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.bar .sp { flex: 1 1 auto; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--panel2); }
+.seg button { border: 0; background: transparent; padding: 4px 9px; cursor: pointer; font-size: 12.5px; font-family: var(--mono); color: var(--muted); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn { border: 1px solid var(--line); background: var(--panel2); border-radius: 7px; padding: 5px 10px; cursor: pointer; font-size: 13px; line-height: 1.35; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.warn { border-color: var(--warn); color: var(--warn); }
+.btn.small { padding: 2px 8px; font-size: 12px; }
+.btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+button:focus-visible, input:focus-visible, select:focus-visible, canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.canvaswrap { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: var(--floor); aspect-ratio: 4 / 3; max-width: 100%; }
+canvas#room { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: manipulation; }
+.canvaswrap .tag { position: absolute; right: 8px; top: 8px; background: color-mix(in srgb, var(--panel) 88%, transparent); border: 1px solid var(--line); border-radius: 5px; padding: 1px 7px; font-size: 12px; color: var(--muted); pointer-events: none; }
+.say { background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; font-size: 13px; min-height: 34px; overflow-wrap: anywhere; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px 5px; padding: 2px 9px; border-radius: 12px; font-size: 12.5px; border: 1px solid var(--line); background: var(--panel2); max-width: 100%; overflow-wrap: anywhere; }
+.chip b { font-family: var(--mono); font-weight: 600; }
+.chip.good { background: var(--good-soft); border-color: transparent; color: var(--good); }
+.chip.warn { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+.chip.bad { background: var(--bad-soft); border-color: transparent; color: var(--bad); }
+.chip.info { background: var(--info-soft); border-color: transparent; color: var(--info); }
+.meter { width: 70px; height: 7px; border-radius: 4px; background: var(--line); overflow: hidden; position: relative; }
+.meter i { position: absolute; inset: 0 auto 0 0; background: var(--good); }
+.meter.low i { background: var(--warn); } .meter.crit i { background: var(--bad); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--muted); font-size: 12px; }
+.legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; background: var(--c, var(--muted)); }
+.tabs { display: flex; gap: 2px; padding: 6px 6px 0; overflow-x: auto; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; background: transparent; padding: 8px 12px; cursor: pointer; border-radius: 7px 7px 0 0; color: var(--muted); font-weight: 500; white-space: nowrap; border-bottom: 2px solid transparent; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 700; }
+.pane { padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+.pane[hidden] { display: none; }
+.sec { display: flex; flex-direction: column; gap: 7px; }
+.sec h3 { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.say-input { display: flex; gap: 6px; }
+.say-input input[type=text] { flex: 1 1 140px; min-width: 0; padding: 6px 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel2); }
+.note { color: var(--muted); font-size: 12.5px; }
+.chat { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; height: 190px; overflow: auto; font-size: 13px; display: flex; flex-direction: column; gap: 3px; }
+.chat div { display: grid; grid-template-columns: 44px 52px minmax(0, 1fr); gap: 6px; }
+.chat .t { color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
+.chat .w { font-weight: 700; font-size: 12.5px; } .chat .w.r { color: var(--accent); } .chat .w.y { color: var(--info); } .chat .w.s { color: var(--muted); }
+.log { font-family: var(--mono); font-size: 12px; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; max-height: 150px; overflow: auto; color: var(--muted); }
+.log div { white-space: pre-wrap; overflow-wrap: anywhere; }
+.keys { display: grid; grid-template-columns: repeat(3, 38px); gap: 4px; }
+.keys button { height: 34px; padding: 0; font-family: var(--mono); font-weight: 600; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 12px; }
+td.num, th.num { font-family: var(--mono); text-align: right; white-space: nowrap; }
+.scroll { overflow-x: auto; max-width: 100%; }
+.chk { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 4px 9px; background: var(--panel); }
+.chk .mark { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--accent-ink); margin-top: 2px; }
+.chk.ok .mark { background: var(--good); border-color: var(--good); }
+.chk h4 { margin: 0; font-size: 14px; font-weight: 700; }
+.chk p { font-size: 12.5px; color: var(--muted); }
+.chk .real { grid-column: 2; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.prog { height: 8px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.prog i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+.tape { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; display: flex; flex-direction: column; gap: 6px; }
+.tape[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.tape h4 { margin: 0; font-size: 14px; }
+details { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--panel2); }
+details summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.kbd { font-family: var(--mono); font-size: 12px; background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+.cols2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 520px) { .cols2 { grid-template-columns: minmax(0, 1fr); } }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+label.ck { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .prog i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>小拾沙盘</h1>
+    <p>在网页里玩小拾的行为规则：对它说话、让人走进来、推倒它、调电量、遥控；再和真实仿真的录像、真实代码的答案逐项对照。<b>先试：</b>右边点“收拾一下玩具”，再点“孩子冲过来”，然后看“验证”页。</p>
+  </header>
+  <div class="banner"><b>先说清楚：</b>这个页面里跑的是 JavaScript 写的<b>行为模型</b>，不是真的机器人代码。规则（安全距离、权限、模式的抢占、电池曲线、中文听懂的办法）和真代码是同一套，并且在“对照”页里逐条比过；物理、抓取、真实感知这里没有，是计时和成功率代替的。“回放”页放的是真实物理仿真录下来的数据。</div>
+
+  <div class="grid">
+    <section class="card stage" aria-label="房间俯视图">
+      <div class="bar">
+        <button class="btn primary" id="btn-pause" type="button" aria-pressed="false">暂停</button>
+        <span class="seg" id="seg-speed" role="group" aria-label="速度"></span>
+        <button class="btn" id="btn-reset" type="button">重置房间</button>
+        <label class="ck">布局 <select id="sel-seed" aria-label="房间布局"></select></label>
+        <span class="sp"></span>
+        <span class="note" id="clock" style="font-family:var(--mono)">0 s</span>
+      </div>
+      <div class="canvaswrap">
+        <canvas id="room" tabindex="0" aria-label="房间：点一下画面再按 W A S D Q E 遥控"></canvas>
+        <div class="tag" id="viewtag">沙盘（行为模型）</div>
+      </div>
+      <div class="say" id="saybox" role="status" aria-live="polite">机器人停在充电座上，等你说话。</div>
+      <div class="chips" id="hud"></div>
+      <div class="bar">
+        <label class="ck"><input type="checkbox" id="o-rings" checked> 安全距离</label>
+        <label class="ck"><input type="checkbox" id="o-fov" checked> 相机视野</label>
+        <label class="ck"><input type="checkbox" id="o-path" checked> 路线</label>
+        <label class="ck"><input type="checkbox" id="o-truth" checked> 它看到的人</label>
+      </div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <section class="card" aria-label="操作和验证">
+      <div class="tabs" role="tablist" id="tabs">
+        <button role="tab" aria-selected="true" data-tab="play">玩</button>
+        <button role="tab" aria-selected="false" data-tab="verify">验证 <span class="chip" id="verify-count" style="padding:0 7px">0/0</span></button>
+        <button role="tab" aria-selected="false" data-tab="replay">回放</button>
+        <button role="tab" aria-selected="false" data-tab="compare">对照</button>
+        <button role="tab" aria-selected="false" data-tab="about">说明</button>
+      </div>
+
+      <div class="pane" id="pane-play">
+        <div class="sec">
+          <h3>对它说话</h3>
+          <div class="row"><span class="note">谁在说：</span><span class="seg" id="seg-role" role="group" aria-label="说话的人"></span></div>
+          <form class="say-input" id="say-form"><input type="text" id="say-text" placeholder="例如：收拾一下玩具" autocomplete="off" aria-label="对机器人说的话"><button class="btn primary" type="submit">说</button></form>
+          <label class="ck"><input type="checkbox" id="o-raw"> 不喊“小拾小拾”（模拟旁人闲聊，它不该动）</label>
+          <div class="row" id="quick-say"></div>
+        </div>
+        <div class="sec"><h3>对话</h3><div class="chat" id="chat" role="log" aria-live="polite"></div></div>
+        <div class="sec">
+          <h3>让人走进来</h3>
+          <div class="row" id="people-btns"></div>
+          <div class="note" id="people-now"></div>
+        </div>
+        <div class="sec">
+          <h3>捣乱</h3>
+          <div class="row" id="mess-btns"></div>
+          <div class="row"><label class="ck"><input type="checkbox" id="o-guard" checked> 安全层开着</label><label class="ck"><input type="checkbox" id="o-failright"> 让它起不来</label></div>
+        </div>
+        <div class="sec">
+          <h3>遥控</h3>
+          <div class="row">
+            <button class="btn" id="btn-tele" type="button" aria-pressed="false">遥控 开</button>
+            <div class="keys" aria-label="方向键">
+              <button class="btn" data-key="q" type="button">Q</button><button class="btn" data-key="w" type="button">W</button><button class="btn" data-key="e" type="button">E</button>
+              <button class="btn" data-key="a" type="button">A</button><button class="btn" data-key="s" type="button">S</button><button class="btn" data-key="d" type="button">D</button>
+            </div>
+          </div>
+          <div class="note">W 前 S 后 A 左移 D 右移 Q 左转 E 右转。电脑上先点一下画面再按键；松手它就停（死人开关 0.5 秒）。</div>
+        </div>
+        <div class="sec">
+          <h3>点画面</h3>
+          <div class="row"><span class="seg" id="seg-tool" role="group" aria-label="点画面做什么"></span><select id="sel-person" aria-label="放哪个人"></select></div>
+          <div class="note" id="tool-note"></div>
+        </div>
+        <div class="sec"><h3>它的记录</h3><div class="log" id="evlog"></div></div>
+        <div class="sec"><h3>它看到的人 和 真正在房间里的人</h3><div class="scroll"><table id="peopletable"></table></div></div>
+      </div>
+
+      <div class="pane" id="pane-verify" hidden>
+        <div class="sec">
+          <div class="row" style="justify-content:space-between"><h3>要验证什么，怎么做，该看到什么</h3><button class="btn small" id="btn-clear-checks" type="button">清空记录</button></div>
+          <div class="prog" aria-hidden="true"><i id="verify-bar"></i></div>
+          <p class="note">每一条做对了页面会自己打勾。每一条的最后一行是真实仿真里同一件事的验收结果（跑了几百到几千次的那种），这里只是让你亲手看一遍。</p>
+        </div>
+        <div class="sec" id="checks"></div>
+      </div>
+
+      <div class="pane" id="pane-replay" hidden>
+        <p class="note">这些是<b>真实的物理仿真</b>（MuJoCo + 真的控制器、模式、安全层和语音代码）跑出来录下的数据，每秒 5 帧，不是视频，也不是这个页面里的模型。点一个，左边的房间就放它。</p>
+        <div class="sec" id="tapes"></div>
+        <div class="sec" id="tape-detail" hidden>
+          <div class="row"><button class="btn primary" id="tape-play" type="button">暂停</button><span class="seg" id="seg-tspeed" role="group" aria-label="回放速度"></span><button class="btn" id="tape-back" type="button">回到沙盘</button></div>
+          <input type="range" id="tape-scrub" min="0" max="100" step="0.1" aria-label="回放进度">
+          <div class="log" id="tape-events" style="max-height:200px"></div>
+        </div>
+      </div>
+
+      <div class="pane" id="pane-compare" hidden>
+        <p class="note">沙盘里的规则是不是和真代码一样，不靠我说，让数字说话。真代码（Python）在仓库里把下面这些情形都答了一遍，存成文件；这里让沙盘的规则把同样的情形答一遍，看一不一样。</p>
+        <div class="sec" id="cmp-body"><button class="btn primary" id="btn-run-compare" type="button">开始对照（几秒钟）</button></div>
+      </div>
+
+      <div class="pane" id="pane-about" hidden>
+        <div class="sec" id="about-body"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+/*__XS_LOGIC__*/
+</script>
+<script>
+/*__XS_WORLD__*/
+</script>
+<script>
+/*__UI__*/
+</script>

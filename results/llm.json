@@ -83,7 +83,7 @@
   {
    "name": "gateway: the log holds no words by default",
    "ok": true,
-   "detail": "{'t': 1795509919.4, 'role': 'owner', 'chars': 8, 'result': 'command', 'ms': 0, 'sha': '4155ea81'}"
+   "detail": "{'t': 1795666733.9, 'role': 'owner', 'chars': 8, 'result': 'command', 'ms': 0, 'sha': '4155ea81'}"
   },
   {
    "name": "gateway: with keep_text the last five are in memory only",

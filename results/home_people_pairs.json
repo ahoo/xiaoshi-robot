@@ -1,23 +1,23 @@
 {
  "summary": {
   "side gap 10 cm": {
-   "n": 16,
+   "n": 32,
    "two_tracks": 0,
-   "merged_into_one": 14,
+   "merged_into_one": 32,
    "child_called_child": 0,
-   "child_called_adult_or_missing": 16,
+   "child_called_adult_or_missing": 32,
    "pair_called": {
     "adult": 0,
-    "child": 1,
-    "unsure": 12
+    "child": 0,
+    "unsure": 32
    }
   },
   "inline gap 10 cm": {
-   "n": 16,
-   "two_tracks": 0,
-   "merged_into_one": 3,
-   "child_called_child": 0,
-   "child_called_adult_or_missing": 16,
+   "n": 32,
+   "two_tracks": 32,
+   "merged_into_one": 0,
+   "child_called_child": 32,
+   "child_called_adult_or_missing": 0,
    "pair_called": {
     "adult": 0,
     "child": 0,
@@ -25,11 +25,11 @@
    }
   },
   "side gap 25 cm": {
-   "n": 16,
-   "two_tracks": 9,
-   "merged_into_one": 2,
-   "child_called_child": 10,
-   "child_called_adult_or_missing": 6,
+   "n": 32,
+   "two_tracks": 32,
+   "merged_into_one": 0,
+   "child_called_child": 32,
+   "child_called_adult_or_missing": 0,
    "pair_called": {
     "adult": 0,
     "child": 0,
@@ -37,23 +37,23 @@
    }
   },
   "inline gap 25 cm": {
-   "n": 16,
-   "two_tracks": 10,
-   "merged_into_one": 1,
-   "child_called_child": 10,
-   "child_called_adult_or_missing": 6,
+   "n": 32,
+   "two_tracks": 32,
+   "merged_into_one": 0,
+   "child_called_child": 32,
+   "child_called_adult_or_missing": 0,
    "pair_called": {
     "adult": 0,
-    "child": 1,
+    "child": 0,
     "unsure": 0
    }
   },
   "side gap 45 cm": {
-   "n": 16,
-   "two_tracks": 10,
-   "merged_into_one": 2,
-   "child_called_child": 12,
-   "child_called_adult_or_missing": 4,
+   "n": 32,
+   "two_tracks": 32,
+   "merged_into_one": 0,
+   "child_called_child": 32,
+   "child_called_adult_or_missing": 0,
    "pair_called": {
     "adult": 0,
     "child": 0,
@@ -61,11 +61,11 @@
    }
   },
   "inline gap 45 cm": {
-   "n": 16,
-   "two_tracks": 12,
+   "n": 32,
+   "two_tracks": 32,
    "merged_into_one": 0,
-   "child_called_child": 13,
-   "child_called_adult_or_missing": 3,
+   "child_called_child": 32,
+   "child_called_adult_or_missing": 0,
    "pair_called": {
     "adult": 0,
     "child": 0,
@@ -73,11 +73,11 @@
    }
   },
   "side gap 70 cm": {
-   "n": 16,
-   "two_tracks": 12,
+   "n": 32,
+   "two_tracks": 32,
    "merged_into_one": 0,
-   "child_called_child": 14,
-   "child_called_adult_or_missing": 2,
+   "child_called_child": 32,
+   "child_called_adult_or_missing": 0,
    "pair_called": {
     "adult": 0,
     "child": 0,
@@ -85,17 +85,18 @@
    }
   },
   "inline gap 70 cm": {
-   "n": 16,
-   "two_tracks": 13,
+   "n": 32,
+   "two_tracks": 32,
    "merged_into_one": 0,
-   "child_called_child": 13,
-   "child_called_adult_or_missing": 3,
+   "child_called_child": 32,
+   "child_called_adult_or_missing": 0,
    "pair_called": {
     "adult": 0,
     "child": 0,
     "unsure": 0
    }
-  }
+  },
+  "robot_tipped_trials": 0
  },
  "rows": [
   {
@@ -106,7 +107,8 @@
    "child_found": false,
    "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": true
+   "pair_in_one": true,
+   "tipped": false
   },
   {
    "gap": 0.1,
@@ -116,7 +118,8 @@
    "child_found": false,
    "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": true
+   "pair_in_one": true,
+   "tipped": false
   },
   {
    "gap": 0.1,
@@ -126,7 +129,8 @@
    "child_found": false,
    "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": true
+   "pair_in_one": true,
+   "tipped": false
   },
   {
    "gap": 0.1,
@@ -136,7 +140,8 @@
    "child_found": false,
    "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": true
+   "pair_in_one": true,
+   "tipped": false
   },
   {
    "gap": 0.1,
@@ -146,17 +151,8 @@
    "child_found": false,
    "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": true
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "side",
-   "tracks": 1,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "child",
-   "child_cls": null,
-   "pair_in_one": true
+   "pair_in_one": true,
+   "tipped": false
   },
   {
    "gap": 0.1,
@@ -166,7 +162,8 @@
    "child_found": false,
    "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": true
+   "pair_in_one": true,
+   "tipped": false
   },
   {
    "gap": 0.1,
@@ -176,587 +173,8 @@
    "child_found": false,
    "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": true
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 1,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": true
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "child",
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "child",
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 0,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 0,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "child",
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 1,
-   "adult_found": false,
-   "child_found": true,
-   "adult_cls": null,
-   "child_cls": "child",
-   "pair_in_one": true
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 1,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": true
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 0,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 0,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 1,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "child",
-   "child_cls": null,
-   "pair_in_one": true
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "unsure",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 5,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 1,
-   "adult_found": false,
-   "child_found": true,
-   "adult_cls": null,
-   "child_cls": "child",
-   "pair_in_one": true
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "adult",
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 3,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 0,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 4,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "unsure",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 4,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "unsure",
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": false,
-   "child_found": true,
-   "adult_cls": null,
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "unsure",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 0,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "unsure",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "side",
-   "tracks": 0,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "side",
-   "tracks": 0,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
+   "pair_in_one": true,
+   "tipped": false
   },
   {
    "gap": 0.1,
@@ -766,7 +184,624 @@
    "child_found": false,
    "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": true
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
   },
   {
    "gap": 0.1,
@@ -776,7 +811,8 @@
    "child_found": false,
    "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": true
+   "pair_in_one": true,
+   "tipped": false
   },
   {
    "gap": 0.1,
@@ -786,17 +822,8 @@
    "child_found": false,
    "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": true
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "side",
-   "tracks": 1,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": true
+   "pair_in_one": true,
+   "tipped": false
   },
   {
    "gap": 0.1,
@@ -806,7 +833,8 @@
    "child_found": false,
    "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": true
+   "pair_in_one": true,
+   "tipped": false
   },
   {
    "gap": 0.1,
@@ -816,497 +844,580 @@
    "child_found": false,
    "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": true
+   "pair_in_one": true,
+   "tipped": false
   },
   {
    "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "child",
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "child",
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "child",
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "child",
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "child",
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": false,
-   "adult_cls": "child",
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 1,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": true
-  },
-  {
-   "gap": 0.1,
-   "arrangement": "inline",
-   "tracks": 1,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": true
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 0,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 0,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 0,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "side",
-   "tracks": 0,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": false,
-   "child_found": false,
-   "adult_cls": null,
-   "child_cls": null,
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.25,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
    "arrangement": "side",
    "tracks": 1,
-   "adult_found": false,
-   "child_found": true,
-   "adult_cls": null,
-   "child_cls": "child",
-   "pair_in_one": true
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 2,
    "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 0,
-   "adult_found": false,
    "child_found": false,
-   "adult_cls": null,
+   "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": false
+   "pair_in_one": true,
+   "tipped": false
   },
   {
-   "gap": 0.45,
+   "gap": 0.1,
    "arrangement": "side",
-   "tracks": 2,
+   "tracks": 1,
    "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": false,
    "child_found": false,
-   "adult_cls": null,
+   "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": false
+   "pair_in_one": true,
+   "tipped": false
   },
   {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.45,
-   "arrangement": "inline",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
+   "gap": 0.1,
    "arrangement": "side",
-   "tracks": 2,
+   "tracks": 1,
    "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 3,
-   "adult_found": false,
-   "child_found": true,
-   "adult_cls": null,
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "child",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "adult",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "side",
-   "tracks": 2,
-   "adult_found": false,
    "child_found": false,
-   "adult_cls": null,
+   "adult_cls": "unsure",
    "child_cls": null,
-   "pair_in_one": false
+   "pair_in_one": true,
+   "tipped": false
   },
   {
-   "gap": 0.7,
+   "gap": 0.1,
    "arrangement": "side",
-   "tracks": 3,
-   "adult_found": false,
-   "child_found": true,
-   "adult_cls": null,
-   "child_cls": "child",
-   "pair_in_one": false
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
   },
   {
-   "gap": 0.7,
+   "gap": 0.1,
    "arrangement": "inline",
    "tracks": 2,
    "adult_found": true,
    "child_found": true,
    "adult_cls": "adult",
    "child_cls": "child",
-   "pair_in_one": false
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
   },
   {
    "gap": 0.7,
@@ -1316,7 +1427,8 @@
    "child_found": true,
    "adult_cls": "unsure",
    "child_cls": "child",
-   "pair_in_one": false
+   "pair_in_one": false,
+   "tipped": false
   },
   {
    "gap": 0.7,
@@ -1326,7 +1438,8 @@
    "child_found": true,
    "adult_cls": "unsure",
    "child_cls": "child",
-   "pair_in_one": false
+   "pair_in_one": false,
+   "tipped": false
   },
   {
    "gap": 0.7,
@@ -1336,7 +1449,8 @@
    "child_found": true,
    "adult_cls": "adult",
    "child_cls": "child",
-   "pair_in_one": false
+   "pair_in_one": false,
+   "tipped": false
   },
   {
    "gap": 0.7,
@@ -1346,27 +1460,8 @@
    "child_found": true,
    "adult_cls": "unsure",
    "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "unsure",
-   "child_cls": "child",
-   "pair_in_one": false
-  },
-  {
-   "gap": 0.7,
-   "arrangement": "inline",
-   "tracks": 3,
-   "adult_found": true,
-   "child_found": true,
-   "adult_cls": "unsure",
-   "child_cls": "child",
-   "pair_in_one": false
+   "pair_in_one": false,
+   "tipped": false
   },
   {
    "gap": 0.7,
@@ -1376,7 +1471,1449 @@
    "child_found": true,
    "adult_cls": "adult",
    "child_cls": "child",
-   "pair_in_one": false
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "side",
+   "tracks": 1,
+   "adult_found": true,
+   "child_found": false,
+   "adult_cls": "unsure",
+   "child_cls": null,
+   "pair_in_one": true,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.1,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.25,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.45,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "side",
+   "tracks": 2,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "adult",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
+  },
+  {
+   "gap": 0.7,
+   "arrangement": "inline",
+   "tracks": 3,
+   "adult_found": true,
+   "child_found": true,
+   "adult_cls": "unsure",
+   "child_cls": "child",
+   "pair_in_one": false,
+   "tipped": false
   }
  ]
 }

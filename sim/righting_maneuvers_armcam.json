@@ -27,6 +27,71 @@
     "phases": [
      {
       "q": [
+       1.7986,
+       -0.6627,
+       -0.5097,
+       -1.0123
+      ],
+      "w": [
+       2.8944,
+       -1.5804,
+       -0.7506
+      ],
+      "T": 0.906,
+      "speed": 1.81
+     },
+     {
+      "q": [
+       -0.3273,
+       -1.5454,
+       -1.66,
+       -1.0684
+      ],
+      "w": [
+       1.484,
+       1.4506,
+       -2.6312
+      ],
+      "T": 1.201,
+      "speed": 3.062
+     },
+     {
+      "q": [
+       -1.0218,
+       -0.0656,
+       -1.1515,
+       0.6746
+      ],
+      "w": [
+       0.0441,
+       -1.7313,
+       -0.7731
+      ],
+      "T": 1.127,
+      "speed": 1.228
+     },
+     {
+      "q": [
+       1.5074,
+       0.7646,
+       1.66,
+       1.0821
+      ],
+      "w": [
+       0.9837,
+       1.6495,
+       -3.1242
+      ],
+      "T": 1.349,
+      "speed": 3.25
+     }
+    ],
+    "source": "results/righting_armcamguard_side_l.json (fit 0.0, 12/12 upright on the search scenarios, with the camera's bumper)"
+   },
+   {
+    "phases": [
+     {
+      "q": [
        1.5756,
        -0.691,
        0.0396,
@@ -422,7 +487,7 @@
   ]
  },
  "notes": {
-  "camera": "forearm_up, 75 g on the forearm, its box touching the floor (model.ARM_CAMS, arm_cam_collide=True); searched with search_righting.py refine from the maneuvers of righting_maneuvers.json, fitness with up to 30 points for pressing the camera against the floor",
+  "camera": "forearm_up, 75 g on the forearm, its box touching the floor (model.ARM_CAMS, arm_cam_collide=True); searched with search_righting.py refine from the maneuvers of righting_maneuvers.json, fitness with up to 30 points for pressing the camera against the floor Round 17: the camera also carries its bumper (model.GUARD: four rails and two end rings, 12 g, 4.5 mm proud of the camera body); that changes how the robot lies on its left side, so side_l was searched again with it (the two earlier side_l maneuvers, made without the bumper, succeed on 1-7 of 24 with it and stay behind the new one).",
   "back": "There is no stable on-its-back pose in the model once the lidar head and its standoffs are solid: a robot dropped nose-up ends on its side. The earlier search for a back maneuver (1 of 24 perturbed scenarios) is dropped."
  }
 }

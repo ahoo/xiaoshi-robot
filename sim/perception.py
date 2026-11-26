@@ -17,6 +17,8 @@ known size and rim height.
 import math
 
 import mujoco
+
+_GEOM_ID = int(mujoco.mjtObj.mjOBJ_GEOM)       # an int: comparing a whole image with the enum member costs 25 ms, with the int 0.1 ms
 import numpy as np
 
 from scipy import ndimage
@@ -137,7 +139,7 @@ class FrontCamera:
         d = self.r.d
         self.seg.update_scene(d, 'front'); s = self.seg.render()
         self.dep.update_scene(d, 'front'); depth = self.dep.render()
-        lab = np.where(s[..., 1] == mujoco.mjtObj.mjOBJ_GEOM, s[..., 0], -1)
+        lab = np.where(s[..., 1] == _GEOM_ID, s[..., 0], -1)
         bg = None
         if self.has_clear:
             self.dep.update_scene(d, 'front', scene_option=self.bg_opt); bg = self.dep.render()
@@ -418,7 +420,7 @@ class WristCamera:
         d = self.r.d
         self.seg.update_scene(d, self.cam); s = self.seg.render()
         self.dep.update_scene(d, self.cam); z = self.dep.render()
-        lab = np.where(s[..., 1] == mujoco.mjtObj.mjOBJ_GEOM, s[..., 0], -1)
+        lab = np.where(s[..., 1] == _GEOM_ID, s[..., 0], -1)
         bg = None
         if self.has_clear:
             self.dep.update_scene(d, self.cam, scene_option=self.bg_opt); bg = self.dep.render()

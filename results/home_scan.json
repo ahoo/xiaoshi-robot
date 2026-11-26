@@ -5,7 +5,7 @@
    "planner": "tour",
    "seed": 1,
    "sim_s": 129.0,
-   "wall_s": 163,
+   "wall_s": 130,
    "stops": 18,
    "path_m": 7.5,
    "frames": 429,
@@ -146,7 +146,7 @@
      "path_m": 7.49
     }
    ],
-   "ms_per_frame": 179,
+   "ms_per_frame": 173,
    "furniture_boxes": [
     {
      "centre": [
@@ -217,7 +217,7 @@
    "planner": "nbv",
    "seed": 1,
    "sim_s": 92.9,
-   "wall_s": 117,
+   "wall_s": 92,
    "stops": 5,
    "path_m": 7.0,
    "frames": 309,
@@ -267,7 +267,7 @@
      "path_m": 6.96
     }
    ],
-   "ms_per_frame": 184,
+   "ms_per_frame": 169,
    "furniture_boxes": [
     {
      "centre": [
@@ -338,7 +338,7 @@
    "planner": "tour",
    "seed": 2,
    "sim_s": 128.7,
-   "wall_s": 167,
+   "wall_s": 128,
    "stops": 17,
    "path_m": 6.5,
    "frames": 428,
@@ -472,7 +472,7 @@
      "path_m": 6.54
     }
    ],
-   "ms_per_frame": 180,
+   "ms_per_frame": 168,
    "furniture_boxes": [
     {
      "centre": [
@@ -543,7 +543,7 @@
    "planner": "nbv",
    "seed": 2,
    "sim_s": 93.4,
-   "wall_s": 119,
+   "wall_s": 90,
    "stops": 5,
    "path_m": 7.1,
    "frames": 311,
@@ -593,7 +593,7 @@
      "path_m": 7.08
     }
    ],
-   "ms_per_frame": 179,
+   "ms_per_frame": 166,
    "furniture_boxes": [
     {
      "centre": [
@@ -646,7 +646,7 @@
    "planner": "tour",
    "seed": 3,
    "sim_s": 159.2,
-   "wall_s": 182,
+   "wall_s": 130,
    "stops": 20,
    "path_m": 8.7,
    "frames": 530,
@@ -801,7 +801,7 @@
      "path_m": 8.72
     }
    ],
-   "ms_per_frame": 157,
+   "ms_per_frame": 129,
    "furniture_boxes": [
     {
      "centre": [
@@ -872,7 +872,7 @@
    "planner": "nbv",
    "seed": 3,
    "sim_s": 91.4,
-   "wall_s": 108,
+   "wall_s": 81,
    "stops": 5,
    "path_m": 6.8,
    "frames": 304,
@@ -922,7 +922,7 @@
      "path_m": 6.76
     }
    ],
-   "ms_per_frame": 169,
+   "ms_per_frame": 145,
    "furniture_boxes": [
     {
      "centre": [

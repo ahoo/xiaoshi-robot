@@ -1,0 +1,1805 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>小拾沙盘</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one stage (the room from above) on the left, a tabbed panel (play, verify, replay, compare, notes) on the right; stacked on a phone. */
+:root {
+  --bg: #f1f4f1; --panel: #ffffff; --panel2: #f6f8f6; --ink: #16211e; --muted: #596a65; --line: #d3dcd8; --accent: #0e7a67; --accent-ink: #ffffff; --accent-soft: #dcefe9;
+  --good: #1a7f4b; --good-soft: #dcf1e4; --warn: #a15c07; --warn-soft: #fbecd2; --bad: #b42318; --bad-soft: #fbe0dc; --info: #2459a6; --info-soft: #dde8f7;
+  --floor: #eef2ec; --grid: #dde5de; --wall: #3b4944; --shadow: 0 1px 2px rgba(20, 40, 35, .08), 0 6px 18px rgba(20, 40, 35, .06);
+  --font: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1715; --panel: #15211e; --panel2: #1a2825; --ink: #e3ece8; --muted: #93a49e; --line: #2b3b36; --accent: #3cc3a8; --accent-ink: #06231d; --accent-soft: #17352e;
+  --good: #5fd48e; --good-soft: #163626; --warn: #f0a35e; --warn-soft: #3b2a14; --bad: #ff8a7a; --bad-soft: #43201b; --info: #7fb0f2; --info-soft: #1a2c46;
+  --floor: #1a2723; --grid: #22332e; --wall: #8aa39b; --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px rgba(0, 0, 0, .3); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0e1715; --panel: #15211e; --panel2: #1a2825; --ink: #e3ece8; --muted: #93a49e; --line: #2b3b36; --accent: #3cc3a8; --accent-ink: #06231d; --accent-soft: #17352e;
+  --good: #5fd48e; --good-soft: #163626; --warn: #f0a35e; --warn-soft: #3b2a14; --bad: #ff8a7a; --bad-soft: #43201b; --info: #7fb0f2; --info-soft: #1a2c46;
+  --floor: #1a2723; --grid: #22332e; --wall: #8aa39b; --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px rgba(0, 0, 0, .3); color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.55; padding-block: 14px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button, input, select { font: inherit; color: inherit; }
+h1, h2, h3, p { margin: 0; text-wrap: balance; }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+header.top h1 { font-size: 22px; font-weight: 700; letter-spacing: .02em; }
+header.top p { color: var(--muted); font-size: 13px; min-width: 0; }
+.banner { background: var(--warn-soft); color: var(--ink); border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
+.banner b { font-weight: 700; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); min-width: 0; }
+.stage { padding: 10px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 8px; }
+@media (max-width: 900px) { .stage { position: static; } }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.bar .sp { flex: 1 1 auto; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; background: var(--panel2); }
+.seg button { border: 0; background: transparent; padding: 4px 9px; cursor: pointer; font-size: 12.5px; font-family: var(--mono); color: var(--muted); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn { border: 1px solid var(--line); background: var(--panel2); border-radius: 7px; padding: 5px 10px; cursor: pointer; font-size: 13px; line-height: 1.35; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.warn { border-color: var(--warn); color: var(--warn); }
+.btn.small { padding: 2px 8px; font-size: 12px; }
+.btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+button:focus-visible, input:focus-visible, select:focus-visible, canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.canvaswrap { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: var(--floor); aspect-ratio: 4 / 3; max-width: 100%; }
+canvas#room { display: block; width: 100%; height: 100%; cursor: crosshair; touch-action: manipulation; }
+.canvaswrap .tag { position: absolute; right: 8px; top: 8px; background: color-mix(in srgb, var(--panel) 88%, transparent); border: 1px solid var(--line); border-radius: 5px; padding: 1px 7px; font-size: 12px; color: var(--muted); pointer-events: none; }
+.say { background: var(--panel2); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; font-size: 13px; min-height: 34px; overflow-wrap: anywhere; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px 5px; padding: 2px 9px; border-radius: 12px; font-size: 12.5px; border: 1px solid var(--line); background: var(--panel2); max-width: 100%; overflow-wrap: anywhere; }
+.chip b { font-family: var(--mono); font-weight: 600; }
+.chip.good { background: var(--good-soft); border-color: transparent; color: var(--good); }
+.chip.warn { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+.chip.bad { background: var(--bad-soft); border-color: transparent; color: var(--bad); }
+.chip.info { background: var(--info-soft); border-color: transparent; color: var(--info); }
+.meter { width: 70px; height: 7px; border-radius: 4px; background: var(--line); overflow: hidden; position: relative; }
+.meter i { position: absolute; inset: 0 auto 0 0; background: var(--good); }
+.meter.low i { background: var(--warn); } .meter.crit i { background: var(--bad); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--muted); font-size: 12px; }
+.legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; background: var(--c, var(--muted)); }
+.tabs { display: flex; gap: 2px; padding: 6px 6px 0; overflow-x: auto; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; background: transparent; padding: 8px 12px; cursor: pointer; border-radius: 7px 7px 0 0; color: var(--muted); font-weight: 500; white-space: nowrap; border-bottom: 2px solid transparent; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 700; }
+.pane { padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+.pane[hidden] { display: none; }
+.sec { display: flex; flex-direction: column; gap: 7px; }
+.sec h3 { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.say-input { display: flex; gap: 6px; }
+.say-input input[type=text] { flex: 1 1 140px; min-width: 0; padding: 6px 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel2); }
+.note { color: var(--muted); font-size: 12.5px; }
+.chat { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; height: 190px; overflow: auto; font-size: 13px; display: flex; flex-direction: column; gap: 3px; }
+.chat div { display: grid; grid-template-columns: 44px 52px minmax(0, 1fr); gap: 6px; }
+.chat .t { color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
+.chat .w { font-weight: 700; font-size: 12.5px; } .chat .w.r { color: var(--accent); } .chat .w.y { color: var(--info); } .chat .w.s { color: var(--muted); }
+.log { font-family: var(--mono); font-size: 12px; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; max-height: 150px; overflow: auto; color: var(--muted); }
+.log div { white-space: pre-wrap; overflow-wrap: anywhere; }
+.keys { display: grid; grid-template-columns: repeat(3, 38px); gap: 4px; }
+.keys button { height: 34px; padding: 0; font-family: var(--mono); font-weight: 600; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 12px; }
+td.num, th.num { font-family: var(--mono); text-align: right; white-space: nowrap; }
+.scroll { overflow-x: auto; max-width: 100%; }
+.chk { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 4px 9px; background: var(--panel); }
+.chk .mark { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--accent-ink); margin-top: 2px; }
+.chk.ok .mark { background: var(--good); border-color: var(--good); }
+.chk h4 { margin: 0; font-size: 14px; font-weight: 700; }
+.chk p { font-size: 12.5px; color: var(--muted); }
+.chk .real { grid-column: 2; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.prog { height: 8px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.prog i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s; }
+.tape { border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; display: flex; flex-direction: column; gap: 6px; }
+.tape[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.tape h4 { margin: 0; font-size: 14px; }
+details { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; background: var(--panel2); }
+details summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.kbd { font-family: var(--mono); font-size: 12px; background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+.cols2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 520px) { .cols2 { grid-template-columns: minmax(0, 1fr); } }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+label.ck { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .prog i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>小拾沙盘</h1>
+    <p>在网页里玩小拾的行为规则：对它说话、让人走进来、推倒它、调电量、遥控；再和真实仿真的录像、真实代码的答案逐项对照。<b>先试：</b>右边点“收拾一下玩具”，再点“孩子冲过来”，然后看“验证”页。</p>
+  </header>
+  <div class="banner"><b>先说清楚：</b>这个页面里跑的是 JavaScript 写的<b>行为模型</b>，不是真的机器人代码。规则（安全距离、权限、模式的抢占、电池曲线、中文听懂的办法）和真代码是同一套，并且在“对照”页里逐条比过；物理、抓取、真实感知这里没有，是计时和成功率代替的。“回放”页放的是真实物理仿真录下来的数据。</div>
+
+  <div class="grid">
+    <section class="card stage" aria-label="房间俯视图">
+      <div class="bar">
+        <button class="btn primary" id="btn-pause" type="button" aria-pressed="false">暂停</button>
+        <span class="seg" id="seg-speed" role="group" aria-label="速度"></span>
+        <button class="btn" id="btn-reset" type="button">重置房间</button>
+        <label class="ck">布局 <select id="sel-seed" aria-label="房间布局"></select></label>
+        <span class="sp"></span>
+        <span class="note" id="clock" style="font-family:var(--mono)">0 s</span>
+      </div>
+      <div class="canvaswrap">
+        <canvas id="room" tabindex="0" aria-label="房间：点一下画面再按 W A S D Q E 遥控"></canvas>
+        <div class="tag" id="viewtag">沙盘（行为模型）</div>
+      </div>
+      <div class="say" id="saybox" role="status" aria-live="polite">机器人停在充电座上，等你说话。</div>
+      <div class="chips" id="hud"></div>
+      <div class="bar">
+        <label class="ck"><input type="checkbox" id="o-rings" checked> 安全距离</label>
+        <label class="ck"><input type="checkbox" id="o-fov" checked> 相机视野</label>
+        <label class="ck"><input type="checkbox" id="o-path" checked> 路线</label>
+        <label class="ck"><input type="checkbox" id="o-truth" checked> 它看到的人</label>
+      </div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <section class="card" aria-label="操作和验证">
+      <div class="tabs" role="tablist" id="tabs">
+        <button role="tab" aria-selected="true" data-tab="play">玩</button>
+        <button role="tab" aria-selected="false" data-tab="verify">验证 <span class="chip" id="verify-count" style="padding:0 7px">0/0</span></button>
+        <button role="tab" aria-selected="false" data-tab="replay">回放</button>
+        <button role="tab" aria-selected="false" data-tab="compare">对照</button>
+        <button role="tab" aria-selected="false" data-tab="about">说明</button>
+      </div>
+
+      <div class="pane" id="pane-play">
+        <div class="sec">
+          <h3>对它说话</h3>
+          <div class="row"><span class="note">谁在说：</span><span class="seg" id="seg-role" role="group" aria-label="说话的人"></span></div>
+          <form class="say-input" id="say-form"><input type="text" id="say-text" placeholder="例如：收拾一下玩具" autocomplete="off" aria-label="对机器人说的话"><button class="btn primary" type="submit">说</button></form>
+          <label class="ck"><input type="checkbox" id="o-raw"> 不喊“小拾小拾”（模拟旁人闲聊，它不该动）</label>
+          <div class="row" id="quick-say"></div>
+        </div>
+        <div class="sec"><h3>对话</h3><div class="chat" id="chat" role="log" aria-live="polite"></div></div>
+        <div class="sec">
+          <h3>让人走进来</h3>
+          <div class="row" id="people-btns"></div>
+          <div class="note" id="people-now"></div>
+        </div>
+        <div class="sec">
+          <h3>捣乱</h3>
+          <div class="row" id="mess-btns"></div>
+          <div class="row"><label class="ck"><input type="checkbox" id="o-guard" checked> 安全层开着</label><label class="ck"><input type="checkbox" id="o-failright"> 让它起不来</label></div>
+        </div>
+        <div class="sec">
+          <h3>遥控</h3>
+          <div class="row">
+            <button class="btn" id="btn-tele" type="button" aria-pressed="false">遥控 开</button>
+            <div class="keys" aria-label="方向键">
+              <button class="btn" data-key="q" type="button">Q</button><button class="btn" data-key="w" type="button">W</button><button class="btn" data-key="e" type="button">E</button>
+              <button class="btn" data-key="a" type="button">A</button><button class="btn" data-key="s" type="button">S</button><button class="btn" data-key="d" type="button">D</button>
+            </div>
+          </div>
+          <div class="note">W 前 S 后 A 左移 D 右移 Q 左转 E 右转。电脑上先点一下画面再按键；松手它就停（死人开关 0.5 秒）。</div>
+        </div>
+        <div class="sec">
+          <h3>点画面</h3>
+          <div class="row"><span class="seg" id="seg-tool" role="group" aria-label="点画面做什么"></span><select id="sel-person" aria-label="放哪个人"></select></div>
+          <div class="note" id="tool-note"></div>
+        </div>
+        <div class="sec"><h3>它的记录</h3><div class="log" id="evlog"></div></div>
+        <div class="sec"><h3>它看到的人 和 真正在房间里的人</h3><div class="scroll"><table id="peopletable"></table></div></div>
+      </div>
+
+      <div class="pane" id="pane-verify" hidden>
+        <div class="sec">
+          <div class="row" style="justify-content:space-between"><h3>要验证什么，怎么做，该看到什么</h3><button class="btn small" id="btn-clear-checks" type="button">清空记录</button></div>
+          <div class="prog" aria-hidden="true"><i id="verify-bar"></i></div>
+          <p class="note">每一条做对了页面会自己打勾。每一条的最后一行是真实仿真里同一件事的验收结果（跑了几百到几千次的那种），这里只是让你亲手看一遍。</p>
+        </div>
+        <div class="sec" id="checks"></div>
+      </div>
+
+      <div class="pane" id="pane-replay" hidden>
+        <p class="note">这些是<b>真实的物理仿真</b>（MuJoCo + 真的控制器、模式、安全层和语音代码）跑出来录下的数据，每秒 5 帧，不是视频，也不是这个页面里的模型。点一个，左边的房间就放它。</p>
+        <div class="sec" id="tapes"></div>
+        <div class="sec" id="tape-detail" hidden>
+          <div class="row"><button class="btn primary" id="tape-play" type="button">暂停</button><span class="seg" id="seg-tspeed" role="group" aria-label="回放速度"></span><button class="btn" id="tape-back" type="button">回到沙盘</button></div>
+          <input type="range" id="tape-scrub" min="0" max="100" step="0.1" aria-label="回放进度">
+          <div class="log" id="tape-events" style="max-height:200px"></div>
+        </div>
+      </div>
+
+      <div class="pane" id="pane-compare" hidden>
+        <p class="note">沙盘里的规则是不是和真代码一样，不靠我说，让数字说话。真代码（Python）在仓库里把下面这些情形都答了一遍，存成文件；这里让沙盘的规则把同样的情形答一遍，看一不一样。</p>
+        <div class="sec" id="cmp-body"><button class="btn primary" id="btn-run-compare" type="button">开始对照（几秒钟）</button></div>
+      </div>
+
+      <div class="pane" id="pane-about" hidden>
+        <div class="sec" id="about-body"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+/* xs_logic.js: the decision rules of the real system, written again in JavaScript so that they can be played with in a web page.
+ *
+ *   Battery   power.py        charge profile, voltage, the reading of the battery board (state of charge plus a drift)
+ *   Guard     people.Guard    the safety layer between the modes and the wheels (halt, slow down, arm pause, "please make way")
+ *   Voice     voice.py        wake word, stop word, intent from the pinyin of what was said, who may ask for what, asking back, confirming
+ *
+ * None of it runs the physics, the grasping or the real perception. What it does run is checked against what the real code answers (web/playground/data/model.json "golden", see test_core.mjs
+ * and the "对照" tab of the page). */
+(function (G) {
+'use strict';
+const XS = G.XS = G.XS || {};
+const PI = Math.PI;
+const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+const hypot = Math.hypot;
+XS.clamp = clamp;
+
+// ---------------------------------------------------------------------------------------------------------------- battery (power.py)
+class Battery {
+    constructor(B, soc = 1.0, bias = null, rnd = Math.random) {
+        this.B = B; this.soc = soc; this.drawn_wh = 0; this.charged_wh = 0; this.load_w = B.p_run_w; this.dead = false; this.t_charging = 0;
+        if (bias === null) { const u = Math.max(rnd(), 1e-9), v = rnd(); bias = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * PI * v) * B.est_bias_sigma; }
+        this.bias = bias;
+    }
+    step(dt, load_w, charge_w = 0) {
+        const B = this.B; this.load_w = load_w;
+        const eOut = load_w * dt / 3600, eIn = charge_w * dt / 3600;
+        this.drawn_wh += eOut; this.charged_wh += eIn;
+        this.soc = Math.min(1, Math.max(0, this.soc + (eIn - eOut) / B.capacity_wh));
+        if (charge_w > 0) this.t_charging += dt;
+        if (this.soc <= B.soc_cutoff) this.dead = true;
+    }
+    get est() { return clamp(this.soc + this.bias, 0, 1); }
+    voltage(load_w) {
+        const B = this.B, w = load_w === undefined ? this.load_w : load_w;
+        const ocv = B.v_empty + (B.v_full - B.v_empty) * this.soc;
+        return ocv - B.r_int * w / Math.max(ocv, 1.0);
+    }
+    chargePower(supplied, docked) {
+        const B = this.B; if (supplied === undefined) supplied = B.charger_w; if (docked === undefined) docked = B.p_docked_w;
+        let p = supplied - docked;
+        if (this.soc > B.cc_until) p *= Math.exp(-(this.soc - B.cc_until) / B.cv_taper);
+        return Math.max(p, 0);
+    }
+    /** one step of the charging fast-forward: `stepS` seconds of charging; false when the taper has reached nothing */
+    chargeStep(stepS, docked, servoIdle) {
+        const B = this.B; if (docked === undefined) docked = B.p_docked_w; if (servoIdle === undefined) servoIdle = B.servo_idle_w;
+        const pIn = this.chargePower(undefined, docked + servoIdle);
+        if (pIn < 0.5) return false;
+        this.soc = Math.min(1, this.soc + pIn * stepS / 3600 / B.capacity_wh); this.charged_wh += pIn * stepS / 3600;
+        this.load_w = docked + servoIdle; this.t_charging += stepS; return true;
+    }
+    chargeUntil(target, docked, servoIdle, stepS = 5, maxS = 8 * 3600) {
+        let t = 0;
+        while (this.soc < target && t < maxS) { if (!this.chargeStep(stepS, docked, servoIdle)) break; t += stepS; }
+        return t;
+    }
+}
+XS.Battery = Battery;
+
+// ---------------------------------------------------------------------------------------------------------------- the safety layer (people.Guard)
+/** What the guard needs from the robot, `S`: S.t, S.mode, S.state, S.armBusy, S.armDone(), S.pose() -> [x, y, th], S.zoneSkipT, S.tracks() -> [{cls, x, y, vx, vy, coast, predict(t)}],
+ *  S.wheelTarget {vx, vy, wz} (body frame), S.setTwist(0, 0, 0), S.holdArm (written), S.dynZones / S.personZones (written), S.event(text), S.speak(text), S.onAsk(x, y). */
+class Guard {
+    constructor(cfg) {
+        this.c = Object.assign({}, cfg); this.halted = false; this._clearT = 0; this.stats = { halt_s: 0, slow_s: 0, halts: 0, arm_pauses: 0, max_scale_cut: 0, blocked_s: 0 };
+        this.why = ''; this.scale = 1; this._haltT = 0; this.mem = new Map(); this.episodes = []; this._zoneAskT = -99; this._lastSay = -99; this.dt = 0.05;
+    }
+    _people(S) {
+        const out = [], [x, y, th] = S.pose(), c = this.c;
+        for (const k of S.tracks()) {
+            const kid = k.cls === 'child' || k.cls === 'unsure';
+            const [px, py] = k.coast ? k.predict(S.t) : [k.x, k.y];
+            const d = hypot(px - x, py - y), gap = d - c.robot_r - c.person_r;
+            const clos = -((px - x) * k.vx + (py - y) * k.vy) / Math.max(d, 1e-3);
+            out.push({ k, kid, gap, bearing: Math.atan2(py - y, px - x) - th, closing: clos });
+        }
+        return out;
+    }
+    pre(S) {
+        const c = this.c;
+        if (S.mode === 'RIGHT' || S.mode === 'FAULT' || S.mode === 'TELEOP') { this.halted = false; S.holdArm = false; S.personZones = []; S.dynZones = []; return false; }
+        const ppl = this._people(S), armWork = ['抓取', '放置', '放下'].includes(S.state) || S.armBusy || !S.armDone(0.08), t = S.t;
+        S.dynZones = ppl.filter(p => !p.k.coast).map(p => [p.k.x, p.k.y, p.kid ? 0.25 : 0.32]);
+        for (const p of ppl) { const k = p.k; if (!k.coast) this.mem.set(k.id, [k.x, k.y, t, p.kid, hypot(k.vx, k.vy) < 0.25]); }
+        for (const [id, m] of Array.from(this.mem)) if (!(t - m[2] < (m[4] ? c.mem_still : c.mem_moving))) this.mem.delete(id);
+        S.personZones = Array.from(this.mem.values()).map(m => [m[0], m[1], m[3] ? c.zone_child : c.zone]);
+        let trig = false; this.why = '';
+        if (S.mode === 'TASK' && S.t - S.zoneSkipT < 1.5 && S.t - this._zoneAskT > 20.0) { this._zoneAskT = S.t; this._say(S, '请让一让，我想拿您旁边的玩具', 0.0); }
+        for (const p of ppl) {
+            const reach = p.kid ? c.arm_reach_child : c.arm_reach;
+            if (p.gap < 0.2) { trig = true; this.why = `${p.k.cls} at ${p.gap.toFixed(2)} m`; }
+            if (p.gap < reach && armWork) { trig = true; this.why = `arm, ${p.k.cls} ${p.gap.toFixed(2)} m`; }
+            if (p.closing > c.close_speed && p.gap < (p.kid ? 1.2 : 0.9)) { trig = true; this.why = `${p.k.cls} coming fast ${p.closing.toFixed(1)} m/s`; }
+        }
+        if (trig) {
+            if (!this.halted) { this.stats.halts += 1; this.stats.arm_pauses += armWork ? 1 : 0; this._say(S, `有人在附近（${this.why}），先停一下`); this.episodes.push([Math.round(S.t * 10) / 10, null, this.why]); }
+            this.halted = true; this._clearT = S.t;
+        } else if (this.halted && S.t - this._clearT > c.release) {
+            this.halted = false;
+            if (this.episodes.length && this.episodes[this.episodes.length - 1][1] === null) this.episodes[this.episodes.length - 1][1] = Math.round(S.t * 10) / 10;
+        }
+        S.holdArm = !!(this.halted && armWork);
+        if (this.halted) {
+            this.stats.halt_s += this.dt; S.setTwist(0, 0, 0); this._haltT += this.dt;
+            if (this._haltT > c.ask_after) this._say(S, '请让一让，我要过去拿东西', 15.0);
+        } else this._haltT = 0;
+        return this.halted;
+    }
+    post(S) {
+        const c = this.c; this.scale = 1.0;
+        if (S.mode === 'RIGHT' || S.mode === 'FAULT' || this.halted) return;
+        const w = S.wheelTarget, v = hypot(w.vx, w.vy);
+        if (v < 1e-3) return;
+        let blocked = false;
+        for (const p of this._people(S)) {
+            const slow = p.kid ? c.slow_child : c.slow, halt = p.kid ? c.halt_child : c.halt;
+            if (p.gap > slow) continue;
+            const toward = Math.cos(Math.atan2(w.vy, w.vx) - p.bearing);
+            if (toward < 0.2) continue;
+            if (p.gap <= halt) { this.scale = 0.0; blocked = true; break; }
+            let vmax = p.kid ? c.v_crawl_child : c.v_crawl;
+            vmax = Math.max(vmax, Math.min(v, Math.sqrt(2 * c.brake * Math.max(p.gap - halt, 0.0))));
+            vmax = p.gap > halt + 0.25 ? Math.min(vmax, v) : Math.min(vmax, p.kid ? c.v_crawl_child : c.v_crawl);
+            this.scale = Math.min(this.scale, vmax / v);
+        }
+        if (this.scale < 1.0) {
+            S.wheelTarget = { vx: w.vx * this.scale, vy: w.vy * this.scale, wz: w.wz };
+            this.stats.slow_s += this.dt; this.stats.max_scale_cut = Math.max(this.stats.max_scale_cut, 1 - this.scale);
+            if (blocked) this.stats.blocked_s += this.dt;
+        }
+    }
+    _say(S, text, every = 10.0) {
+        if (S.t - this._lastSay < every) return;
+        this._lastSay = S.t; S.event(text); if (S.speak) S.speak(text);
+        if (S.onAsk && text.includes('请让一让')) { const p = S.pose(); S.onAsk(p[0], p[1]); }
+    }
+}
+XS.Guard = Guard;
+
+/** The size class of a person from a height and a shoulder width, as people.classify */
+XS.classify = function (h, w, lowerBound, K) {
+    if (lowerBound) return h >= K.adult_from ? 'adult' : 'unsure';
+    if (h >= K.adult_from) return 'adult';
+    if (h < K.child_below) return 'child';
+    return (w !== null && w !== undefined && w >= K.adult_width) ? 'adult' : 'unsure';
+};
+
+// ---------------------------------------------------------------------------------------------------------------- voice (voice.py)
+const INIT = [['zh', 'z'], ['ch', 'c'], ['sh', 's']];
+const FIN = [['iang', 'ian'], ['uang', 'uan'], ['ang', 'an'], ['eng', 'en'], ['ing', 'in']];
+function fz(s) {
+    for (const [a, b] of INIT) if (s.startsWith(a)) { s = b + s.slice(a.length); break; }
+    if (s.length > 1 && 'nf'.includes(s[0]) && 'aeiouüv'.includes(s[1])) s = (s[0] === 'n' ? 'l' : 'h') + s.slice(1);
+    for (const [a, b] of FIN) if (s.endsWith(a) && s.length > a.length - 1) { s = s.slice(0, s.length - a.length) + b; break; }
+    return s;
+}
+const INITRE = /^[bpmfdtlnghjqxzcsryw]*/;
+function sd(a, b) {
+    if (a === b) return 0.0;
+    const ia = INITRE.exec(a)[0], ib = INITRE.exec(b)[0], fa = a.slice(ia.length), fb = b.slice(ib.length);
+    return ((ia === ib && ia) || (fa === fb && fa)) ? 0.5 : 1.0;
+}
+/** Best approximate occurrence of the syllable list `pat` in `text`: [score 0..1, start, end] (voice.match) */
+function match(pat, text, strict = false) {
+    const m = pat.length, n = text.length;
+    if (m === 0 || n === 0) return [0.0, 0, 0];
+    const D = [], S = [];
+    for (let i = 0; i <= m; i++) { D.push(new Float64Array(n + 1)); S.push(new Int32Array(n + 1)); D[i][0] = i; }
+    for (let j = 0; j <= n; j++) S[0][j] = j;
+    for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+        const sub = strict ? (pat[i - 1] === text[j - 1] ? 0.0 : 1.0) : sd(pat[i - 1], text[j - 1]);
+        const c0 = D[i - 1][j - 1] + sub, c1 = D[i - 1][j] + 1.0, c2 = D[i][j - 1] + 1.0;
+        let k = 0, best = c0; if (c1 < best) { best = c1; k = 1; } if (c2 < best) { best = c2; k = 2; }
+        D[i][j] = best; S[i][j] = k === 0 ? S[i - 1][j - 1] : (k === 1 ? S[i - 1][j] : S[i][j - 1]);
+    }
+    let j = 1; for (let jj = 2; jj <= n; jj++) if (D[m][jj] < D[m][j]) j = jj;
+    return [Math.max(0.0, 1.0 - D[m][j] / m), S[m][j], j];
+}
+XS.fz = fz; XS.match = match;
+const thr = n => n <= 2 ? 1.0 : (n === 3 ? 0.8 : (n === 4 ? 0.74 : 0.7));
+const round = (v, d) => { const f = Math.pow(10, d); return Math.round(v * f) / f; };
+
+class Voice {
+    /** V: the "voice" part of model.json; py: its "pinyin" table; host: null (nothing connected: the language side alone, as the real code is tested) or the robot's hooks. */
+    constructor(V, py, host) {
+        this.V = V; this.host = host || null; this.ch = new Map();
+        for (const [s, chars] of Object.entries(py)) for (const c of chars) this.ch.set(c, s);
+        this.pinyinWords = new Set(Object.keys(py));
+        this.trig = {};
+        for (const [k, v] of Object.entries(V.trig)) this.trig[k] = v.map(([p, w]) => ({ p: this.fkey(p), phrase: p, w }));
+        this.lex = [];
+        for (const [k, ws] of Object.entries(V.items)) for (const w of ws) this.lex.push(['item', k, w, this.fkey(w)]);
+        for (const [k, ws] of Object.entries(V.places)) for (const w of ws) this.lex.push(['place', k, w, this.fkey(w)]);
+        this.wake = this.fkey(V.wake); this.wakeAlt = this.fkey(V.wake_alt); this.stopP = V.stop_words.map(w => this.fkey(w));
+        this.yes = V.yes.map(w => [w, this.fkey(w)]); this.no = V.no.map(w => [w, this.fkey(w)]);
+        this.t = 0; this.sessionUntil = -1; this.pending = null; this.ctx = { item: null, place: null, person: null };
+        this.tts = []; this.log = []; this.actions = []; this.muted = false; this.resumeCmd = null; this.stats = { heard: 0, ignored: 0, reask: 0, confirm: 0, denied: 0, acted: 0, stop: 0 };
+    }
+    now() { return this.host ? this.host.now() : this.t; }
+    advance(dt) { this.t += dt; }
+    speak(text) { this.tts.push([round(this.now(), 1), text]); if (this.host && this.host.onSpeak) this.host.onSpeak(text); return text; }
+
+    syl(text) { return Array.from(text).map(c => this.ch.get(c) || c); }
+    fkey(text) { return this.syl(text).map(fz); }
+    static clean(text) { return text.replace(/[\s，。！？、,.!?；;：:“”"'（）()…~～—-]/g, ''); }
+    english(text) {
+        return (text.match(/[A-Za-z][A-Za-z'\-]*/g) || []).filter(w => w.length >= 2 && !['hey', 'hi'].includes(w.toLowerCase()) && !this.isPinyinWord(w.toLowerCase()));
+    }
+    isPinyinWord(w) {                          // 'xiaoshi' is the robot's name spelled in pinyin, not English
+        const n = w.length, ok = new Array(n + 1).fill(false); ok[0] = true;
+        for (let i = 0; i < n; i++) if (ok[i]) for (let l = 1; l <= 6 && i + l <= n; l++) if (this.pinyinWords.has(w.slice(i, i + l))) ok[i + l] = true;
+        return ok[n];
+    }
+    wakeAt(ft) {
+        let best = [0.0, 0, 0];
+        for (const w of [this.wake, this.wakeAlt]) { const r = match(w, ft.slice(0, 12), false); if (r[0] > best[0]) best = r; }
+        return best;
+    }
+    hasWake(text) {
+        const [sc, a] = this.wakeAt(this.fkey(Voice.clean(text)));
+        return (sc >= 0.74 && a <= 4) || /\bhey[\s,]*(xiao|shao)\s*shi\b/i.test(text);
+    }
+    stripWake(text) {
+        const t = Voice.clean(text), [sc, a, b] = this.wakeAt(this.fkey(t));
+        if (sc >= 0.74 && a <= 4) return t.slice(b);
+        const m = /\bhey[\s,]*(xiao|shao)\s*shi\b[\s,.!?，。]*/i.exec(text);
+        return m ? text.slice(m.index + m[0].length) : t;
+    }
+    isStopWord(text) {
+        const t = Voice.clean(text);
+        if (t.length <= 7) {
+            const ft = this.fkey(t);
+            for (const p of this.stopP) { const [sc] = match(p, ft, true); if (sc >= 1.0 && (p.length >= 2 || ft.length <= 2)) return true; }
+        }
+        return /stop|halt/i.test(text) && text.trim().length <= 12 && /^(please\s+)?(stop|halt)\b/i.test(text.trim());
+    }
+    entities(text) {
+        const ft = this.fkey(text), found = [];
+        for (const [kind, ref, w, p] of this.lex) {
+            const [sc, a, b] = match(p, ft, true);
+            if (sc >= thr(p.length) && b - a >= Math.max(p.length - 1, 1)) found.push([kind, ref, w, sc, a, b]);
+        }
+        found.sort((f, g) => ((g[5] - g[4]) - (f[5] - f[4])) || (g[3] - f[3]));
+        const out = [];
+        for (const f of found) if (!out.some(o => !(f[5] <= o[4] || f[4] >= o[5]))) out.push(f);
+        return out.sort((f, g) => f[4] - g[4]);
+    }
+    /** utterance (without the wake word) -> {intent, conf, slots, missing, alts, phrase} */
+    parse(raw) {
+        if (this.english(raw).length) return { intent: null, conf: 0, slots: {}, missing: [], alts: [], english: true, text: raw };
+        const t = Voice.clean(raw), ft = this.fkey(t), ents = t ? this.entities(t) : [], slots = {};
+        for (const [kind, ref, w] of ents) {
+            if (kind === 'item' && !('item' in slots)) { slots.item = ref; slots.item_word = w; }
+            else if (kind === 'place' && !('place' in slots)) slots.place = ref;
+        }
+        for (const w of ['它', '这个', '那个', '这个东西', '那个东西']) if (t.includes(w) && !('item' in slots)) { slots.anaphora = true; break; }
+        const nm = /(?:叫做|叫它|叫|起名叫|取名叫|名字是|名字叫)([一-鿿A-Za-z0-9]{1,6})/.exec(t); if (nm) slots.newname = nm[1];
+        const bestBy = {};
+        for (const [intent, trigs] of Object.entries(this.trig)) {
+            let best = [0.0, null];
+            for (const { p, phrase, w } of trigs) {
+                if (!ft.length) break;
+                const [sc] = match(p, ft, false);
+                let th = thr(p.length); if (intent === 'stop') th = Math.min(th, p.length > 1 ? 0.7 : 0.5);
+                if (this.V.sensitive.includes(intent)) th = Math.max(th, 0.99);          // remember / forget somebody and the microphone: never on a near miss of the sound ('巡视一下' is not '记一下')
+                if (sc >= th) { const v = sc * w * (0.62 + 0.13 * Math.min(p.length, 3)); if (v > best[0]) best = [v, phrase]; }
+            }
+            bestBy[intent] = best;
+        }
+        let scored = [];
+        for (const intent of Object.keys(this.trig)) {
+            const best = bestBy[intent]; if (best[1] === null) continue;
+            let conf = best[0]; const need = this.V.needs[intent] || [];
+            const missing = need.filter(s => !((s in slots) || (s === 'item' && slots.anaphora)));
+            if (intent === 'name_item' && !('newname' in slots) && !missing.includes('newname')) missing.push('newname');
+            if (need.length && !missing.length) conf = Math.min(1.0, conf + 0.12);
+            if (missing.length) conf *= 0.8;
+            if (intent === 'go_to' && !('place' in slots)) conf *= 0.3;
+            scored.push([conf, intent, best[1], missing]);
+        }
+        if (t.length <= 4) {
+            let best = null;
+            for (const [kind, words] of [['yes', this.yes], ['no', this.no]]) for (const [, p] of words) {
+                const [sc, a, b] = match(p, ft, true);
+                if (sc >= 1.0 && a === 0 && b >= ft.length && (best === null || p.length > best[0])) best = [p.length, kind];
+            }
+            if (best) scored.push([0.9, best[1], t, []]);
+        }
+        const personNoun = /(孩子|小孩|宝宝|女儿|儿子|妈妈|爸爸|爷爷|奶奶|哥哥|姐姐|弟弟|妹妹|宝贝|这个人|他|她)/.test(t);
+        if (personNoun) slots.person_noun = true;
+        scored = scored.map(s => [s[1] === 'name_item' && personNoun ? s[0] * 0.5 : s[0], s[1], s[2], s[3]]);
+        if (slots.item_word && slots.newname && !personNoun && !scored.some(s => s[1] === 'name_item')) scored.push([0.85, 'name_item', '叫', []]);
+        if (/^(别|不要|不用|先别)/.test(t) && scored.some(s => ['tidy', 'scan_home', 'go_to', 'charge', 'fetch_item'].includes(s[1]))) scored.push([0.9, 'stop', t, []]);
+        if (scored.some(s => s[1] === 'set_lang')) slots.lang = /英/.test(t) ? 'en' : 'zh';
+        scored.sort((a, b) => b[0] - a[0]);
+        if (!scored.length) return { intent: null, conf: 0.0, slots, missing: [], alts: [], text: t };
+        const top = scored[0];
+        return { intent: top[1], conf: round(top[0], 3), slots, missing: top[3], alts: scored.slice(1, 4).map(s => [round(s[0], 2), s[1]]), text: t, phrase: top[2] };
+    }
+
+    // ---- one utterance
+    hear(said, role = 'owner') {
+        const now = this.now(), rec = { t: round(now, 1), said, role }; this.stats.heard++;
+        const out = this._hear(said, role, rec, now); this.log.push(out); return out;
+    }
+    _hear(said, role, rec, now) {
+        if (this.muted) { this.stats.ignored++; rec.action = 'ignored: muted'; return rec; }
+        if (this.english(said).length && !/^\s*hey[\s,]*(xiao|shao)\s*shi\s*$/i.test(said)) {
+            rec.action = 'english'; rec.outOfScope = true; rec.reply = this.speak('（英文和中英夹杂：真实系统听得懂，沙盘没做）'); return rec;
+        }
+        if (this.isStopWord(said)) { this._doStop(); this.stats.stop++; rec.intent = 'stop'; rec.action = 'stop'; rec.reply = this.speak('好的，我停下来了'); this.sessionUntil = now + this.V.session_s; return rec; }
+        const woke = this.hasWake(said), live = now < this.sessionUntil || (this.pending !== null && now <= this.pending.until);
+        if (!woke && !live) { this.stats.ignored++; rec.action = 'ignored: no wake word'; return rec; }
+        if (woke) rec.woke = true;
+        const body = woke ? this.stripWake(said) : Voice.clean(said);
+        if (!Voice.clean(body)) { this.sessionUntil = now + this.V.session_s; rec.intent = 'wake'; rec.action = 'listening'; rec.reply = this.speak('我在'); return rec; }
+        if (this.pending !== null && now > this.pending.until) this.pending = null;
+        if (this.pending !== null) { if (this._answer(body, role, rec)) { this.sessionUntil = now + this.V.session_s; return rec; } }
+        this._command(body, role, rec); this.sessionUntil = now + (this.pending ? this.V.pending_s : this.V.session_s); return rec;
+    }
+    intentCn(intent, s = {}) {
+        const it = s.item_word || '';
+        return ({ tidy: '收拾玩具', fetch_item: `把${it || '它'}放进筐里`, scan_home: '扫描一遍家里', go_to: `去${s.place || '那里'}`, charge: '去充电', where_is: `找${it || '东西'}`, resume: '继续刚才的事',
+            enrol: '记住一个人', forget: '忘掉一个人', stop: '停下', status: '说说我在做什么', list_items: '数数地上的东西', who_here: '看看谁在', come_here: '过来找你', profile_show: '看看我对某人的了解', set_lang: '换种语言' })[intent] || intent;
+    }
+    _allowed(intent, role, rec) {
+        const need = this.V.min_role[intent] || 'adult';
+        if (this.V.role_rank[role] >= this.V.role_rank[need]) return true;
+        this.stats.denied++; rec.action = 'denied';
+        rec.reply = this.speak(({ child: '这个要大人来说哦', unknown: '我没看清是谁在说话，这个要大人在我面前说才行' })[role] || '这个需要主人来确认'); return false;
+    }
+    _command(body, role, rec) {
+        const p = this.parse(body), conf = p.conf * (0.55 + 0.45 * this.V.asr_conf); let intent = p.intent; const slots = Object.assign({}, p.slots);
+        if (intent === 'privacy' && ['静音', '别听', '关掉麦克风', '别看'].includes(p.phrase)) slots.mute = true;
+        if (intent === 'forget' && /(所有|全部|大家|每个人)/.test(body)) slots.all = true;
+        rec.intent = intent; rec.conf = round(conf, 2); rec.slots = Object.fromEntries(Object.entries(slots).filter(([k]) => k !== 'item_word'));
+        if (intent === null || conf < 0.45) {
+            this.stats.reask++; rec.action = 'reask';
+            rec.reply = this.speak(intent === null ? '我没听清，请再说一遍' : `我没太听清，你是说“${this.intentCn(intent)}”吗？`);
+            if (intent !== null) this.pending = { kind: 'confirm', intent, slots, role, until: this.now() + this.V.pending_s };
+            return;
+        }
+        if (intent === 'yes' || intent === 'no') { rec.action = 'nothing to answer'; rec.reply = this.speak('嗯？'); return; }
+        const needs = this.V.needs[intent] || [];
+        if (needs.includes('item') && !('item' in slots) && slots.anaphora && this.ctx.item !== null) slots.item = this.ctx.item;
+        const missing = needs.filter(s => !(s in slots) || slots[s] === null);
+        if (!this._allowed(intent, role, rec)) return;
+        if (intent === 'enrol' || intent === 'forget' || intent === 'profile_show' || intent === 'name_item') {
+            rec.action = intent; rec.outOfScope = true;
+            rec.reply = this.speak('（记住、忘掉、给东西起名：真实系统要走同意和确认的流程，见验收 E4、H1，沙盘没做）'); return;
+        }
+        if (missing.length) {
+            const ask = { item: '要哪一个东西？', place: '要去哪里？', newname: '想叫它什么名字？' }[missing[0]];
+            this.pending = { kind: 'slot', intent, slots, slot: missing[0], role, until: this.now() + this.V.pending_s }; rec.action = 'ask'; rec.reply = this.speak(ask); return;
+        }
+        if (this.V.motion.includes(intent) && conf < 0.7) {
+            this.stats.confirm++; this.pending = { kind: 'confirm', intent, slots, role, until: this.now() + this.V.pending_s };
+            rec.action = 'confirm'; rec.reply = this.speak(`你是要我${this.intentCn(intent, slots)}吗？`); return;
+        }
+        this._execute(intent, slots, role, rec);
+    }
+    _answer(body, role, rec) {
+        const pd = this.pending, p = this.parse(body), yes = p.intent === 'yes', no = p.intent === 'no';
+        if (pd.kind === 'confirm') {
+            if (no) { this.pending = null; rec.intent = 'no'; rec.action = 'cancelled'; rec.reply = this.speak('好的，不做了'); return true; }
+            if (yes) {
+                if (this.V.role_rank[role] < this.V.role_rank[this.V.min_role[pd.intent] || 'adult']) { this._allowed(pd.intent, role, rec); return true; }
+                this.pending = null; rec.intent = pd.intent; rec.via = 'confirmed'; this._execute(pd.intent, pd.slots, role, rec); return true;
+            }
+            this.pending = null; return false;
+        }
+        if (pd.kind === 'slot') {
+            const slots = Object.assign({}, pd.slots), s = pd.slot, ents = this.entities(Voice.clean(body)), got = {};
+            for (const e of ents) if (!(e[0] in got)) got[e[0]] = e[1];
+            if (!(s in got)) { this.pending = null; return false; }
+            slots[s] = got[s]; if (s === 'item') slots.item_word = (ents.find(e => e[0] === 'item') || [])[2] || '';
+            this.pending = null; rec.intent = pd.intent; rec.via = 'answer'; this._execute(pd.intent, slots, role, rec); return true;
+        }
+        this.pending = null; return false;
+    }
+    _doStop() {
+        this.actions.push(['stop']);
+        if (this.host) {
+            const m = this.host.mode();
+            if (['TASK', 'NAV', 'SCAN', 'CHARGE', 'FETCH'].includes(m)) this.resumeCmd = { mode: m, kw: this.host.curKw ? this.host.curKw() : {} };
+            this.host.idle();
+        }
+    }
+    _execute(intent, slots, role, rec) {
+        const kid = role === 'child' || role === 'unknown', H = this.host, V = this.V;
+        this.stats.acted++; rec.action = intent; this.actions.push([intent, { item: slots.item, place: slots.place }]);
+        const say = (a, c) => { rec.reply = this.speak(kid && c ? c : a); };
+        const izh = slots.item_word ? (slots.item_word) : '它', hasItem = !!slots.item_word;
+        const iname = hasItem ? (/[一-鿿]/.test(slots.item_word) ? slots.item_word : (V.items[slots.item] || [slots.item_word])[0]) : '它';
+        switch (intent) {
+        case 'stop': this._doStop(); say('好的，我停下来了'); break;
+        case 'resume':
+            if (this.resumeCmd && H) { const { mode, kw } = this.resumeCmd; H.requestMode(mode, mode === 'TASK' ? { resume: true } : kw); say(`好的，接着${V.mode_cn[mode] || '刚才的事'}`); this.resumeCmd = null; }
+            else say('我没有要接着做的事');
+            break;
+        case 'cancel': this.pending = null; say('好的，不做了'); break;
+        case 'tidy': if (H) H.startTask(); say('好的，我去收地上的玩具', '好的！我去收玩具啦'); break;
+        case 'fetch_item': {
+            let it = null;
+            if (H) { const its = H.items(slots.item); it = its.find(i => i.status === 'on_floor' && H.canFetch(i)) || null; }
+            if (H && it === null) { say(`我现在不知道${hasItem ? iname : '它'}在哪里，我先找一找`); H.explore(); }
+            else { if (H) H.fetch(it); this.ctx.item = it ? it.id : slots.item; say(`好的，我去把${hasItem ? iname : '它'}放进筐里`, '好的！'); }
+            break;
+        }
+        case 'where_is': {
+            const its = H ? H.items(slots.item) : [];
+            if (!H) say(`${hasItem ? iname : '它'}？我现在还没有物品记录`);
+            else if (!its.length) say(`我没见过${hasItem ? iname : '这个东西'}`);
+            else { this.ctx.item = its[0].id; say(its.slice(0, 2).map(i => H.where(i)).join('；')); }
+            break;
+        }
+        case 'list_items': {
+            if (!H) { say('我还没有物品记录'); break; }
+            const fl = H.items(null).filter(i => i.status === 'on_floor');
+            say(fl.length ? '地上现在有：' + fl.map(i => `${i.label}（${i.place || '地板上'}）`).join('、') : '地上现在没看到东西'); break;
+        }
+        case 'what_new': say(H ? '和上次一样，没什么变化' : '我还没有物品记录'); break;
+        case 'scan_home': if (H) H.scanHome(); say('好的，我去把家里扫描一遍，大概要两分钟'); break;
+        case 'go_to': {
+            const name = slots.place;
+            if (name === '充电座') return this._execute('charge', slots, role, rec);
+            if (!H) { say(`好的，我去${name}那边`); break; }
+            if (!H.placeKnown(name)) say(`我还不知道${name}在哪里，要先扫描一下家里`);
+            else if (H.goToPlace(name)) { this.ctx.place = name; say(`好的，我去${name}那边`); }
+            else say(`我找不到能站的位置去${name}那边，它旁边太挤了`);
+            break;
+        }
+        case 'charge': if (H) H.chargeNow(); say('好的，我去充电'); break;
+        case 'who_here': { const ds = H ? H.describePeople() : []; say(ds.length ? '我看到：' + ds.join('；') : '我现在没看到人'); break; }
+        case 'status':
+            if (!H) say('我在待命');
+            else say(`我现在在${V.mode_cn[H.mode()] || H.mode()}，电量大约百分之${Math.round(100 * H.socEst())}`);
+            break;
+        case 'privacy':
+            if (slots.mute) { this.muted = true; say('好的，我不听了。要我重新听，请按机身上的静音键'); }
+            else say('我只在听到“小拾小拾”以后才处理你说的话，不保存录音，也不会把声音传出去。要让我完全不听，请按机身上的静音键');
+            break;
+        case 'greet': say('你好！我是小拾', '你好呀！'); break;
+        case 'identity': say('我是小拾，家里的收纳小助手', '我是小拾！'); break;
+        case 'help': say('我可以收拾地上的玩具、扫描家里、记住东西放在哪里、告诉你东西在哪儿，也可以去充电。', '我会收玩具，还会找东西！'); break;
+        case 'come_here': {
+            const loc = H && H.speakerLoc ? H.speakerLoc() : null;
+            if (!loc) { say('我没听出你在哪里。请站到我前面再说一遍'); break; }
+            if (H) H.comeHere(loc);
+            say('好的，我过来', '来啦！'); break;
+        }
+        case 'set_lang': say(slots.lang === 'en' ? "OK, I'll speak English from now on.（沙盘不换语言，后面的话还是中文）" : '好的，我以后说中文。'); rec.outOfScope = slots.lang === 'en'; break;
+        default: say('这个我还不会');
+        }
+    }
+}
+XS.Voice = Voice;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* xs_world.js: a small 2-D world for the rules of xs_logic.js: the room, the people (people.Script), what the robot sees of them, and the mode supervisor (modes.Supervisor) with its
+ * modes written as generators the way the Python ones are. Movement is a point-mass robot on a path from A*, grasping is a timer with the success rate that was measured in the physics
+ * simulator (results/grasp_bench.json), falling and getting up are timers copied from a recorded run. This is a behaviour model, not the physics. */
+(function (G) {
+'use strict';
+const XS = G.XS;
+const { clamp, Battery, Guard, Voice } = XS;
+const hypot = Math.hypot, PI = Math.PI;
+const wrap = a => { while (a > PI) a -= 2 * PI; while (a < -PI) a += 2 * PI; return a; };
+function rng32(seed) { let a = (seed >>> 0) || 1; return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+XS.rng32 = rng32;
+
+const ROBOT_R = 0.105, INFLATE = 0.15, CELL = 0.05;
+const PARK = [-7, -7], SIT_DROP = 0.45;
+const FURN_CN = { sofa: '沙发', table: '桌子', shelf: '架子', plant: '盆栽', chair: '椅子', carton: '箱子', basket: '收纳筐', dock: '充电座' };
+const KIND_CN = { ball: '小球', cube: '方块', car: '玩具车', banana: '香蕉玩具', lbrick: 'L形积木', rock: '石头', sock: '袜子', plush: '毛绒玩具' };
+// the average power the real simulator's robot drew in each state (watts), measured from the recorded runs
+const LOAD_W = { '待命': 13.7, '启动': 14.6, '离开充电座': 21.0, '巡视': 49.7, '导航': 46.3, '抓取': 17.6, '搬运': 49.8, '放置': 18.9, '起身': 47.7, '重新定位': 40.9, '交接': 22.5, '去充电座': 22.5, '对接': 18.0, '扫描': 49.7, '遥控': 30, '暂停': 17, '求助': 13.7, '等待': 17, '回位': 46.3, '完成': 13.7 };
+XS.FURN_CN = FURN_CN; XS.KIND_CN = KIND_CN;
+
+// ---------------------------------------------------------------------------------------------------------------- the room
+class World {
+    constructor(D, seed) {
+        this.D = D; this.W = D.world.room[0]; this.H = D.world.room[1];
+        this.furn = D.world.furniture.map(f => ({ name: f[0], cx: f[1], cy: f[2], sx: f[3], sy: f[4], h: f[5], rgba: f[6] }));
+        this.boxes = (D.layouts[String(seed)].boxes || []).map(b => ({ name: 'carton', cx: b[0], cy: b[1], sx: b[2], sy: b[3], h: b[4], rgba: '0.79 0.64 0.45 1' }));
+        this.basket = Object.assign({}, D.world.basket); this.dockPose = D.world.dock.slice(); this.home = D.world.home.slice(); this.doors = D.world.doors;
+        this.objects = D.layouts[String(seed)].objects.map((o, i) => ({ id: i, kind: o.kind, x: o.x, y: o.y, th: o.th, r: o.r, z: 0, status: 'on_floor', seen: false, lastSeen: null, fails: 0, gaveUp: false }));
+        this.solids = this.furn.concat(this.boxes);
+        this.nx = Math.round(this.W / CELL); this.ny = Math.round(this.H / CELL); this.free = new Uint8Array(this.nx * this.ny);
+        for (let j = 0; j < this.ny; j++) for (let i = 0; i < this.nx; i++) this.free[j * this.nx + i] = this.clearance((i + 0.5) * CELL, (j + 0.5) * CELL) >= INFLATE ? 1 : 0;
+    }
+    /** the distance from a point to the nearest wall or piece of furniture (negative inside) */
+    clearance(x, y, noBasket) {
+        let d = Math.min(x, y, this.W - x, this.H - y);
+        for (const f of this.solids) d = Math.min(d, this._dist(f, x, y));
+        if (!noBasket) { const b = this.basket; d = Math.min(d, hypot(Math.max(Math.abs(x - b.x) - b.sx / 2, 0), Math.max(Math.abs(y - b.y) - b.sy / 2, 0))); }
+        return d;
+    }
+    _dist(f, x, y) {
+        if (f.sy === null || f.sy === undefined) return hypot(x - f.cx, y - f.cy) - f.sx;
+        const dx = Math.abs(x - f.cx) - f.sx / 2, dy = Math.abs(y - f.cy) - f.sy / 2;
+        return dx > 0 || dy > 0 ? hypot(Math.max(dx, 0), Math.max(dy, 0)) : Math.max(dx, dy);
+    }
+    cell(x, y) { return [clamp(Math.floor(x / CELL), 0, this.nx - 1), clamp(Math.floor(y / CELL), 0, this.ny - 1)]; }
+    isFree(x, y, extra) {
+        const [i, j] = this.cell(x, y); if (!this.free[j * this.nx + i]) return false;
+        if (extra) for (const z of extra) if (hypot(x - z[0], y - z[1]) < z[2] + (z[3] === undefined ? INFLATE : z[3])) return false;
+        return true;
+    }
+    /** a line of sight between two points that does not cross a piece of furniture taller than `h` */
+    sees(x0, y0, x1, y1, h = 0.1) {
+        const n = Math.ceil(hypot(x1 - x0, y1 - y0) / 0.04);
+        for (let k = 1; k < n; k++) { const x = x0 + (x1 - x0) * k / n, y = y0 + (y1 - y0) * k / n; for (const f of this.solids) if (f.h > h && this._dist(f, x, y) < 0) return false; }
+        return true;
+    }
+    /** A* on the cost map (8 neighbours), then the path is pulled straight where it can be. `zones`: [[x, y, r], ...] that are blocked as well (people). Returns [[x, y], ...] or null */
+    plan(a, b, zones) {
+        const nx = this.nx, ny = this.ny; let [si, sj] = this.cell(a[0], a[1]), [gi, gj] = this.cell(b[0], b[1]);
+        const ok = (i, j) => i >= 0 && j >= 0 && i < nx && j < ny && this.free[j * nx + i] && (!zones || this.isFree((i + 0.5) * CELL, (j + 0.5) * CELL, zones));
+        const nearest = (i, j) => {
+            if (ok(i, j)) return [i, j];
+            for (let r = 1; r < 12; r++) { let best = null, bd = 1e9; for (let dj = -r; dj <= r; dj++) for (let di = -r; di <= r; di++) { if (Math.max(Math.abs(di), Math.abs(dj)) !== r || !ok(i + di, j + dj)) continue; const d = hypot(di, dj); if (d < bd) { bd = d; best = [i + di, j + dj]; } } if (best) return best; }
+            return null;
+        };
+        const s = nearest(si, sj), g = nearest(gi, gj); if (!s || !g) return null;
+        const N = nx * ny, gs = new Float64Array(N).fill(1e9), from = new Int32Array(N).fill(-1), closed = new Uint8Array(N);
+        const heap = []; const push = (f, n) => { heap.push([f, n]); let k = heap.length - 1; while (k > 0) { const p = (k - 1) >> 1; if (heap[p][0] <= heap[k][0]) break; [heap[p], heap[k]] = [heap[k], heap[p]]; k = p; } };
+        const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let k = 0; for (;;) { let l = 2 * k + 1, r = l + 1, m = k; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === k) break; [heap[m], heap[k]] = [heap[k], heap[m]]; k = m; } } return top; };
+        const h = (i, j) => { const dx = Math.abs(i - g[0]), dy = Math.abs(j - g[1]); return (dx + dy) + (Math.SQRT2 - 2) * Math.min(dx, dy); };
+        const s0 = s[1] * nx + s[0]; gs[s0] = 0; push(h(s[0], s[1]), s0);
+        const goal = g[1] * nx + g[0]; let found = false;
+        while (heap.length) {
+            const [, n] = pop(); if (closed[n]) continue; closed[n] = 1; if (n === goal) { found = true; break; }
+            const i = n % nx, j = (n / nx) | 0;
+            for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+                if (!di && !dj) continue; const ni = i + di, nj = j + dj; if (!ok(ni, nj)) continue;
+                if (di && dj && (!ok(i + di, j) || !ok(i, j + dj))) continue;
+                const m = nj * nx + ni, c = gs[n] + (di && dj ? Math.SQRT2 : 1); if (c < gs[m]) { gs[m] = c; from[m] = n; push(c + h(ni, nj), m); }
+            }
+        }
+        if (!found) return null;
+        let pts = [], n = goal; while (n !== -1) { pts.push([(n % nx + 0.5) * CELL, (((n / nx) | 0) + 0.5) * CELL]); n = from[n]; } pts.reverse();
+        pts[0] = [a[0], a[1]]; if (hypot(b[0] - pts[pts.length - 1][0], b[1] - pts[pts.length - 1][1]) < 0.12 && this.isFree(b[0], b[1], zones)) pts[pts.length - 1] = [b[0], b[1]];
+        const clear = (p, q) => { const m = Math.ceil(hypot(q[0] - p[0], q[1] - p[1]) / 0.025); for (let k = 0; k <= m; k++) if (!this.isFree(p[0] + (q[0] - p[0]) * k / m, p[1] + (q[1] - p[1]) * k / m, zones)) return false; return true; };
+        const out = [pts[0]]; let k = 0;
+        while (k < pts.length - 1) { let far = k + 1; for (let m = pts.length - 1; m > k + 1; m--) if (clear(pts[k], pts[m])) { far = m; break; } out.push(pts[far]); k = far; }
+        return out;
+    }
+}
+XS.World = World;
+
+// ---------------------------------------------------------------------------------------------------------------- the people (people.Script, people.People)
+class Script {
+    constructor(steps) { this.steps = steps.slice(); this.i = 0; this.x = PARK[0]; this.y = PARK[1]; this.yaw = 0; this.s = 0; this.v = 0; this.face = false; this._t = null; this._k = 0; this._started = false; }
+    _done() { this.i++; this._k = 0; this._started = false; }
+    at(t, rxy, doors) {
+        const dt = this._t === null ? 0 : Math.max(t - this._t, 0); this._t = t; this.v = 0;
+        let guard = 0;
+        while (this.i < this.steps.length && guard < 20) {
+            guard++; const st = this.steps[this.i], k = st[0];
+            if (k === 'at') { this.x = st[1]; this.y = st[2]; this.yaw = st[3]; this._done(); continue; }
+            if (k === 'turn') { this.yaw = st[1]; this._done(); continue; }
+            if (k === 'face_robot') { this.face = true; this._done(); continue; }
+            if (k === 'hide') { this.x = PARK[0]; this.y = PARK[1]; this._done(); continue; }
+            if (k === 'wait') { this._k += dt; if (this._k >= st[1]) { this._done(); continue; } break; }
+            if (k === 'enter') {
+                let far = doors[0], fd = -1; for (const p of doors) { const d = hypot(p[0] - rxy[0], p[1] - rxy[1]); if (d > fd) { fd = d; far = p; } }
+                this.x = far[0]; this.y = far[1]; this.yaw = Math.atan2(1.5 - far[1], 2.0 - far[0]); this._done(); continue;
+            }
+            if (k === 'exit') {
+                let ok = doors.filter(p => hypot(p[0] - rxy[0], p[1] - rxy[1]) > 1.2); if (!ok.length) ok = doors;
+                let door = ok[0], bd = 1e9; for (const p of ok) { const d = hypot(p[0] - this.x, p[1] - this.y); if (d < bd) { bd = d; door = p; } }
+                this.steps[this.i] = ['walk', door[0], door[1], st[1]]; this.steps.splice(this.i + 1, 0, ['hide']); continue;
+            }
+            if (k === 'to_robot') {
+                const d = hypot(rxy[0] - this.x, rxy[1] - this.y), target = st[1] + 0.105 + 0.14;
+                if (d <= target + 0.01) { this._done(); continue; }
+                this.steps[this.i] = ['walk_dyn', st[1], st[2]]; continue;
+            }
+            if (k === 'walk' || k === 'walk_dyn') {
+                let tx, ty, sp, goalD = null;
+                if (k === 'walk_dyn') { tx = rxy[0]; ty = rxy[1]; const target = st[1] + 0.105 + 0.14, dd = hypot(tx - this.x, ty - this.y); if (dd <= target + 0.01) { this._done(); continue; } sp = st[2]; goalD = dd - target; }
+                else { tx = st[1]; ty = st[2]; sp = st[3]; }
+                const dx = tx - this.x, dy = ty - this.y; let d = hypot(dx, dy); this._k += dt;
+                if (!this._started) { this._d0 = d; this._started = true; }
+                if (this._k > 5.0 + 3.0 * this._d0 / Math.max(sp, 0.1)) { this._done(); continue; }
+                if (d < 1e-6) { this._done(); continue; }
+                if (goalD !== null) d = goalD;
+                this.yaw = Math.atan2(dy, dx); const step = Math.min(sp * dt, d), dd = hypot(dx, dy);
+                let nx = this.x + dx / dd * step, ny = this.y + dy / dd * step;
+                if (k === 'walk') {
+                    const rd = hypot(nx - rxy[0], ny - rxy[1]);
+                    if (rd < 0.45) { const ux = (nx - rxy[0]) / Math.max(rd, 1e-6), uy = (ny - rxy[1]) / Math.max(rd, 1e-6); let tx_ = -uy, ty_ = ux; if (tx_ * dx + ty_ * dy < 0) { tx_ = -tx_; ty_ = -ty_; } nx = rxy[0] + ux * 0.45 + tx_ * step; ny = rxy[1] + uy * 0.45 + ty_ * step; }
+                }
+                this.v = dt > 0 ? hypot(nx - this.x, ny - this.y) / dt : 0; this.x = nx; this.y = ny;
+                if (k === 'walk' && hypot(st[1] - this.x, st[2] - this.y) < 0.03) this._done();
+                break;
+            }
+            if (k === 'posture') {
+                this._k += dt; const a = st[1] === 'sit' ? 1.0 : 0.0; if (!this._started) { this._s0 = this.s; this._started = true; }
+                const f = st[2] <= 0 ? 1.0 : Math.min(this._k / st[2], 1.0); this.s = this._s0 + f * (a - this._s0);
+                if (f >= 1.0) { this._done(); continue; } break;
+            }
+            if (k === 'chase') {
+                this._k += dt; const dx = rxy[0] - this.x, dy = rxy[1] - this.y, d = hypot(dx, dy), target = st[2] + 0.105 + 0.14; this.yaw = Math.atan2(dy, dx);
+                if (d <= target + 0.01 || this._k >= st[3]) { this._done(); continue; }
+                const step = Math.min(st[1] * dt, d - target); this.x += dx / d * step; this.y += dy / d * step; this.v = dt > 0 ? step / dt : 0; break;
+            }
+            this._done();
+        }
+        if (this.face && this.v < 0.01) this.yaw = Math.atan2(rxy[1] - this.y, rxy[0] - this.x);
+        return [this.x, this.y, this.yaw, this.v, this.s];
+    }
+}
+XS.Script = Script;
+
+class People {
+    constructor(D, comply, rnd) {
+        this.D = D; this.specs = D.people; this.scripts = this.specs.map(() => new Script([])); this.comply = comply || [1.0, 1.0, 0.7, 0.7, 0.0]; this.rnd = rnd; this.state = []; this.t = 0;
+        this.contact = this.specs.map(() => 0); this._in = this.specs.map(() => false); this.minGap = this.specs.map(() => 9);
+        this.update(0, [2, 1.5]);
+    }
+    index(name) { return this.specs.findIndex(s => s.name === name); }
+    update(t, rxy) {
+        this.t = t;
+        this.state = this.specs.map((s, i) => {
+            const [x, y, yaw, v, sit] = this.scripts[i].at(t, rxy, this.D.world.doors); const hipH = (s.hip || 0.5) * s.h;       // sitting drops the hips by SIT_DROP of the hip height, and the head with them
+            return { i, name: s.name, cn: s.cn, cls: s.cls, x, y, yaw, v, sit, h: s.h - SIT_DROP * hipH * sit, hStand: s.h, w: s.w, inside: x > -0.5 };
+        });
+    }
+    truth() { return this.state; }
+    askToMove(rxy, reach = 1.4) {
+        for (const s of this.state) {
+            if (!s.inside || hypot(s.x - rxy[0], s.y - rxy[1]) > reach || this.rnd() >= this.comply[s.i]) continue;
+            const dx = s.x - rxy[0], dy = s.y - rxy[1], d = Math.max(hypot(dx, dy), 1e-3);
+            const ax = clamp(s.x + dx / d * 1.0, 0.25, 3.75), ay = clamp(s.y + dy / d * 1.0, 0.25, 2.75), sc = this.scripts[s.i];
+            sc.steps.splice(sc.i, 0, ['wait', 1.0], ['walk', ax, ay, 0.8]); sc._k = 0; sc._started = false;
+        }
+    }
+    /** contacts between a person and the robot: counted when they start */
+    touch(rxy, rr) {
+        let n = 0;
+        for (const s of this.state) {
+            if (!s.inside) { this._in[s.i] = false; continue; }
+            const gap = hypot(s.x - rxy[0], s.y - rxy[1]) - rr - (s.w / 2 + 0.02); this.minGap[s.i] = Math.min(this.minGap[s.i], gap);
+            const c = gap < 0; if (c && !this._in[s.i]) { this.contact[s.i]++; n++; } this._in[s.i] = c;
+        }
+        return n;
+    }
+}
+XS.People = People;
+
+// ---------------------------------------------------------------------------------------------------------------- what the robot sees of the people (the head camera tracker and the lidar movers)
+class Tracker {
+    constructor(K) {
+        this.K = K; this.cam = []; this.lid = []; this.nextId = 1; this.t = 0; this.fov = 35 * PI / 180; this.range = 5.0; this.period = 0.2; this.last = -9;
+    }
+    update(t, pose, state) {
+        if (t - this.last < this.period - 1e-9) return; const dt = t - this.last; this.last = t; this.t = t;
+        const [x, y, th] = pose, vis = [], mov = [];
+        for (const s of state) {
+            if (!s.inside) continue; const d = hypot(s.x - x, s.y - y), b = wrap(Math.atan2(s.y - y, s.x - x) - th);
+            if (d <= this.range && Math.abs(b) <= this.fov && d > 0.12) vis.push(s); else if (s.v > 0.15 && d < 4.0) mov.push(s);
+        }
+        this._assoc(this.cam, vis, t, dt, 'cam'); this._assoc(this.lid, mov, t, dt, 'lidar');
+        for (const k of this.cam) { k.dist = hypot(k.x - x, k.y - y); }
+        for (const k of this.lid) { k.cls = 'unsure'; k.dist = hypot(k.x - x, k.y - y); }
+    }
+    _assoc(tracks, dets, t, dt, src) {
+        const used = new Set();
+        for (const k of tracks) {
+            let best = null, bd = 0.6; for (const s of dets) { if (used.has(s.i)) continue; const d = hypot(s.x - k.x, s.y - k.y); if (d < bd) { bd = d; best = s; } }
+            if (best) {
+                used.add(best.i); const vx = (best.x - k.x) / Math.max(dt, 1e-3), vy = (best.y - k.y) / Math.max(dt, 1e-3);
+                k.vx = k.hits > 0 ? 0.5 * k.vx + 0.5 * vx : vx; k.vy = k.hits > 0 ? 0.5 * k.vy + 0.5 * vy : vy; k.x = best.x; k.y = best.y; k.tSeen = t; k.hits++; k.misses = 0; k.coast = false; k.truth = best.i; k.h = best.h; k.w = best.w;
+                if (src === 'cam') k.cls = XS.classify(best.h, best.w, false, this.K);
+            } else { k.misses++; if (t - k.tSeen > 0.3) k.coast = true; }
+        }
+        for (const s of dets) if (!used.has(s.i)) {
+            const k = { id: this.nextId++, x: s.x, y: s.y, vx: 0, vy: 0, hits: 1, misses: 0, coast: false, tSeen: t, truth: s.i, src, h: s.h, w: s.w, cls: src === 'cam' ? XS.classify(s.h, s.w, false, this.K) : 'unsure', dist: 0 };
+            k.predict = function (tt) { return [this.x + this.vx * (tt - this.tSeen), this.y + this.vy * (tt - this.tSeen)]; }; tracks.push(k);
+        }
+        for (let i = tracks.length - 1; i >= 0; i--) { tracks[i].predict = tracks[i].predict || function (tt) { return [this.x + this.vx * (tt - this.tSeen), this.y + this.vy * (tt - this.tSeen)]; }; if (t - tracks[i].tSeen > 1.5) tracks.splice(i, 1); }
+    }
+    /** confirmed tracks: the camera's (two looks) and the lidar's that the camera does not already have (three looks, moving) */
+    confirmed() {
+        const cam = this.cam.filter(k => k.hits >= 2), lid = this.lid.filter(k => k.hits >= 3 && !k.coast && !cam.some(c => hypot(k.x - c.x, k.y - c.y) < 0.6));
+        return cam.concat(lid);
+    }
+}
+XS.Tracker = Tracker;
+
+// ---------------------------------------------------------------------------------------------------------------- the robot and its supervisor (modes.Supervisor)
+const DEFAULTS_CFG = { auto_charge: true, auto_right: true, crit_overrides_teleop: true, deadman: 0.5, fall_tilt: 45.0, fall_hold: 0.3 };
+
+class Sim {
+    constructor(D, opts = {}) {
+        this.D = D; this.dt = 0.05; this.t = 0; this.seed = opts.seed || 4; this.rnd = rng32(this.seed * 7919 + 13);
+        this.cfg = Object.assign({}, D.modes, DEFAULTS_CFG, opts.cfg || {});
+        this.world = new World(D, this.seed); this.dockPose = D.world.dock; this.K = D.classify;
+        const [dx, dy, dth] = opts.start === 'home' ? D.world.home : D.world.dock;
+        this.x = dx; this.y = dy; this.th = dth; this.vx = 0; this.vy = 0; this.wz = 0; this.tilt = 0; this.fallT = null; this.fallKind = null; this.held = null; this.armOut = false; this.armHold = false;
+        this.bat = new Battery(D.battery, opts.soc0 === undefined ? 0.9 : opts.soc0, null, this.rnd); this.estBias = this.bat.bias;
+        this.people = new People(D, undefined, this.rnd); this.tracker = new Tracker(this.K); this.guard = new Guard(D.guard); this.guardOn = true;
+        this.mode = 'IDLE'; this.state = '待命'; this.kw = {}; this.gen = null; this.modeT = 0; this.q = []; this.events = []; this.chat = []; this.logLines = [];
+        this.stats = { charges: 0, charge_min: 0, falls: 0, righted: 0, right_failed: 0, takeovers: 0, nav_ok: 0, nav_fail: 0, dock_fail: 0, delivered: 0, contacts: 0 };
+        this.taskDone = false; this._taskStarted = false; this._looked = false; this._handback = false; this.navQueue = []; this.navExplore = false; this.navResults = [];
+        this.resume = null; this.resumeRight = null; this.scanDone = false; this.scanned = new Set(); this.fault = null; this.warn = null; this._softReq = false; this._fallTicks = 0;
+        this.wheelTarget = { vx: 0, vy: 0, wz: 0 }; this.zoneSkipT = -1e9; this.dynZones = []; this.personZones = []; this.abort = null;
+        this.tele = { vx: 0, vy: 0, wz: 0, t: -1e9, safety: true }; this.speakerAt = null; this.trail = []; this.path = null; this.targetObj = null; this.failRight = false; this.nowDocked = true;
+        this.guard.dt = this.dt; this.pad = 0;
+        this.voice = new Voice(D.voice, D.pinyin, this._host());
+        this.gen = this._gen_idle(); this._lastTrail = -9;
+    }
+    // ---- bookkeeping
+    pose() { return [this.x, this.y, this.th]; }
+    armDone() { return !this._armBusyUntil || this.t >= this._armBusyUntil; }
+    get armBusy() { return this._armBusy || false; }
+    set armBusy(v) { this._armBusy = v; }
+    setTwist() { this.wheelTarget = { vx: 0, vy: 0, wz: 0 }; }
+    event(text) { this.events.push([Math.round(this.t * 10) / 10, this.mode, text]); this.logLines.push([this.t, `[${this.mode}] ${text}`]); }
+    log(text) { this.logLines.push([this.t, text]); if (this.logLines.length > 300) this.logLines.shift(); }
+    say(who, text) { this.chat.push({ t: Math.round(this.t * 10) / 10, who, text }); if (this.chat.length > 200) this.chat.shift(); }
+    speak(text) { this.say('机器人', text); }
+    onAsk(x, y) { this.people.askToMove([x, y]); }
+    tracks() { return this.tracker.confirmed(); }
+    socEst() { return this.bat.est; }
+    atDock() { return hypot(this.x - this.dockPose[0], this.y - this.dockPose[1]) < 0.12; }
+    dockConnected() { return hypot(this.x - this.dockPose[0], this.y - this.dockPose[1]) < 0.05 && this.mode !== 'RIGHT'; }
+    delivered() { return this.world.objects.filter(o => o.status === 'in_basket').length; }
+
+    // ---- the operator's side (modes.Supervisor)
+    request(mode, kw) { this.q.push([mode.toUpperCase(), kw || {}]); }
+    startTask() { this.request('TASK'); } idle() { this.request('IDLE'); } chargeNow() { this.request('CHARGE', { reason: 'requested' }); } teleop() { this.request('TELEOP'); }
+    scanHome() { this.request('SCAN'); } explore() { this.request('NAV', { goals: [], explore: true }); } fetch(o) { this.request('FETCH', { k: o.id }); }
+    goTo(x, y, th = null, tol = 0.07) { this.request('NAV', { goals: [{ x, y, th, tol }] }); }
+    drive(vx, vy, wz) { this.tele.vx = vx; this.tele.vy = vy; this.tele.wz = wz; this.tele.t = this.t; }
+    status() { return { t: this.t, mode: this.mode, state: this.state, soc: this.bat.est, fault: this.fault, warn: this.warn }; }
+    /** people walking in (the presets of live.py) */
+    person(kind) {
+        const P = this.people, S = n => P.scripts[P.index(n)].steps;
+        if (kind === 'kid') S('child_5').push(['enter'], ['chase', 1.4, 0.12, 15.0], ['face_robot'], ['wait', 6.0], ['exit', 0.9]);
+        else if (kind === 'adult') S('adult_m').push(['enter'], ['to_robot', 0.5, 1.0], ['exit', 1.0]);
+        else if (kind === 'toddler') S('toddler').push(['enter'], ['walk', 3.2, 2.35, 0.4], ['wait', 25.0], ['walk', 3.05, 2.45, 0.3], ['wait', 15.0], ['exit', 0.4]);
+        else if (kind === 'family') {
+            S('adult_f').push(['enter'], ['walk', 2.0, 1.1, 0.8], ['wait', 10.0], ['walk', 3.6, 1.5, 0.8], ['wait', 20.0], ['walk', 1.0, 2.6, 0.8], ['wait', 20.0], ['exit', 0.8]);
+            S('child_8').push(['wait', 10.0], ['enter'], ['walk', 2.2, 1.9, 1.1], ['walk', 1.0, 1.0, 1.1], ['wait', 5.0], ['walk', 3.0, 2.4, 1.4], ['wait', 5.0], ['walk', 3.6, 1.9, 1.3], ['wait', 5.0], ['exit', 1.0]);
+            S('toddler').push(['wait', 20.0], ['enter'], ['walk', 2.6, 1.7, 0.3], ['wait', 8.0], ['walk', 3.4, 2.2, 0.3], ['wait', 15.0], ['exit', 0.4]);
+        } else if (kind === 'leave') P.specs.forEach((s, i) => P.scripts[i].steps.push(['exit', 1.0]));
+        else if (kind && kind.startsWith('stand:')) { const [, name, x, y] = kind.split(':'); const sc = P.scripts[P.index(name)]; sc.steps.push(['at', +x, +y, 0.0], ['face_robot']); }
+    }
+
+    _host() {
+        const S = this;
+        return {
+            now: () => S.t, mode: () => S.mode, socEst: () => S.bat.est, idle: () => S.idle(), startTask: () => S.startTask(), scanHome: () => S.scanHome(), chargeNow: () => S.chargeNow(),
+            requestMode: (m, kw) => S.request(m, kw), curKw: () => Object.assign({}, S.kw), explore: () => S.explore(), onSpeak: t => S.speak(t),
+            placeKnown: n => n === '收纳筐' || n === '充电座' || (S.scanDone && S.placeNames().includes(n)),
+            goToPlace: n => S.goToPlace(n), items: k => S.inventory(k), canFetch: i => i.status === 'on_floor', fetch: i => S.fetch(i), where: i => S.itemWhere(i),
+            describePeople: () => S.describePeople(), speakerLoc: () => S.speakerAt, comeHere: loc => { const [x, y] = [S.x, S.y], d = hypot(loc[0] - x, loc[1] - y), k = Math.max(d - 1.0, 0) / Math.max(d, 1e-6); S.goTo(x + (loc[0] - x) * k, y + (loc[1] - y) * k, Math.atan2(loc[1] - y, loc[0] - x), 0.2); },
+        };
+    }
+    placeNames() { return Array.from(new Set(this.world.solids.map(f => FURN_CN[f.name]))); }
+    inventory(kind) {
+        const W = this.world, out = [];
+        for (const o of W.objects) {
+            if (!o.seen || (kind && o.kind !== kind)) continue;
+            out.push({ id: o.id, kind: o.kind, label: KIND_CN[o.kind], status: o.status === 'in_basket' ? 'in_basket' : (o.status === 'held' ? 'held' : 'on_floor'), place: this.itemPlace(o), lastSeen: o.lastSeen, o });
+        }
+        return out.sort((a, b) => b.lastSeen - a.lastSeen);
+    }
+    itemPlace(o) {
+        if (o.status === 'in_basket') return '收纳筐里'; if (!this.scanDone) return null;
+        let best = null, bd = 0.40; for (const f of this.world.solids) { const d = this.world._dist(f, o.x, o.y); if (d < bd) { bd = d; best = f; } }
+        return best ? `${FURN_CN[best.name]}旁边` : '地板中间';
+    }
+    itemWhere(i) {
+        const age = Math.max(this.t - i.lastSeen, 0), a = age < 90 ? `${Math.round(age)} 秒` : (age < 5400 ? `${Math.round(age / 60)} 分钟` : `${(age / 3600).toFixed(1)} 小时`);
+        const st = { on_floor: '在地上', in_basket: '在收纳筐里', held: '正拿在手里' }[i.status];
+        return `${i.label}：${i.place || '不知道在哪'}（${st}，${a}前看到）`;
+    }
+    describePeople() {
+        const [x, y, th] = this.pose(), out = [];
+        for (const k of this.tracks().filter(k => k.src !== 'lidar').sort((a, b) => a.dist - b.dist)) {
+            const sn = Math.sin(Math.atan2(k.y - y, k.x - x) - th), side = sn > 0.25 ? '左' : (sn < -0.25 ? '右' : '正');
+            const who = k.cls === 'child' ? '一个小孩' : (k.cls === 'adult' ? '一个大人' : '一个人（不确定大人还是小孩）');
+            out.push(`${who}，约 ${k.h.toFixed(1)} 米高，在${side}前方 ${k.dist.toFixed(1)} 米`);
+        }
+        return out;
+    }
+    goToPlace(name) {
+        const W = this.world;
+        if (name === '收纳筐') { this.goTo(W.basket.x - 0.5, W.basket.y); return true; }
+        let pts = [];
+        if (name === '充电座') return false;
+        for (const f of W.solids) {
+            if (FURN_CN[f.name] !== name) continue;
+            if (f.sy === null || f.sy === undefined) for (let a = 0; a < 8; a++) pts.push([f.cx + Math.cos(a * PI / 4) * (f.sx + 0.5), f.cy + Math.sin(a * PI / 4) * (f.sx + 0.5)]);
+            else for (const [sx, sy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) pts.push([f.cx + sx * (f.sx / 2 + 0.5), f.cy + sy * (f.sy / 2 + 0.5)]);
+        }
+        pts = pts.filter(p => W.isFree(p[0], p[1]));
+        if (!pts.length) {       // the real code only tries the four spots 0.5 m from the middle of each side; the sandbox looks for any free spot 0.4-0.75 m from the piece, so that it is rarely refused
+            const fs = W.solids.filter(f => FURN_CN[f.name] === name);
+            for (let x = 0.1; x < W.W; x += 0.1) for (let y = 0.1; y < W.H; y += 0.1) { const d = Math.min(...fs.map(f => W._dist(f, x, y))); if (d > 0.4 && d < 0.75 && W.isFree(x, y)) pts.push([x, y]); }
+            if (!pts.length) return false;
+        }
+        pts.sort((a, b) => hypot(a[0] - this.x, a[1] - this.y) - hypot(b[0] - this.x, b[1] - this.y)); this.goTo(pts[0][0], pts[0][1]); return true;
+    }
+
+    // ---- one control period
+    tick() {
+        this.t = Math.round((this.t + this.dt) * 1e6) / 1e6; const dt = this.dt;
+        this.wheelTarget = { vx: 0, vy: 0, wz: 0 };
+        this._intake(); this._watch();
+        const g = this.guardOn ? this.guard : null; const halted = g ? g.pre(this) : false;
+        if (!g) { this.dynZones = []; this.personZones = []; this.armHold = false; }
+        if (this.gen && !halted) {
+            let r; try { r = this.gen.next(); } catch (e) { throw e; }
+            if (r.done) { this.gen = null; this._onDone(); }
+        }
+        if (g && !halted) g.post(this);
+        this.people.update(this.t, [this.x, this.y]); this._physics(dt); this._account(dt);
+        this.tracker.update(this.t, this.pose(), this.people.state); this._sense();
+        if (this.t - this._lastTrail > 0.5) { this._lastTrail = this.t; this.trail.push([this.x, this.y]); if (this.trail.length > 600) this.trail.shift(); }
+    }
+    run(seconds) { const n = Math.round(seconds / this.dt); for (let i = 0; i < n; i++) this.tick(); }
+    _sense() {            // what the base camera and the lidar see of the things on the floor: within 2.2 m and not behind furniture
+        for (const o of this.world.objects) {
+            if (o.status !== 'on_floor') continue; const d = hypot(o.x - this.x, o.y - this.y);
+            if (d < 2.2 && this.world.sees(this.x, this.y, o.x, o.y, 0.12) && (this._spinning || Math.abs(wrap(Math.atan2(o.y - this.y, o.x - this.x) - this.th)) < 0.9 || d < 0.6)) { o.seen = true; o.lastSeen = this.t; }
+        }
+    }
+    _account(dt) {
+        const b = this.bat; if (this.mode === 'CHARGE' && this.state === '充电') return;
+        const w = LOAD_W[this.state] !== undefined ? LOAD_W[this.state] : 20; b.step(dt, w, 0);
+    }
+    _physics(dt) {
+        const W = this.world, w = this.wheelTarget;
+        const accel = 0.6 * dt, tgt = this.tilt > 8 ? { vx: 0, vy: 0, wz: 0 } : w;
+        this.vx += clamp(tgt.vx - this.vx, -accel, accel); this.vy += clamp(tgt.vy - this.vy, -accel, accel); this.wz += clamp(tgt.wz - this.wz, -3 * dt, 3 * dt);
+        const c = Math.cos(this.th), s = Math.sin(this.th), dx = (c * this.vx - s * this.vy) * dt, dy = (s * this.vx + c * this.vy) * dt;
+        const ok = (x, y) => W.clearance(x, y, false) >= ROBOT_R - 0.005 && !this.people.state.some(p => p.inside && hypot(p.x - x, p.y - y) < ROBOT_R + p.w / 2 * 0.9);
+        if (ok(this.x + dx, this.y + dy)) { this.x += dx; this.y += dy; }
+        else if (ok(this.x + dx, this.y)) this.x += dx; else if (ok(this.x, this.y + dy)) this.y += dy;
+        else { this.vx = this.vy = 0; }
+        this.th = wrap(this.th + this.wz * dt);
+        this.stats.contacts += this.people.touch([this.x, this.y], ROBOT_R);
+        // falling and getting up are driven by the timers below
+        if (this.fallT !== null) {
+            const e = this.t - this.fallT; this.tilt = e < 0.8 ? 160 * Math.sin(Math.min(e / 0.8, 1) * PI / 2) : (this.fallPhase === 'up' ? Math.max(0, this.tilt - 90 * dt) : this.tilt);
+        }
+    }
+
+    // ---- switching (modes.Supervisor._intake / _switch / _watch / _on_done)
+    _soft() {
+        if (this._softReq) return true;
+        if (!this.cfg.auto_charge || !['TASK', 'NAV', 'SCAN'].includes(this.mode)) return false;
+        return this.bat.est < this.cfg.soc_soft;
+    }
+    _switch(mode, kw = {}) {
+        if (this.gen) { try { this.gen.return(); } catch (e) {} this.gen = null; }
+        this.setTwist(); this.path = null; this.armHold = false;
+        this.event(`→ ${mode}` + (mode !== 'NAV' && Object.keys(kw).length ? ' ' + JSON.stringify(kw) : ''));
+        this.mode = mode; this.kw = kw; this.modeT = this.t; this._softReq = false; this.armBusy = false;
+        this.gen = this['_gen_' + mode.toLowerCase()](kw);
+    }
+    _intake() {
+        while (this.q.length) {
+            const [mode, kw0] = this.q.shift(); let kw = kw0;
+            if (this.mode === 'RIGHT' || this.mode === 'FAULT') { if (this.mode === 'RIGHT') { this.q.unshift([mode, kw]); return; } if (mode !== 'IDLE') continue; }
+            if (mode === 'TELEOP' && this.mode !== 'TELEOP') { this.stats.takeovers++; this.resume = null; }
+            if (mode !== 'TASK' && this.mode === 'TASK') this._handback = true;
+            if (mode === 'NAV') { kw = Object.assign({}, kw); this.navQueue = (kw.goals || []).slice(); delete kw.goals; this.navExplore = !!kw.explore; }
+            if (mode === 'IDLE') this.fault = null;
+            this._switch(mode, kw);
+        }
+    }
+    _watch() {
+        const cfg = this.cfg;
+        const frz = this.tilt > 12 ? 2 : (this.mode === 'RIGHT' ? 1 : 0); this.freeze = frz;
+        this._fallTicks = this.tilt > cfg.fall_tilt ? this._fallTicks + 1 : 0;
+        if (this._fallTicks >= cfg.fall_hold / this.dt && !['RIGHT', 'FAULT'].includes(this.mode)) {
+            this.stats.falls++; this.event(`摔倒了（IMU 倾角 ${Math.round(this.tilt)}°）`);
+            if (cfg.auto_right) { this.resumeRight = [this.mode, Object.assign({}, this.kw)]; this._handback = this._handback || this.mode === 'TASK'; this._switch('RIGHT'); }
+            else this._fault('fall');
+            return;
+        }
+        const b = this.bat; if (this.mode === 'FAULT' || this.mode === 'RIGHT') return;
+        if (b.dead) { this._fault('battery'); return; }
+        const e = b.est; this.warn = e < cfg.soc_soft ? 'low battery' : null;
+        if (e < cfg.soc_crit && this.mode !== 'CHARGE' && cfg.auto_charge && (this.mode !== 'TELEOP' || cfg.crit_overrides_teleop)) {
+            this.resume = this.mode === 'TASK' ? ['TASK', { resume: true }] : (this.mode === 'NAV' ? ['NAV', Object.assign({}, this.kw)] : null);
+            if (this.mode === 'TASK') this._handback = true;
+            this.event(`电量 ${Math.round(100 * e)}%，低于紧急线，放下手里的事去充电`); this._switch('CHARGE', { reason: 'critical' });
+        }
+    }
+    _fault(why) { this.fault = why; this.event(`故障：${why}，需要人来处理`); this._switch('FAULT', { why }); }
+    _onDone() {
+        const mode = this.mode;
+        if (mode === 'TASK') {
+            if (this.state === '暂停') { this.resume = ['TASK', { resume: true }]; this.event('电量低，停在两件事之间去充电'); this._switch('CHARGE', { reason: 'low battery' }); }
+            else if (this.state === '求助') this._fault('payload stuck');
+            else {
+                this.taskDone = true; this.event('任务结束');
+                if (this.cfg.auto_charge && this.bat.est < this.cfg.soc_full - 0.05) { this.resume = null; this._switch('CHARGE', { reason: 'task done' }); } else this._switch('IDLE');
+            }
+        } else if (mode === 'SCAN') {
+            if (!this.scanDone && this._soft()) { this.resume = ['SCAN', Object.assign({}, this.kw)]; this.event('电量低，停在两个扫描点之间去充电'); this._switch('CHARGE', { reason: 'low battery' }); } else this._switch('IDLE');
+        } else if (mode === 'NAV') {
+            if ((this.navQueue.length || this.navExplore) && this._soft()) { this.resume = ['NAV', { explore: this.navExplore }]; this.event('电量低，停在两个目标之间去充电'); this._switch('CHARGE', { reason: 'low battery' }); } else this._switch('IDLE');
+        } else if (mode === 'CHARGE') {
+            if (this.fault) return; const res = this.resume; this.resume = null;
+            if (res && !this._soft()) this._switch(res[0], res[1]); else this._switch('IDLE');
+        } else if (mode === 'RIGHT') {
+            const res = this.resumeRight; this.resumeRight = null; if (this.fault) return;
+            if (!res || ['IDLE', 'RIGHT', 'FAULT'].includes(res[0])) this._switch('IDLE');
+            else { const kw = Object.assign({}, res[1]); if (res[0] === 'TASK') Object.assign(kw, { resume: true, handback: true }); if (res[0] === 'CHARGE' && kw.reason === undefined) kw.reason = 'after fall'; this._switch(res[0], kw); }
+        } else this._switch('IDLE');
+    }
+
+    // ---- motion helpers
+    cmd(vx, vy, wz) { this.wheelTarget = { vx, vy, wz }; }          // body frame
+    stop() { this.cmd(0, 0, 0); }
+    *wait(sec) { const t0 = this.t; while (this.t - t0 < sec) yield; }
+    /** drive to a point along a planned path (re-planned every second, people's legs are kept out of the map); returns the goal reached, or null (this.abort says why) */
+    *goto(goalFn, opts = {}) {
+        const vmax = opts.vmax || 0.14, timeout = opts.timeout || 120, t0 = this.t; let path = null, replan = -1e9, stuck = 0, lastD = 1e9, lastT = this.t;
+        for (;;) {
+            if (this.t - t0 > timeout) { this.abort = 'timeout'; this.path = null; return null; }
+            const goal = goalFn(); if (!goal) { this.abort = 'no goal'; return null; }
+            const [gx, gy, gth, tol] = goal; const dG = hypot(gx - this.x, gy - this.y);
+            if (this.t - replan > 1.0 || !path) { path = this.world.plan([this.x, this.y], [gx, gy], this.dynZones); replan = this.t; if (!path) { this.abort = 'no path'; this.path = null; return null; } this.path = path; }
+            const endOk = dG < Math.max(tol || 0.07, 0.04);
+            if (endOk) {
+                if (gth === null || gth === undefined || Math.abs(wrap(gth - this.th)) < 0.06) { this.stop(); this.path = null; return goal; }
+                this.cmd(0, 0, clamp(2.2 * wrap(gth - this.th), -1.0, 1.0)); yield; continue;
+            }
+            let k = 1; while (k < path.length - 1 && hypot(path[k][0] - this.x, path[k][1] - this.y) < 0.12) k++;
+            const wp = path[Math.min(k, path.length - 1)], dx = wp[0] - this.x, dy = wp[1] - this.y, d = Math.max(hypot(dx, dy), 1e-6);
+            let dEnd = hypot(path[path.length - 1][0] - this.x, path[path.length - 1][1] - this.y); const v = Math.min(vmax, 0.05 + 0.9 * dEnd);
+            const wx = dx / d * v, wy = dy / d * v, c = Math.cos(this.th), s = Math.sin(this.th);
+            const heading = (gth !== null && gth !== undefined && dEnd < 0.4) ? gth : (opts.faceGoal ? Math.atan2(gy - this.y, gx - this.x) : Math.atan2(dy, dx));
+            this.cmd(c * wx + s * wy, -s * wx + c * wy, clamp(2.2 * wrap(heading - this.th), -1.0, 1.0));
+            if (this.t - lastT > 6) { if (lastD - dG < 0.03 && !this.guard.halted) { this.abort = 'stuck'; this.path = null; return null; } lastD = dG; lastT = this.t; }
+            yield;
+        }
+    }
+    *spin(sec = 7.6) { this._spinning = true; const t0 = this.t; while (this.t - t0 < sec) { this.cmd(0, 0, 2 * PI / sec); yield; } this._spinning = false; this.stop(); }
+    *pullOut() { const prev = this.state; this.state = '离开充电座'; const y1 = this.dockPose[1] - 0.357; while (this.y > y1 + 0.01) { this.cmd(0.067, 0, 0); yield; } this.stop(); this.state = prev; }
+    *dockIn() {
+        // to the spot in front of the dock, then reverse into it
+        this.state = '去充电座'; const fx = this.dockPose[0], fy = this.dockPose[1] - 0.36;
+        const r = yield* this.goto(() => [fx, fy, this.dockPose[2], 0.05], { vmax: 0.14, timeout: 90 });
+        if (!r) return false;
+        this.state = '对接'; const t0 = this.t;
+        while (this.y < this.dockPose[1] - 0.003) { this.cmd(-0.04, 0, clamp(2.2 * wrap(this.dockPose[2] - this.th), -0.3, 0.3)); if (this.t - t0 > 30) return false; yield; }
+        this.x = this.dockPose[0]; this.y = this.dockPose[1]; this.stop(); return true;
+    }
+
+    // ---- the modes
+    *_gen_idle() {
+        this.state = '待命';
+        for (;;) {
+            this.stop(); if (this.state !== '待命') this.state = '待命';
+            if (this.cfg.auto_charge && this.bat.est < this.cfg.soc_soft) { this.resume = null; this.event('待命时电量低，去充电'); this._switch('CHARGE', { reason: 'low battery while idle' }); return; }
+            yield;
+        }
+    }
+    *_gen_fault() { this.state = '求助'; for (;;) { this.stop(); yield; } }
+    *_handbackGen() {
+        this.state = '交接'; yield* this.wait(0.8);
+        if (this.held !== null) { const o = this.world.objects[this.held]; o.status = 'on_floor'; o.x = this.x + 0.2 * Math.cos(this.th); o.y = this.y + 0.2 * Math.sin(this.th); this.held = null; }
+        this.targetObj = null; this._handback = false;
+    }
+    *_gen_task(kw) {
+        if (this.atDock()) yield* this.pullOut();
+        let resume = kw.resume; if (resume === undefined) resume = this._taskStarted || this._looked;
+        if (kw.handback || (kw.handback === undefined && this._handback)) yield* this._handbackGen();
+        this._taskStarted = true;
+        yield* this._run(resume);
+    }
+    /** controller.Agent.run: look round once, then for each thing: go to it, pick it up, take it to the basket, let go */
+    *_run(resume) {
+        const W = this.world, T = this.D.grasp;
+        if (!resume && !this._looked) { this.state = '巡视'; yield* this.wait(0.5); yield* this.spin(); this._looked = true; }
+        this._looked = true; const visited = this._visited = this._visited || [[this.x, this.y]];
+        for (;;) {
+            if (this._soft()) { this.state = '暂停'; this.stop(); return; }
+            const left = W.objects.filter(o => o.status === 'on_floor' && !o.gaveUp);
+            if (!left.length) {
+                // everything it knows of is in the basket: look round the rest of the room once, in case something else is lying about, then go back to the start
+                if (!this._sweep) this._sweep = [[this.x, this.y]];
+                const spot = this._nextLookout(this._sweep, 0.85);
+                if (spot) { this._sweep.push(spot); this.state = '巡视'; const r = yield* this.goto(() => [spot[0], spot[1], null, 0.12], { timeout: 80 }); if (r) yield* this.spin(7.6); continue; }
+                this._sweep = null; this.state = '回位'; const h = [W.home[0], W.home[1] - 0.1, null, 0.12]; yield* this.goto(() => h, { timeout: 60 });
+                this.state = '完成'; this.stop(); return;
+            }
+            const near = o => this.personZones.some(z => hypot(o.x - z[0], o.y - z[1]) < z[2]);
+            const ok = left.filter(o => o.seen && !near(o)); const skipped = left.filter(o => o.seen && near(o));
+            let tgt = null, bd = 1e9; for (const o of ok) { const d = hypot(o.x - this.x, o.y - this.y); if (d < bd) { bd = d; tgt = o; } }
+            if (!tgt) {
+                if (skipped.length && left.every(o => !o.seen || near(o))) { this.zoneSkipT = this.t; this.state = '等待'; yield* this.wait(1.0); continue; }
+                this.state = '导航'; const spot = this._nextLookout(visited); if (!spot) { for (const o of left) o.gaveUp = true; continue; }
+                visited.push(spot); const r = yield* this.goto(() => [spot[0], spot[1], null, 0.12], { timeout: 80 }); if (r) { this.state = '巡视'; yield* this.spin(7.6); } continue;
+            }
+            const ok2 = yield* this._pickAndPlace(tgt, T);
+            if (ok2 === 'fault') { this.state = '求助'; return; }
+        }
+    }
+    /** where to look next: the nearest place that none of the looks so far covers (it does not know where the things are: it only knows what it has not looked at) */
+    _nextLookout(visited, radius = 1.05) {
+        const W = this.world; let best = null, bd = 1e9;
+        for (let x = 0.4; x < W.W - 0.2; x += 0.4) for (let y = 0.4; y < W.H - 0.2; y += 0.4) {
+            if (!W.isFree(x, y)) continue; if (visited.some(v => hypot(v[0] - x, v[1] - y) < radius)) continue;
+            const d = hypot(this.x - x, this.y - y); if (d < bd) { bd = d; best = [x, y]; }
+        }
+        return best;
+    }
+    stance(o) {       // where the robot stands to pick a thing up: 0.24 m from it on the side the robot comes from, with a free spot
+        const W = this.world, a0 = Math.atan2(this.y - o.y, this.x - o.x);
+        for (const da of [0, 0.5, -0.5, 1.0, -1.0, 1.6, -1.6, 2.2, -2.2, PI]) { const a = a0 + da, sx = o.x + 0.24 * Math.cos(a), sy = o.y + 0.24 * Math.sin(a); if (W.isFree(sx, sy)) return [sx, sy, Math.atan2(o.y - sy, o.x - sx)]; }
+        return null;
+    }
+    basketStance() {
+        const W = this.world, b = W.basket, sides = [[0, -1], [-1, 0], [0, 1], [1, 0]];
+        let best = null, bd = 1e9;
+        for (const [sx, sy] of sides) {
+            const x = b.x + sx * (b.sx / 2 + 0.29), y = b.y + sy * (b.sy / 2 + 0.29); if (!W.isFree(x, y)) continue;
+            const d = hypot(x - this.x, y - this.y); if (d < bd) { bd = d; best = [x, y, Math.atan2(b.y - y, b.x - x)]; }
+        }
+        return best;
+    }
+    *_pickAndPlace(o, T) {
+        const W = this.world, rate = T[o.kind] ? T[o.kind].success / T[o.kind].n : 0.85;
+        const st = this.stance(o); if (!st) { o.gaveUp = true; this.log(`${KIND_CN[o.kind]}：没有能站的位置，放弃`); return false; }
+        this.state = '导航'; this.targetObj = o.id; this.log(`前往 ${KIND_CN[o.kind]}`);
+        const r = yield* this.goto(() => [st[0], st[1], st[2], 0.05], { vmax: 0.14, timeout: 100 });
+        if (!r) { o.fails++; if (o.fails >= 3) { o.gaveUp = true; this.log(`${KIND_CN[o.kind]}：到不了，放弃（${this.abort}）`); } return false; }
+        this.state = '抓取'; this._armBusyUntil = this.t + 9.6; this.armBusy = true; yield* this.wait(9.6); this.armBusy = false;
+        if (this.rnd() > rate) { o.fails++; this.log(`${KIND_CN[o.kind]}：抓取时滑脱`); if (o.fails >= 4) { o.gaveUp = true; this.log(`${KIND_CN[o.kind]}：放弃`); } return false; }
+        o.status = 'held'; this.held = o.id; this.log(`夹住了 ${KIND_CN[o.kind]}`);
+        this.state = '搬运'; const bs = this.basketStance(); if (!bs) { this.log('筐前没有位置'); return 'fault'; }
+        const r2 = yield* this.goto(() => [bs[0], bs[1], bs[2], 0.05], { vmax: 0.13, timeout: 120 });
+        if (!r2) { o.status = 'on_floor'; o.x = this.x; o.y = this.y; this.held = null; o.fails++; return false; }
+        this.state = '放置'; this._armBusyUntil = this.t + 8.4; this.armBusy = true; yield* this.wait(8.4); this.armBusy = false;
+        const b = W.basket; o.status = 'in_basket'; o.x = b.x + (this.rnd() - 0.5) * (b.sx - 0.1); o.y = b.y + (this.rnd() - 0.5) * (b.sy - 0.1); this.held = null; this.targetObj = null; this.stats.delivered++; (this.deliveries = this.deliveries || []).push(this.t);
+        this.log(`已放进收纳筐（${this.delivered()}/${W.objects.length}）`); return true;
+    }
+    *_gen_nav(kw) {
+        const explore = !!kw.explore;
+        if (this.atDock()) yield* this.pullOut();
+        if (!this._looked && !explore) { this.state = '巡视'; this.event('第一次导航，先原地环顾建图'); yield* this.wait(0.5); yield* this.spin(); this._looked = true; }
+        this.state = '导航';
+        if (explore) {
+            this.event('自主巡视，只建图不捡东西'); const visited = [[this.x, this.y]];
+            for (;;) {
+                if (this._soft()) { this.stop(); return; }
+                const spot = this._nextLookout(visited); if (!spot) break; visited.push(spot);
+                const r = yield* this.goto(() => [spot[0], spot[1], null, 0.12], { timeout: 80 }); if (r) { this.state = '巡视'; yield* this.spin(7.6); this.state = '导航'; }
+            }
+            this.navExplore = false; this.event('整个房间看过了'); this.navResults.push({ t: this.t, goal: 'explore', result: 'done' }); return;
+        }
+        while (this.navQueue.length) {
+            if (this._soft()) return;
+            const g = this.navQueue[0]; this.event(`去 (${g.x.toFixed(2)}, ${g.y.toFixed(2)})` + (g.th === null || g.th === undefined ? '' : ` 朝向 ${Math.round(g.th * 180 / PI)}°`)); this.state = '导航'; const t0 = this.t;
+            const r = yield* this.goto(() => [g.x, g.y, g.th, g.th === null || g.th === undefined ? g.tol : 0.05], { timeout: this.cfg.nav_timeout });
+            const res = { t: this.t, goal: [g.x, g.y, g.th], result: r ? 'arrived' : this.abort, secs: Math.round((this.t - t0) * 10) / 10 }; this.navResults.push(res); this.stats[r ? 'nav_ok' : 'nav_fail']++;
+            this.event(`${r ? '到了' : '没到：' + this.abort}（${res.secs} 秒）`); this.navQueue.shift();
+        }
+    }
+    *_gen_scan() {
+        if (this.atDock()) yield* this.pullOut();
+        const W = this.world, t0 = this.t; this.scanDone = false; let stops = 0;
+        if (!this._looked) { this.state = '扫描'; yield* this.wait(0.5); yield* this.spin(); this._looked = true; }
+        this.event('开始扫描家里（nbv）'); const visited = [[this.x, this.y]];
+        const cand = []; for (let x = 0.5; x < W.W; x += 0.5) for (let y = 0.5; y < W.H; y += 0.5) if (W.isFree(x, y)) cand.push([x, y]);
+        while (stops < 6) {
+            if (this._soft()) return;
+            this.state = '扫描'; let best = null, bs = -1;
+            for (const c of cand) { const dv = Math.min(...visited.map(v => hypot(v[0] - c[0], v[1] - c[1]))); if (dv > bs && dv > 1.1) { bs = dv; best = c; } }
+            if (!best) break;
+            const r = yield* this.goto(() => [best[0], best[1], null, 0.10], { timeout: 60 }); if (!r) { cand.splice(cand.indexOf(best), 1); continue; }
+            yield* this.spin(); stops++; visited.push([this.x, this.y]);
+        }
+        this.scanDone = true; let seen = 0, tot = 0;
+        for (let x = 0.1; x < W.W; x += 0.1) for (let y = 0.1; y < W.H; y += 0.1) { if (W.clearance(x, y) < 0.0) continue; tot++; if (visited.some(v => hypot(v[0] - x, v[1] - y) < 2.4 && W.sees(v[0], v[1], x, y, 0.3))) seen++; }
+        for (const o of W.objects) if (o.status === 'on_floor' && visited.some(v => hypot(v[0] - o.x, v[1] - o.y) < 2.4 && W.sees(v[0], v[1], o.x, o.y, 0.12))) { o.seen = true; o.lastSeen = this.t; }
+        this.event(`扫描完成：${stops} 个停靠点，${Math.round(this.t - t0)} 秒；家具：${this.placeNames().join('、')}`);
+    }
+    *_gen_fetch(kw) {
+        const o = this.world.objects[kw.k]; if (!o) { this.event('要拿的东西不在记忆里'); return; }
+        if (this.atDock()) yield* this.pullOut();
+        this.event(`去拿 #${o.id}（${KIND_CN[o.kind]}）`);
+        const ok = yield* this._pickAndPlace(o, this.D.grasp); this.event(ok === true ? '拿到并送进了收纳筐' : '没拿成');
+    }
+    *_gen_teleop() {
+        const tc = this.tele, cfg = this.cfg; this.state = '遥控'; this.path = null; tc.vx = tc.vy = tc.wz = 0; this.event('遥控开始' + (this.guardOn ? '（人靠近时安全层仍限速）' : '（安全层关着）'));
+        let stale = true;
+        for (;;) {
+            const live = this.t - tc.t < cfg.deadman; if (live) stale = false; else if (!stale) { stale = true; this.event('指令超时，停车（死人开关）'); }
+            let vx = live ? tc.vx : 0, vy = live ? tc.vy : 0, wz = live ? tc.wz : 0; const sp = hypot(vx, vy), vm = this.D.limits.v_max;
+            if (sp > vm) { vx *= vm / sp; vy *= vm / sp; } wz = clamp(wz, -this.D.limits.w_max, this.D.limits.w_max);
+            this.cmd(vx, vy, wz);
+            yield;
+        }
+    }
+    *_gen_charge(kw) {
+        const b = this.bat; this.event(`去充电（${kw.reason || ''}），电量 ${Math.round(100 * b.est)}%`);
+        if (!this.dockConnected()) {
+            if (this.held !== null) { /* the real robot puts down what it holds before it goes (the job's own safe point does that); here the soft stop already came between two things */ }
+            const ok = yield* this.dockIn(); if (!ok) { this.stats.dock_fail++; this._fault('dock unreachable'); return; }
+        }
+        this.stop(); this.state = '充电'; yield* this.wait(1.0);
+        const soc0 = b.soc; let secs = 0;
+        while (b.soc < this.cfg.soc_full) { let more = false; for (let i = 0; i < 4; i++) { if (!b.chargeStep(5.0)) break; secs += 5; more = true; } if (!more) break; yield; }
+        this.stats.charges++; this.stats.charge_min += secs / 60;
+        this.event(`充电 ${Math.round(100 * soc0)}% → ${Math.round(100 * b.soc)}%，用了 ${Math.round(secs / 60)} 分钟（沙盘里快进，物理时间没走）`); this.warn = null;
+        if (this.resume !== null) yield* this.pullOut();
+    }
+    // ---- being knocked over and getting up: the stages and their length are those of the recorded run (docs/playground.md)
+    push(kind) { if (this.fallT !== null && this.mode === 'RIGHT') return; this.fallT = this.t; this.fallKind = kind; this.fallPhase = 'down'; this.say('系统', `推了一下（${kind}）。看它是不是自己起来。`); }
+    *_gen_right() {
+        this.state = '起身'; this.held !== null && (this._dropHeld());
+        yield* this.wait(2.2); this.event('静止了，姿态：side_r');
+        const tries = this.failRight ? 3 : (this.rnd() < 0.5 ? 1 : 2);
+        for (let n = 1; n <= tries; n++) {
+            this.event(`3 秒后开始起身（第 ${n} 次）`); yield* this.wait(3.0);
+            if (n === tries && !this.failRight) this.fallPhase = 'up'; yield* this.wait(n === tries && !this.failRight ? 11.7 : 9.4);
+            if (!(n === tries && !this.failRight)) this.event(`静止了，姿态：side_l`);
+        }
+        if (this.failRight) { this.stats.right_failed++; this.event('起不来：三次都没成功'); this._fault('fall'); return; }
+        this.fallT = null; this.tilt = 0; this.stats.righted++; this.event('站起来了');
+        this.state = '重新定位'; yield* this.wait(2.5); this.event('重新定位成功（沙盘里用的是假设的结果）'); yield* this.wait(2.2);
+    }
+    _dropHeld() { const o = this.world.objects[this.held]; if (!o) return; o.status = 'on_floor'; o.x = this.x + 0.2 * Math.cos(this.th); o.y = this.y + 0.2 * Math.sin(this.th); this.held = null; }
+}
+XS.Sim = Sim;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ui.js: the page of the playground: the drawing of the room, the buttons, the checks, the replay of recorded runs and the comparison with the real code. */
+(function () {
+'use strict';
+const XS = window.XS, $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
+const hypot = Math.hypot, PI = Math.PI;
+const MODE_CN = { IDLE: '待命', TASK: '收玩具', NAV: '自己走', SCAN: '扫描家里', FETCH: '捡一件', CHARGE: '充电', TELEOP: '被遥控', RIGHT: '爬起来', FAULT: '故障' };
+const ROLE_CN = { owner: '主人', adult: '大人（不认识）', child: '孩子', unknown: '看不清是谁' };
+const CLS_CN = { adult: '大人', child: '小孩', unsure: '拿不准' };
+const app = { D: null, sim: null, speed: 4, paused: false, view: 'sim', tool: 'speaker', role: 'owner', tapes: {}, tape: null, tapeT: 0, tapePlay: true, tapeSpeed: 1, keys: new Set(), utter: [], passed: {}, seed: 4, acc: 0, colors: null, colorsAt: 0, lastHud: 0, teleOn: false, personSel: 'adult_m', replayName: null, say: '' };
+const tests = {};
+
+// ---------------------------------------------------------------------------------------------------------------- loading
+function jsonURL(p) { return fetch(p).then(r => { if (!r.ok) throw new Error(p + ' ' + r.status); return r.json(); }); }
+async function boot() {
+    try { app.D = await jsonURL('data/model.json'); } catch (e) { $('#saybox').textContent = '数据没有加载出来（data/model.json）：' + e.message; return; }
+    buildStatic(); newSim(app.seed); requestAnimationFrame(loop);
+}
+function newSim(seed, soc0) {
+    app.seed = seed; app.script = []; app.sim = new XS.Sim(app.D, { seed, soc0: soc0 === undefined ? 0.9 : soc0 }); app.utter = []; app.sim.guardOn = $('#o-guard').checked; app.sim.failRight = $('#o-failright').checked; app.teleOn = false; app.acc = 0;
+    app.sim.say('系统', '机器人停在充电座上，等你说话。试试：收拾一下玩具。'); setTele(false);
+}
+
+// ---------------------------------------------------------------------------------------------------------------- static parts of the page
+function buildStatic() {
+    const D = app.D, sp = $('#seg-speed');
+    [1, 2, 4, 8, 16, 32].forEach(v => { const b = document.createElement('button'); b.type = 'button'; b.textContent = v + '×'; b.setAttribute('aria-pressed', String(v === app.speed)); b.onclick = () => { app.speed = v; $$('#seg-speed button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); }; sp.appendChild(b); });
+    const sd = $('#sel-seed'); for (let i = 1; i <= 12; i++) { const o = document.createElement('option'); o.value = i; o.textContent = i; if (i === app.seed) o.selected = true; sd.appendChild(o); }
+    sd.onchange = () => { newSim(+sd.value); setView('sim'); };
+    $('#btn-reset').onclick = () => { newSim(app.seed); setView('sim'); };
+    $('#btn-pause').onclick = e => { app.paused = !app.paused; e.target.textContent = app.paused ? '继续' : '暂停'; e.target.setAttribute('aria-pressed', String(app.paused)); };
+    const rs = $('#seg-role'); Object.entries(ROLE_CN).forEach(([k, v]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = v; b.style.fontFamily = 'var(--font)'; b.dataset.role = k; b.setAttribute('aria-pressed', String(k === app.role)); b.onclick = () => { app.role = k; $$('#seg-role button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); }; rs.appendChild(b); });
+    const quick = [['收拾一下玩具', 0], ['把家里扫描一遍', 0], ['去充电', 0], ['停下', 0], ['继续', 0], ['去沙发那边', 1], ['对', 1], ['不是', 1], ['把小球放进筐里', 1], ['小球在哪', 1], ['地上有什么东西', 1], ['现在有谁', 1], ['你在干什么', 1], ['你好', 1], ['你是谁', 1], ['你会什么', 1], ['过来', 1]];
+    const q = $('#quick-say'); quick.forEach(([t]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.textContent = t; b.onclick = () => speak(t); q.appendChild(b); });
+    $('#say-form').onsubmit = e => { e.preventDefault(); const i = $('#say-text'); if (i.value.trim()) { speak(i.value.trim()); i.value = ''; } };
+    const pb = $('#people-btns');
+    [['孩子冲过来（5 岁）', 'kid'], ['大人走过来', 'adult'], ['幼儿在筐边', 'toddler'], ['一家三口', 'family'], ['人都离开', 'leave']].forEach(([t, k]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn' + (k === 'kid' ? ' warn' : ''); b.textContent = t; b.onclick = () => { app.sim.person(k); app.sim.say('系统', { kid: '一个 5 岁的孩子从门口跑过来，停在离机器人很近的地方。', adult: '一个大人走到机器人旁边再离开。', toddler: '一个幼儿爬到收纳筐边玩。', family: '妈妈、8 岁的孩子和幼儿先后进来在房间里走动。', leave: '房间里的人都离开。' }[k]); }; pb.appendChild(b); });
+    const mb = $('#mess-btns');
+    [['推倒（左）', () => app.sim.push('roll_l')], ['推倒（前）', () => app.sim.push('pitch_f')], ['电量调到 15%', () => setSoc(0.15)], ['电量调到 8%（危急）', () => setSoc(0.08)], ['电量调满', () => setSoc(0.95)]].forEach(([t, f]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = t; b.onclick = f; mb.appendChild(b); });
+    $('#o-guard').onchange = e => { app.sim.guardOn = e.target.checked; app.sim.say('系统', '安全层 ' + (e.target.checked ? '开' : '关了：现在它不会因为人靠近而减速、停下（对照用）')); };
+    $('#o-failright').onchange = e => { app.sim.failRight = e.target.checked; };
+    $('#btn-tele').onclick = () => setTele(!app.teleOn);
+    $$('.keys button').forEach(b => { const k = b.dataset.key; const down = e => { e.preventDefault(); app.keys.add(k); }; const up = () => app.keys.delete(k); b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointerleave', up); b.addEventListener('pointercancel', up); });
+    window.addEventListener('keydown', e => { if (/input|select|textarea/i.test(document.activeElement && document.activeElement.tagName)) return; const k = e.key.toLowerCase(); if ('wasdqe'.includes(k) && k.length === 1 && app.view === 'sim') { app.keys.add(k); if (document.activeElement === $('#room')) e.preventDefault(); } });
+    window.addEventListener('keyup', e => app.keys.delete(e.key.toLowerCase()));
+    window.addEventListener('blur', () => app.keys.clear());
+    const st = $('#seg-tool');
+    [['speaker', '我站这里'], ['goto', '让它去这里'], ['person', '放一个人'], ['move', '把它搬到这里']].forEach(([k, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.style.fontFamily = 'var(--font)'; b.dataset.tool = k; b.setAttribute('aria-pressed', String(k === app.tool)); b.onclick = () => { app.tool = k; $$('#seg-tool button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); toolNote(); }; st.appendChild(b); });
+    const ps = $('#sel-person'); D.people.forEach(p => { const o = document.createElement('option'); o.value = p.name; o.textContent = `${p.cn}（${p.h} m）`; ps.appendChild(o); }); ps.onchange = () => { app.personSel = ps.value; }; ps.value = app.personSel; toolNote();
+    $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) showTab(b.dataset.tab); });
+    $('#btn-clear-checks').onclick = () => { app.passed = {}; renderChecks(); };
+    $('#btn-run-compare').onclick = runCompare;
+    const room = $('#room'); room.addEventListener('click', onRoomClick); room.addEventListener('pointerdown', () => room.focus({ preventScroll: true }));
+    $('#legend').innerHTML = '<span style="--c:var(--info)">大人</span><span style="--c:var(--warn)">小孩 / 拿不准（安全层按小孩办）</span><span style="--c:var(--good)">机器人</span><span style="--c:var(--bad)">安全层停住</span><span style="--c:#e8743b">地上的东西（淡的是还没看到）</span>';
+    buildChecks(); buildAbout(); buildTapes();
+    const ts = $('#seg-tspeed'); [1, 2, 4, 8].forEach(v => { const b = document.createElement('button'); b.type = 'button'; b.textContent = v + '×'; b.setAttribute('aria-pressed', String(v === 1)); b.onclick = () => { app.tapeSpeed = v; $$('#seg-tspeed button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); }; ts.appendChild(b); });
+    $('#tape-play').onclick = e => { app.tapePlay = !app.tapePlay; e.target.textContent = app.tapePlay ? '暂停' : '播放'; };
+    $('#tape-back').onclick = () => { setView('sim'); };
+    $('#tape-scrub').oninput = e => { if (app.tape) app.tapeT = (+e.target.value / 100) * app.tape.frames[app.tape.frames.length - 1][0]; };
+}
+function toolNote() {
+    $('#tool-note').textContent = { speaker: '点房间里一处：你站在那里（画面上出现“你”）。然后说“过来”，它会走到离你 1 米处。', goto: '点房间里一处：直接让它自己走过去（相当于导航模式 NAV）。人靠近时安全层照样管着。', person: '点房间里一处：把上面选的人放在那里，他站着看着机器人。', move: '点房间里一处：把机器人搬到那里（它会停在原地）。' }[app.tool];
+    $('#sel-person').style.display = app.tool === 'person' ? '' : 'none';
+}
+function showTab(name) {
+    $$('#tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+    ['play', 'verify', 'replay', 'compare', 'about'].forEach(n => { $('#pane-' + n).hidden = n !== name; });
+    if (name === 'verify') renderChecks();
+}
+function setSoc(v) { const s = app.sim; s.bat.soc = Math.min(Math.max(v - s.bat.bias, 0.02), 1); s.say('系统', `真实电量设成 ${Math.round(s.bat.soc * 100)}%（机器人自己读到的是 ${Math.round(s.bat.est * 100)}%，有偏差）。它读到低于 20% 就会把手里的放好再去充电，低于 10% 马上去。`); }
+function setTele(on) { app.teleOn = on; const b = $('#btn-tele'); b.setAttribute('aria-pressed', String(on)); b.textContent = on ? '遥控 关' : '遥控 开'; if (app.sim) { if (on) { app.sim.teleop(); app.sim.say('系统', '遥控开了：W 前进 S 后退 A 左移 D 右移 Q 左转 E 右转（点一下画面再按）。松手它就停。人靠近时安全层照样限速（在“捣乱”里可以关）。'); } else if (app.sim.mode === 'TELEOP') app.sim.idle(); } }
+function speak(text, role) { speakAs(text, role || app.role, $('#o-raw').checked); }
+function speakAs(text, role, rawFlag) {
+    const s = app.sim; if (app.view !== 'sim') setView('sim');
+    const raw = rawFlag || /小拾|xiaoshi/i.test(text), full = raw ? text : '小拾小拾，' + text;
+    s.say('你', (role === 'owner' ? '' : ROLE_CN[role] + '：') + text + (rawFlag ? '（没喊它）' : ''));
+    const before = s.mode, rec = s.voice.hear(full, role); app.utter.push({ t: s.t, text, full, role, rec, modeBefore: before, raw: rawFlag });
+    if (!rec.reply) s.say('系统', `（没有回应：${rec.action || '没听到唤醒词'}）`);
+}
+/** the commands of a recorded run ("2:/task; 40:/person kid; 60:/battery 0.15; 3:孩子：去充电") done in the sandbox at the same simulated seconds */
+function parseScript(str) { return (str || '').split(';').map(x => x.trim()).filter(Boolean).map(x => { const i = x.indexOf(':'); return [parseFloat(x.slice(0, i)), x.slice(i + 1).trim()]; }).sort((a, b) => a[0] - b[0]); }
+function runCmd(c) {
+    const s = app.sim; s.say('脚本', c); const w = c.split(/\s+/);
+    if (c.startsWith('/')) {
+        const k = w[0].slice(1).toLowerCase(), a = w[1] || '';
+        if (k === 'task') s.startTask(); else if (k === 'scan') s.scanHome(); else if (k === 'charge') s.chargeNow(); else if (k === 'person') s.person(a);
+        else if (k === 'battery') setSoc(parseFloat(a)); else if (k === 'push') s.push({ left: 'roll_l', 右: 'roll_r', right: 'roll_r', fwd: 'pitch_f', back: 'pitch_b' }[a] || 'roll_l');
+        else if (k === 'stop') s.idle();
+        return;
+    }
+    let role = 'owner', text = c; for (const pre of ['孩子：', '孩子:']) if (text.startsWith(pre)) { role = 'child'; text = text.slice(pre.length).trim(); }
+    speakAs(text, role, false);
+}
+function replayInSandbox(tp) {
+    newSim(tp.seed, tp.battery0); app.script = parseScript(tp.do); setView('sim'); $('#viewtag').textContent = `沙盘重演：${tp.title}（同样的剧本，同一个房间布局）`;
+    app.sim.say('系统', `沙盘重演“${tp.title}”：${tp.do.replace(/;/g, '；')}`);
+}
+function onRoomClick(e) {
+    if (app.view !== 'sim') return; const r = e.currentTarget.getBoundingClientRect(), W = 4.24, sc = r.width / W; const x = (e.clientX - r.left) / sc - 0.12, y = (r.bottom - e.clientY) / sc - 0.12; const s = app.sim;
+    if (x < 0.1 || y < 0.1 || x > 3.9 || y > 2.9) return;
+    if (app.tool === 'speaker') { s.speakerAt = [x, y]; s.say('系统', `你站在 (${x.toFixed(1)}, ${y.toFixed(1)}) 了。现在说“过来”。`); }
+    else if (app.tool === 'goto') { s.goTo(x, y); s.say('系统', `让它去 (${x.toFixed(1)}, ${y.toFixed(1)})。`); }
+    else if (app.tool === 'person') { const i = s.people.index(app.personSel); s.people.scripts[i] = new XS.Script([['at', x, y, 0.0], ['face_robot']]); s.say('系统', `${s.people.specs[i].cn}站在 (${x.toFixed(1)}, ${y.toFixed(1)}) 了。`); }
+    else if (app.tool === 'move') { if (s.world.clearance(x, y) > 0.14) { s.x = x; s.y = y; s.vx = s.vy = 0; s.path = null; s.say('系统', '把机器人搬到了新的位置。'); } }
+}
+
+// ---------------------------------------------------------------------------------------------------------------- views: the sandbox or a recorded run
+function setView(v) {
+    app.view = v; $('#viewtag').textContent = v === 'sim' ? '沙盘（行为模型）' : `回放：${app.tape ? app.tape.title : ''}（真实物理仿真录下来的）`; $('#viewtag').style.color = v === 'sim' ? '' : 'var(--accent)';
+    $('#tape-detail').hidden = v !== 'tape'; $$('.tape').forEach(t => t.setAttribute('aria-current', String(v === 'tape' && t.dataset.name === app.replayName)));
+}
+function viewOfSim() {
+    const s = app.sim, W = s.world;
+    return {
+        world: { room: [W.W, W.H], furn: W.furn, boxes: W.boxes, basket: W.basket, dock: s.dockPose, doors: s.D.world.doors }, t: s.t,
+        robot: { x: s.x, y: s.y, th: s.th, tilt: s.tilt, mode: s.mode, state: s.state, held: s.held, charging: s.mode === 'CHARGE' && s.state === '充电', halted: s.guard.halted && s.guardOn, scale: s.guardOn ? s.guard.scale : 1, armOut: ['抓取', '放置'].includes(s.state) },
+        objects: W.objects.map(o => ({ x: o.x, y: o.y, r: o.r, kind: o.kind, status: o.status, seen: o.seen })),
+        people: s.people.state.filter(p => p.inside).map(p => ({ x: p.x, y: p.y, yaw: p.yaw, cls: p.cls, w: p.w, h: p.h, cn: p.cn, sit: p.sit })),
+        tracks: s.tracks().map(k => ({ cls: k.cls, x: k.x, y: k.y, src: k.src, coast: k.coast, dist: k.dist, h: k.h })), path: s.path, trail: s.trail, speaker: s.speakerAt, guardWhy: s.guard.why, fov: true,
+    };
+}
+function viewOfTape(tp, t) {
+    const F = tp.frames; let i = Math.min(Math.max(0, Math.floor(t * tp.hz)), F.length - 2); const a = F[i], b = F[i + 1], k = b[0] > a[0] ? Math.min(Math.max((t - a[0]) / (b[0] - a[0]), 0), 1) : 0, L = (u, v) => u + (v - u) * k;
+    const th = a[3] + ((((b[3] - a[3]) + PI) % (2 * PI) + 2 * PI) % (2 * PI) - PI) * k, W = tp.world, modes = tp.modes, states = tp.states;
+    const objs = []; for (let j = 0; j < W.objects.length; j++) { const o = W.objects[j], z = a[14][3 * j + 2], x = a[14][3 * j], y = a[14][3 * j + 1]; const inB = Math.abs(x - W.basket.x) < W.basket.sx / 2 && Math.abs(y - W.basket.y) < W.basket.sy / 2 && z < 0.12; objs.push({ x, y, r: o.r, kind: o.kind, status: inB ? 'in_basket' : (z > 0.06 ? 'held' : 'on_floor'), seen: true }); }
+    const ppl = []; for (const p of a[15]) { const q = b[15].find(r => r[0] === p[0]); const sp = tp.people[p[0]]; ppl.push({ x: q ? L(p[1], q[1]) : p[1], y: q ? L(p[2], q[2]) : p[2], yaw: p[3], cls: sp.cls, w: sp.w, h: sp.h, cn: sp.cn, sit: p[4] }); }
+    const tracks = a[16].map(r => ({ cls: r[0] === 'a' ? 'adult' : (r[0] === 'c' ? 'child' : 'unsure'), x: r[1], y: r[2], src: r[0] === 'l' ? 'lidar' : 'cam', coast: false, dist: hypot(r[1] - a[1], r[2] - a[2]), h: 1.2 }));
+    const trail = []; for (let j = Math.max(0, i - 400); j <= i; j += 10) trail.push([F[j][1], F[j][2]]);
+    return {
+        world: { room: W.room, furn: W.furniture.map(f => ({ name: f[0], cx: f[1], cy: f[2], sx: f[3], sy: f[4], h: f[5], rgba: f[6] })), boxes: W.boxes.map(b => ({ cx: b[0], cy: b[1], sx: b[2], sy: b[3] })), basket: W.basket, dock: W.dock, doors: app.D.world.doors }, t,
+        robot: { x: L(a[1], b[1]), y: L(a[2], b[2]), th, tilt: a[8], mode: modes[a[4]], state: states[a[5]], held: a[11] ? 1 : null, charging: states[a[5]] === '充电', halted: !!a[9], scale: a[10], armOut: ['抓取', '放置'].includes(states[a[5]]) },
+        objects: objs, people: ppl, tracks, path: null, trail, speaker: null, guardWhy: a[17], fov: true, frame: a,
+    };
+}
+
+// ---------------------------------------------------------------------------------------------------------------- drawing
+function colors() {
+    const now = performance.now(); if (app.colors && now - app.colorsAt < 1000) return app.colors; const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+    app.colorsAt = now; return app.colors = { floor: g('--floor'), grid: g('--grid'), wall: g('--wall'), ink: g('--ink'), muted: g('--muted'), accent: g('--accent'), good: g('--good'), warn: g('--warn'), bad: g('--bad'), info: g('--info'), panel: g('--panel') };
+}
+const MODE_COL = { IDLE: '#7a8b86', TASK: 'accent', NAV: 'info', SCAN: '#8a63c6', FETCH: 'accent', TELEOP: '#c2409a', CHARGE: 'good', RIGHT: 'warn', FAULT: 'bad' };
+function rgba(s, a = 1) { const v = s.split(' ').map(Number); return `rgba(${Math.round(v[0] * 255)},${Math.round(v[1] * 255)},${Math.round(v[2] * 255)},${a})`; }
+const KIND_COL = { ball: '#e8743b', cube: '#3a74d6', car: '#d64a4a', banana: '#e6c52e', lbrick: '#3fa66a', rock: '#8a8f8c', sock: '#8a63c6', plush: '#f08fb0' };
+function draw(v) {
+    const cv = $('#room'), box = cv.parentElement, dpr = window.devicePixelRatio || 1, cw = Math.round(box.clientWidth * dpr), ch = Math.round(box.clientHeight * dpr);
+    if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+    const ctx = cv.getContext('2d'), C = colors(), sc = cw / 4.24, X = x => (x + 0.12) * sc, Y = y => ch - (y + 0.12) * sc, Lm = m => m * sc, Wd = v.world;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cw, ch); ctx.fillStyle = C.floor; ctx.fillRect(0, 0, cw, ch);
+    ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.beginPath(); for (let x = 0; x <= 4.001; x += 0.5) { ctx.moveTo(X(x), Y(0)); ctx.lineTo(X(x), Y(3)); } for (let y = 0; y <= 3.001; y += 0.5) { ctx.moveTo(X(0), Y(y)); ctx.lineTo(X(4), Y(y)); } ctx.stroke();
+    ctx.strokeStyle = C.wall; ctx.lineWidth = Math.max(2, sc * 0.03); ctx.strokeRect(X(0), Y(3), Lm(4), Lm(3));
+    const txt = (s, x, y, size, col, al = 'center') => { ctx.font = `${Math.max(9, size * dpr)}px "Noto Sans SC", sans-serif`; ctx.fillStyle = col; ctx.textAlign = al; ctx.textBaseline = 'middle'; ctx.fillText(s, x, y); };
+    for (const d of Wd.doors) { ctx.strokeStyle = C.floor; ctx.lineWidth = Math.max(4, sc * 0.05); ctx.beginPath(); const horiz = d[1] > 2.5; if (horiz) { ctx.moveTo(X(d[0] - 0.25), Y(3)); ctx.lineTo(X(d[0] + 0.25), Y(3)); } else { ctx.moveTo(X(d[0] < 1 ? 0 : 4), Y(d[1] - 0.25)); ctx.lineTo(X(d[0] < 1 ? 0 : 4), Y(d[1] + 0.25)); } ctx.stroke(); }
+    const FN = { sofa: '沙发', table: '桌子', shelf: '架子', plant: '盆栽', chair: '椅子', carton: '箱子' };
+    for (const f of Wd.furn.concat(Wd.boxes)) {
+        ctx.fillStyle = rgba(f.rgba || '0.79 0.64 0.45 1', 0.85); ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1;
+        if (f.sy === null || f.sy === undefined) { ctx.beginPath(); ctx.arc(X(f.cx), Y(f.cy), Lm(f.sx), 0, 2 * PI); ctx.fill(); ctx.stroke(); } else { ctx.fillRect(X(f.cx - f.sx / 2), Y(f.cy + f.sy / 2), Lm(f.sx), Lm(f.sy)); ctx.strokeRect(X(f.cx - f.sx / 2), Y(f.cy + f.sy / 2), Lm(f.sx), Lm(f.sy)); }
+        txt(FN[f.name] || '箱子', X(f.cx), Y(f.cy), 11, 'rgba(40,30,20,.85)');
+    }
+    const dk = Wd.dock; ctx.fillStyle = v.robot.charging ? C.good : C.muted; ctx.fillRect(X(dk[0] - 0.12), Y(3.0), Lm(0.24), Lm(0.04)); txt('充电座', X(dk[0] + 0.32), Y(2.95), 10, C.muted);
+    const b = Wd.basket; ctx.fillStyle = 'rgba(150,105,60,.55)'; ctx.strokeStyle = 'rgba(100,70,40,.9)'; ctx.lineWidth = 2; ctx.fillRect(X(b.x - b.sx / 2), Y(b.y + b.sy / 2), Lm(b.sx), Lm(b.sy)); ctx.strokeRect(X(b.x - b.sx / 2), Y(b.y + b.sy / 2), Lm(b.sx), Lm(b.sy)); txt('收纳筐', X(b.x), Y(b.y - b.sy / 2 - 0.09), 10, C.muted);
+    // trail and path
+    if ($('#o-path').checked) {
+        if (v.trail && v.trail.length > 1) { ctx.strokeStyle = C.accent; ctx.globalAlpha = 0.25; ctx.lineWidth = 2; ctx.beginPath(); v.trail.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1]))); ctx.stroke(); ctx.globalAlpha = 1; }
+        if (v.path && v.path.length > 1) { ctx.strokeStyle = C.accent; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.beginPath(); v.path.forEach((p, i) => i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1]))); ctx.stroke(); ctx.setLineDash([]); }
+    }
+    // things on the floor
+    let nb = 0; for (const o of v.objects) {
+        if (o.status === 'held') continue; let x = o.x, y = o.y, k = 1; if (o.status === 'in_basket') { k = 0.7; x = b.x - b.sx / 2 + 0.06 + (nb % 5) * 0.055; y = b.y + (nb < 5 ? 0 : 0.05); nb++; }
+        drawObj(ctx, o.kind, X(x), Y(y), Math.max(o.r, 0.04) * sc * k, KIND_COL[o.kind] || '#999', o.seen || o.status === 'in_basket' ? 1 : 0.4, !o.seen && o.status !== 'in_basket');
+    }
+    const R = v.robot, rr = 0.105;
+    // guard rings and what the robot sees of the people
+    const K = app.D.guard;
+    if ($('#o-rings').checked) for (const t of v.tracks) { const kid = t.cls !== 'adult', base = K.robot_r + K.person_r; ctx.lineWidth = 1; ctx.globalAlpha = 0.7; ctx.setLineDash([2, 4]); ctx.strokeStyle = C.warn; ctx.beginPath(); ctx.arc(X(t.x), Y(t.y), Lm(base + (kid ? K.slow_child : K.slow)), 0, 2 * PI); ctx.stroke(); ctx.setLineDash([6, 3]); ctx.strokeStyle = C.bad; ctx.beginPath(); ctx.arc(X(t.x), Y(t.y), Lm(base + (kid ? K.halt_child : K.halt)), 0, 2 * PI); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; }
+    if (v.fov && $('#o-fov').checked && R.mode !== 'RIGHT') { ctx.fillStyle = C.accent; ctx.globalAlpha = 0.07; ctx.beginPath(); ctx.moveTo(X(R.x), Y(R.y)); ctx.arc(X(R.x), Y(R.y), Lm(2.4), -(R.th + 35 * PI / 180), -(R.th - 35 * PI / 180)); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1; }
+    // people (the truth)
+    for (const p of v.people) {
+        const kid = p.cls === 'child', col = kid ? C.warn : C.info, rad = Math.max(p.w / 2, 0.12);
+        ctx.fillStyle = col; ctx.globalAlpha = 0.85; ctx.beginPath(); ctx.arc(X(p.x), Y(p.y), Lm(rad), 0, 2 * PI); ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(p.x), Y(p.y)); ctx.lineTo(X(p.x + Math.cos(p.yaw) * rad), Y(p.y + Math.sin(p.yaw) * rad)); ctx.stroke();
+        txt(`${p.cn} ${p.h.toFixed(2)} m`, X(p.x), Y(p.y) - Lm(rad) - 9 * dpr, 10.5, C.ink);
+    }
+    if ($('#o-truth').checked) for (const t of v.tracks) {
+        ctx.lineWidth = 2; const col = t.src === 'lidar' ? C.muted : (t.cls === 'adult' ? C.info : C.warn); ctx.strokeStyle = col; ctx.setLineDash(t.src === 'lidar' ? [2, 3] : (t.cls === 'unsure' ? [5, 3] : [])); ctx.beginPath(); ctx.arc(X(t.x), Y(t.y), Lm(0.24), 0, 2 * PI); ctx.stroke(); ctx.setLineDash([]);
+        txt(t.src === 'lidar' ? '雷达：有东西在动' : '看到：' + CLS_CN[t.cls], X(t.x), Y(t.y) + Lm(0.24) + 9 * dpr, 10.5, col);
+    }
+    // the robot
+    const mc = MODE_COL[R.mode] || 'accent', col = mc === 'accent' ? C.accent : (C[mc] || mc), pulse = 0.5 + 0.5 * Math.sin(performance.now() / 160);
+    if (R.halted) { ctx.strokeStyle = C.bad; ctx.lineWidth = 3; ctx.globalAlpha = 0.5 + 0.5 * pulse; ctx.beginPath(); ctx.arc(X(R.x), Y(R.y), Lm(rr + 0.07), 0, 2 * PI); ctx.stroke(); ctx.globalAlpha = 1; }
+    if (R.charging) { ctx.strokeStyle = C.good; ctx.lineWidth = 3; ctx.globalAlpha = 0.4 + 0.5 * pulse; ctx.beginPath(); ctx.arc(X(R.x), Y(R.y), Lm(rr + 0.06), 0, 2 * PI); ctx.stroke(); ctx.globalAlpha = 1; }
+    if (R.tilt > 20) {
+        ctx.save(); ctx.translate(X(R.x), Y(R.y)); ctx.rotate(-R.th); ctx.fillStyle = col; ctx.strokeStyle = C.bad; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, 0, Lm(rr * 1.7), Lm(rr * 0.8), 0, 0, 2 * PI); ctx.fill(); ctx.stroke(); ctx.restore(); txt('倒了', X(R.x), Y(R.y) - Lm(0.2), 11, C.bad);
+    } else {
+        ctx.fillStyle = col; ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X(R.x), Y(R.y), Lm(rr), 0, 2 * PI); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(2, sc * 0.02); ctx.beginPath(); ctx.moveTo(X(R.x), Y(R.y)); ctx.lineTo(X(R.x + Math.cos(R.th) * rr * 1.25), Y(R.y + Math.sin(R.th) * rr * 1.25)); ctx.stroke();
+        if (R.armOut) { ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = Math.max(3, sc * 0.03); ctx.beginPath(); ctx.moveTo(X(R.x + Math.cos(R.th) * rr), Y(R.y + Math.sin(R.th) * rr)); ctx.lineTo(X(R.x + Math.cos(R.th) * (rr + 0.16)), Y(R.y + Math.sin(R.th) * (rr + 0.16))); ctx.stroke(); }
+    }
+    if (R.held !== null && R.held !== undefined) { const o = v.objects.find((q, i) => i === R.held) || v.objects.find(q => q.status === 'held'); if (o) drawObj(ctx, o.kind, X(R.x + Math.cos(R.th) * (rr + 0.12)), Y(R.y + Math.sin(R.th) * (rr + 0.12)), Math.max(o.r, 0.04) * sc, KIND_COL[o.kind] || '#999', 1, false); }
+    txt(`${MODE_CN[R.mode] || R.mode}${R.state && R.state !== MODE_CN[R.mode] ? '·' + R.state : ''}`, X(R.x), Y(R.y) + Lm(rr) + 10 * dpr, 10.5, C.ink);
+    if (v.speaker) { ctx.fillStyle = C.info; ctx.beginPath(); ctx.moveTo(X(v.speaker[0]), Y(v.speaker[1]) - 9 * dpr); ctx.lineTo(X(v.speaker[0]) + 7 * dpr, Y(v.speaker[1])); ctx.lineTo(X(v.speaker[0]), Y(v.speaker[1]) + 9 * dpr); ctx.lineTo(X(v.speaker[0]) - 7 * dpr, Y(v.speaker[1])); ctx.closePath(); ctx.fill(); txt('你', X(v.speaker[0]), Y(v.speaker[1]) - 16 * dpr, 11, C.info); }
+}
+function drawObj(ctx, kind, x, y, r, col, alpha, dashed) {
+    ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = col; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 1;
+    if (kind === 'ball') { ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * PI); ctx.fill(); ctx.stroke(); }
+    else if (kind === 'cube') { ctx.fillRect(x - r, y - r, 2 * r, 2 * r); ctx.strokeRect(x - r, y - r, 2 * r, 2 * r); }
+    else if (kind === 'car') { ctx.fillRect(x - r * 1.3, y - r * 0.7, r * 2.6, r * 1.4); ctx.strokeRect(x - r * 1.3, y - r * 0.7, r * 2.6, r * 1.4); ctx.fillStyle = '#222'; ctx.fillRect(x - r, y - r * 0.9, r * 0.5, r * 0.3); ctx.fillRect(x + r * 0.5, y - r * 0.9, r * 0.5, r * 0.3); }
+    else if (kind === 'banana') { ctx.strokeStyle = col; ctx.lineWidth = Math.max(3, r * 0.6); ctx.beginPath(); ctx.arc(x, y + r * 0.5, r * 1.1, PI * 1.15, PI * 1.85); ctx.stroke(); }
+    else if (kind === 'lbrick') { ctx.beginPath(); ctx.moveTo(x - r, y - r); ctx.lineTo(x - r * 0.1, y - r); ctx.lineTo(x - r * 0.1, y + r * 0.1); ctx.lineTo(x + r, y + r * 0.1); ctx.lineTo(x + r, y + r); ctx.lineTo(x - r, y + r); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    else if (kind === 'rock') { ctx.beginPath(); for (let i = 0; i < 7; i++) { const a = i / 7 * 2 * PI, rr = r * (0.8 + 0.25 * ((i * 37) % 5) / 5); i ? ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr) : ctx.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    else if (kind === 'sock') { ctx.beginPath(); ctx.moveTo(x - r * 0.5, y - r); ctx.lineTo(x + r * 0.5, y - r); ctx.lineTo(x + r * 0.5, y + r * 0.2); ctx.lineTo(x + r * 1.2, y + r); ctx.lineTo(x - r * 0.5, y + r); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+    else { ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * PI); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(x - r * 0.7, y - r * 0.8, r * 0.38, 0, 2 * PI); ctx.arc(x + r * 0.7, y - r * 0.8, r * 0.38, 0, 2 * PI); ctx.fill(); }
+    if (dashed) { ctx.setLineDash([3, 3]); ctx.strokeStyle = colors().muted; ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, 2 * PI); ctx.stroke(); }
+    ctx.restore();
+}
+
+// ---------------------------------------------------------------------------------------------------------------- the readout
+const fmtT = t => t < 90 ? `${t.toFixed(0)} s` : `${Math.floor(t / 60)} 分 ${Math.round(t % 60)} 秒`;
+function chip(cls, html) { return `<span class="chip ${cls || ''}">${html}</span>`; }
+function hudSim() {
+    const s = app.sim, g = s.guard, soc = s.bat.est, tr = Math.round(s.bat.soc * 100), n = s.world.objects.length; let h = '';
+    h += chip(s.mode === 'FAULT' ? 'bad' : (s.mode === 'IDLE' ? '' : 'info'), `模式 <b>${s.mode}</b> ${MODE_CN[s.mode] || ''}${s.state && s.state !== MODE_CN[s.mode] ? '· ' + s.state : ''}`);
+    h += chip(soc < 0.1 ? 'bad' : (soc < 0.2 ? 'warn' : ''), `电量读数 <b>${Math.round(soc * 100)}%</b><span class="meter ${soc < 0.1 ? 'crit' : (soc < 0.2 ? 'low' : '')}"><i style="width:${Math.round(soc * 100)}%"></i></span><span class="note">真 ${tr}%</span>`);
+    h += chip(s.delivered() === n ? 'good' : '', `送进筐里 <b>${s.delivered()}/${n}</b>`);
+    if (!s.guardOn) h += chip('bad', '安全层 <b>关</b>'); else if (g.halted) h += chip('bad', `安全层 <b>停住</b> <span class="note">${g.why}</span>`); else if (g.scale < 0.999) h += chip('warn', `安全层 <b>减速到 ${Math.round(g.scale * 100)}%</b>`); else h += chip('good', '安全层 <b>正常</b>');
+    const seen = s.tracks().length, real = s.people.state.filter(p => p.inside).length; if (real || seen) h += chip('', `人：看到 <b>${seen}</b> / 在场 <b>${real}</b>`);
+    if (s.fault) h += chip('bad', `故障：${s.fault}`);
+    $('#hud').innerHTML = h; $('#clock').textContent = `${fmtT(s.t)} · ${app.speed}×`;
+    const last = s.chat[s.chat.length - 1]; $('#saybox').textContent = last ? `${last.who}：${last.text}` : '';
+}
+function hudTape(v) {
+    const a = v.frame, tp = app.tape; let h = '';
+    h += chip('info', `模式 <b>${v.robot.mode}</b> ${MODE_CN[v.robot.mode] || ''}· ${v.robot.state}`);
+    h += chip(a[7] < 0.1 ? 'bad' : (a[7] < 0.2 ? 'warn' : ''), `电量读数 <b>${Math.round(a[7] * 100)}%</b><span class="meter ${a[7] < 0.1 ? 'crit' : (a[7] < 0.2 ? 'low' : '')}"><i style="width:${Math.round(a[7] * 100)}%"></i></span><span class="note">真 ${Math.round(a[6] * 100)}%</span>`);
+    h += chip(a[12] === tp.world.objects.length ? 'good' : '', `送进筐里 <b>${a[12]}/${tp.world.objects.length}</b>`);
+    h += a[9] ? chip('bad', `安全层 <b>停住</b> <span class="note">${a[17]}</span>`) : (a[10] < 0.999 ? chip('warn', `安全层 <b>减速到 ${Math.round(a[10] * 100)}%</b>`) : chip('good', '安全层 <b>正常</b>'));
+    h += chip('', `人：看到 <b>${a[16].length}</b> / 在场 <b>${a[15].length}</b>`);
+    $('#hud').innerHTML = h; $('#clock').textContent = `${fmtT(v.t)} / ${fmtT(tp.frames[tp.frames.length - 1][0])}`;
+    const say = tp.say.filter(x => x[0] <= v.t && x[1] !== '脚本').slice(-1)[0], ev = tp.events.filter(x => x[0] <= v.t).slice(-1)[0]; $('#saybox').textContent = say && (!ev || say[0] >= ev[0]) ? `${say[1]}：${say[2]}` : (ev ? `${ev[2]}` : '');
+}
+function renderPanels() {
+    const s = app.sim; if (app.view !== 'sim') return;
+    const chat = $('#chat'), top0 = chat.scrollTop, atEnd = chat.scrollTop + chat.clientHeight >= chat.scrollHeight - 30; chat.innerHTML = s.chat.slice(-60).map(m => `<div><span class="t">${m.t.toFixed(0)}s</span><span class="w ${m.who === '机器人' ? 'r' : (m.who === '你' ? 'y' : 's')}">${m.who}</span><span>${esc(m.text)}</span></div>`).join(''); chat.scrollTop = atEnd ? chat.scrollHeight : top0;
+    $('#evlog').innerHTML = s.logLines.slice(-14).reverse().map(l => `<div>${l[0].toFixed(0)}s ${esc(l[1])}</div>`).join('');
+    const truth = s.people.state.filter(p => p.inside), seen = s.tracks();
+    $('#peopletable').innerHTML = (truth.length || seen.length) ? `<tr><th>真正在房间里</th><th class="num">离机器人</th><th>机器人看到了吗</th></tr>` + truth.map(p => { const d = hypot(p.x - s.x, p.y - s.y), k = seen.find(t => t.truth === p.i); return `<tr><td>${p.cn} ${p.h.toFixed(2)} m</td><td class="num">${d.toFixed(1)} m</td><td>${k ? (k.src === 'lidar' ? '雷达看到有东西在动（拿不准，按小孩办）' : `看到了，判成<b>${CLS_CN[k.cls]}</b>`) : '没看到（不在相机视野里，或还不到 0.4 秒）'}</td></tr>`; }).join('') : '<tr><td class="note">房间里现在没有人。点上面“让人走进来”。</td></tr>';
+    const mg = s.people.minGap.map((g, i) => g < 9 ? `${s.people.specs[i].cn} ${Math.max(g, 0).toFixed(2)} m` : null).filter(Boolean);
+    $('#people-now').textContent = mg.length ? `离机器人最近（表面到表面，从开始到现在）：${mg.join('；')}；碰到人 ${s.stats.contacts} 次` : '';
+}
+const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+// ---------------------------------------------------------------------------------------------------------------- the checks
+const CHECKS = [
+    { id: 'tidy', title: '收玩具：5 件都送进筐里', how: '点“收拾一下玩具”，把速度调到 8×，等它做完。', expect: '它从充电座出来，先转一圈看，再一件件找、夹、搬到收纳筐、放下；“送进筐里”涨到 5/5，最后回去充电。', real: ['B1', 'A2'], test: a => a.sim.delivered() === a.sim.world.objects.length },
+    { id: 'child_denied', title: '孩子不能让它去充电', how: '“谁在说”选“孩子”，点“去充电”。', expect: '它回“这个要大人来说哦”，不动。', real: ['F1', 'F3'], test: a => a.utter.some(u => u.role === 'child' && u.rec.intent === 'charge' && u.rec.action === 'denied') },
+    { id: 'child_tidy', title: '孩子可以让它收玩具', how: '“谁在说”选“孩子”，说“收拾一下玩具”。', expect: '它回“好的！我去收玩具啦”（对孩子的回答语气更短），开始收。', real: ['F1'], test: a => a.utter.some(u => u.role === 'child' && u.rec.intent === 'tidy' && u.rec.action === 'tidy') },
+    { id: 'no_wake', title: '没喊它的话，它不动', how: '勾上“不喊小拾小拾”，说“去充电”或“收拾一下玩具”。', expect: '没有回应，也不动（它只听喊了“小拾小拾”以后的话）。', real: ['F1'], test: a => a.utter.some(u => u.rec.action === 'ignored: no wake word' && /充电|收拾|扫描/.test(u.text)) },
+    { id: 'stop', title: '“停下”随时有效，不用喊它', how: '先让它干活，再勾上“不喊小拾小拾”，说“停下”。', expect: '马上回“好的，我停下来了”，模式回到待命。', real: ['F1', 'F5'], test: a => a.utter.some(u => u.raw && u.rec.intent === 'stop' && u.rec.action === 'stop' && ['TASK', 'NAV', 'SCAN', 'CHARGE', 'FETCH'].includes(u.modeBefore)) },
+    { id: 'confirm', title: '拿不准就先问，答“对”才动', how: '说“去沙发那边”，它问回来后再说“对”。（还没扫描过家里，它会说不知道沙发在哪）', expect: '先问“你是要我去沙发吗？”；说“对”之后才行动；说“不是”就取消。', real: ['F3'], test: a => a.utter.some(u => u.rec.via === 'confirmed') && a.utter.some(u => u.rec.action === 'confirm') },
+    { id: 'scan_go', title: '扫描之后知道沙发在哪，能自己走过去', how: '说“把家里扫描一遍”（调到 8×），完了再说“去沙发那边”，再说“对”。', expect: '扫描结束日志里写出家具名；之后“去沙发那边”确认后它走到沙发旁 0.5 米处。', real: ['D1', 'C6'], test: a => a.sim.scanDone && a.sim.navResults.some(r => r.result === 'arrived') && a.utter.some(u => u.rec.action === 'go_to') },
+    { id: 'kid_halt', title: '孩子冲过来，安全层停住，没碰到', how: '让它收玩具，点“孩子冲过来”。', expect: '“安全层”变红“停住”，日志写“有人在附近”；孩子走开后它接着做；整个过程碰到人 0 次（孩子走出房间后页面才打勾）。', real: ['E3', 'E1'], test: a => a.sim.guard.stats.halts >= 1 && a.sim.stats.contacts === 0 && a.sim.people.state.some((p, i) => p.cls === 'child' && a.sim.people.minGap[i] < 9) && !a.sim.people.state.some(p => p.inside) },
+    { id: 'guard_off', title: '对照：关掉安全层，孩子冲过来', how: '取消勾选“安全层开着”，让它收玩具，点“孩子冲过来”。', expect: '它不再因为孩子停下或减速：日志里没有“有人在附近”，照常往前开；“离人最近”那一行能看到孩子凑到多近。说明刚才的停是安全层做的。', real: ['E3'], test: a => !a.sim.guardOn && a.sim.guard.stats.halts === 0 && a.sim.people.minGap.some((g, i) => a.sim.people.specs[i].cls === 'child' && g < 0.6) && a.sim.mode !== 'IDLE' },
+    { id: 'low_soft', title: '电量低：放好手里的，去充电，回来接着干', how: '让它收玩具，点“电量调到 15%”（8×）。', expect: '它不丢下手里的东西：先放进筐，日志“电量低，停在两件事之间去充电”→ CHARGE → 充好电回到收玩具。', real: ['C4', 'C3'], test: a => a.sim.events.some(e => /停在两件事之间去充电/.test(e[2])) && a.sim.events.some(e => /→ TASK/.test(e[2]) && a.sim.events.some(f => /→ CHARGE/.test(f[2]) && f[0] < e[0])) && a.sim.stats.charges >= 1 },
+    { id: 'low_crit', title: '电量危急（低于 10%）：马上去充', how: '让它收玩具，点“电量调到 8%（危急）”。', expect: '不等放好手里的，日志“低于紧急线，放下手里的事去充电”。', real: ['C4'], test: a => a.sim.events.some(e => /低于紧急线/.test(e[2])) },
+    { id: 'fall', title: '被推倒，自己起来，接着干', how: '让它收玩具，点“推倒（左）”。', expect: '日志“摔倒了”→ RIGHT（爬起来，约半分钟）→ 回到收玩具；手里的东西放回地上，重新找。', real: ['C1', 'C2'], test: a => a.sim.stats.righted >= 1 && a.sim.mode !== 'RIGHT' },
+    { id: 'teleop', title: '遥控：松手就停，人靠近安全层仍管着', how: '点“遥控 开”，点一下画面，按住 W，再松手。', expect: '它跟着动；松手 0.5 秒内停，日志“指令超时，停车（死人开关）”。', real: ['C5'], test: a => a.sim.events.some(e => /死人开关/.test(e[2])) },
+    { id: 'who', title: '问“现在有谁”，说得出大人还是小孩、多远', how: '点“一家三口”或“孩子冲过来”，等人进了相机视野，说“现在有谁”。', expect: '“我看到：一个小孩，约 1.1 米高，在正前方 1.2 米…”', real: ['E1', 'F4'], test: a => a.utter.some(u => u.rec.intent === 'who_here' && /我看到/.test(u.rec.reply || '')) },
+    { id: 'come', title: '“过来”：走到你面前 1 米', how: '“点画面”选“我站这里”，点房间里一处，再说“过来”。', expect: '回“好的，我过来”，它走到离你 1 米处，面朝你。', real: ['F4'], test: a => a.utter.some(u => u.rec.intent === 'come_here' && u.rec.reply === '好的，我过来') },
+];
+function buildChecks() { $('#verify-count').textContent = `0/${CHECKS.length}`; renderChecks(); }
+function realChips(ids) {
+    const acc = app.D.accept && app.D.accept.items || {}; return ids.map(id => { const r = acc[id]; if (!r) return `<span class="chip">${id}</span>`; const ok = r.verdict === 'PASS'; return `<span class="chip ${ok ? 'good' : 'warn'}" title="${esc(r.title)}${r.accepted ? '：' + esc(r.accepted) : ''}">真实验收 ${id} <b>${ok ? '通过' : (r.accepted ? '未通过，已接受' : '未通过')}</b></span>`; }).join('');
+}
+function renderChecks() {
+    const el = $('#checks'); if (!el) return;
+    el.innerHTML = CHECKS.map(c => {
+        const ids = c.real, accl = ids.map(id => (app.D.accept.items || {})[id]).filter(Boolean)[0]; const lines = accl ? accl.lines.slice(0, 2).map(l => `${esc(l.label)} ${esc(l.measured)}（要求 ${esc(l.need)}）`).join('；') : '';
+        return `<div class="chk ${app.passed[c.id] ? 'ok' : ''}"><div class="mark">${app.passed[c.id] ? '✓' : ''}</div><div><h4>${c.title}</h4><p><b>怎么做：</b>${c.how}</p><p><b>该看到：</b>${c.expect}</p></div><div class="real">${realChips(ids)}<span class="note">${esc(lines)}</span></div></div>`;
+    }).join('');
+    const n = CHECKS.filter(c => app.passed[c.id]).length; $('#verify-count').textContent = `${n}/${CHECKS.length}`; $('#verify-bar').style.width = (100 * n / CHECKS.length) + '%';
+}
+function runChecks() {
+    if (app.view !== 'sim') return; let changed = false;
+    for (const c of CHECKS) if (!app.passed[c.id]) { let ok = false; try { ok = !!c.test(app); } catch (e) { ok = false; } if (ok) { app.passed[c.id] = true; changed = true; app.sim.say('系统', `✓ 验证通过：${c.title}`); } }
+    if (changed) renderChecks();
+}
+
+// ---------------------------------------------------------------------------------------------------------------- recorded runs
+const TAPE_LIST = [['tidy', '收拾玩具'], ['kid', '孩子冲过来'], ['lowbat', '电量低'], ['fall', '被推倒'], ['family', '一家人在家'], ['scan', '扫描家里'], ['child_denied', '孩子要它去充电']];
+function buildTapes() {
+    $('#tapes').innerHTML = TAPE_LIST.map(([n, t]) => `<div class="tape" data-name="${n}" aria-current="false"><h4>${t}</h4><p class="note" id="tape-about-${n}">真实仿真录像</p><div class="row"><button class="btn primary small" data-play="${n}" type="button">放这一段（真实仿真）</button><button class="btn small" data-redo="${n}" type="button">用沙盘重演同样的剧本</button></div><span class="note" id="tape-meta-${n}"></span></div>`).join('');
+    $('#tapes').addEventListener('click', async e => { const b = e.target.closest('button[data-play]'), r = e.target.closest('button[data-redo]'); if (b) playTape(b.dataset.play); if (r) { const tp = await fetchTape(r.dataset.redo); if (tp) replayInSandbox(tp); } });
+    TAPE_LIST.forEach(([n]) => fetchTape(n).then(tp => { if (tp) { $('#tape-about-' + n).textContent = tp.about; $('#tape-meta-' + n).textContent = `${fmtT(tp.frames[tp.frames.length - 1][0])} · 种子 ${tp.seed} · 录的时候真实机器人要 ${fmtT(tp.result.wall_s)} 的电脑时间`; } }));
+}
+async function fetchTape(n) { if (app.tapes[n]) return app.tapes[n]; try { const tp = await jsonURL(`tapes/${n}.json`); app.tapes[n] = tp; return tp; } catch (e) { const m = $('#tape-meta-' + n); if (m) m.textContent = '（这一段没有加载出来）'; return null; } }
+async function playTape(n) {
+    const tp = await fetchTape(n); if (!tp) return; app.tape = tp; app.replayName = n; app.tapeT = 0; app.tapePlay = true; $('#tape-play').textContent = '暂停'; setView('tape');
+    const T = tp.frames[tp.frames.length - 1][0]; $('#tape-scrub').max = 100; $('#tape-scrub').value = 0;
+    const L = [].concat(tp.events.map(e => [e[0], `[${e[1]}] ${e[2]}`])).concat(tp.say.filter(x => x[1] === '你' || x[1] === '机器人').map(x => [x[0], `${x[1]}：${x[2]}`])).sort((a, b) => a[0] - b[0]);
+    $('#tape-events').innerHTML = L.map(l => `<div data-t="${l[0]}">${l[0].toFixed(0)}s ${esc(l[1])}</div>`).join('');
+    const room = $('#room'); room.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+// ---------------------------------------------------------------------------------------------------------------- compare with the real code
+function runCompare() {
+    const body = $('#cmp-body'); body.innerHTML = '<p class="note">正在算…</p>';
+    setTimeout(() => {
+        try { body.innerHTML = compareHTML(); } catch (e) { body.innerHTML = `<p class="note">出错了：${esc(e.message)}</p>`; console.error(e); }
+    }, 30);
+}
+function cmpVoice() {
+    const g = app.D.golden.voice, rows = { same: [], diff: [], skip: [] };
+    for (const r of g.single) {
+        const v = new XS.Voice(app.D.voice, app.D.pinyin, null), rec = v.hear(r.text, r.role);
+        if (rec.outOfScope) { rows.skip.push([r, rec]); continue; }
+        const ok = (rec.intent ?? null) === (r.intent ?? null) && (rec.action ?? null) === (r.action ?? null) && (rec.reply ?? null) === (r.reply ?? null);
+        (ok ? rows.same : rows.diff).push([r, rec]);
+    }
+    let dsame = 0; const ddiff = [];
+    for (const d of g.dialogues) {
+        const v = new XS.Voice(app.D.voice, app.D.pinyin, null); let ok = true;
+        for (const t of d.turns) { v.advance(t.wait); const rec = v.hear(t.text, t.role); if ((rec.intent ?? null) !== (t.intent ?? null) || (rec.action ?? null) !== (t.action ?? null) || (rec.reply ?? null) !== (t.reply ?? null)) ok = false; }
+        if (ok) dsame++; else ddiff.push(d.name);
+    }
+    return { rows, dsame, dtotal: g.dialogues.length, ddiff, n: g.single.length };
+}
+function cmpGuard() {
+    const K = app.D.guard; let same = 0; const bad = [];
+    for (const r of app.D.golden.guard) {
+        const gu = new XS.Guard(K), b = r.bearing * PI / 180, d = K.robot_r + K.person_r + r.gap, px = 2 + d * Math.cos(b), py = 1.5 + d * Math.sin(b);
+        const k = { id: 1, cls: r.cls, x: px, y: py, vx: -r.closing * Math.cos(b), vy: -r.closing * Math.sin(b), coast: false, predict() { return [this.x, this.y]; } };
+        const S = { t: 100, mode: 'TASK', state: '前往', armBusy: r.arm, armDone: () => true, pose: () => [2, 1.5, 0], zoneSkipT: -1e9, tracks: () => [k], wheelTarget: { vx: 0, vy: 0, wz: 0 }, setTwist() {}, holdArm: false, dynZones: [], personZones: [], event() {}, speak() {}, onAsk: null };
+        const halted = !!gu.pre(S); S.wheelTarget = { vx: r.v, vy: 0, wz: 0 }; gu.post(S);
+        if (halted === r.halted && Math.abs(gu.scale - r.scale) < 1e-4) same++; else bad.push(r);
+    }
+    return { same, n: app.D.golden.guard.length, bad };
+}
+function firstT(ev, re, after = -1) { const e = ev.find(x => re.test(x[2]) && x[0] > after); return e ? e[0] : null; }
+function minutesOf(ev) { const e = ev.find(x => /充电 \d+% → \d+%，用了 (\d+) 分钟/.test(x[2])); return e ? +/用了 (\d+) 分钟/.exec(e[2])[1] : null; }
+const seqOf = ev => ['IDLE'].concat(ev.filter(e => /^→ [A-Z]+/.test(e[2])).map(e => /^→ ([A-Z]+)/.exec(e[2])[1])).join('→');
+async function cmpRuns() {
+    const out = [], D = app.D, mk = () => new XS.Sim(D, { seed: 4, soc0: 0.9 }), say = (s, t) => s.voice.hear('小拾小拾，' + t, 'owner');
+    const tapes = {}; for (const n of ['kid', 'fall', 'lowbat', 'tidy', 'scan']) tapes[n] = await fetchTape(n);
+    const f = v => v === null || v === undefined ? '—' : v;
+    if (tapes.kid) {
+        const s = mk(); say(s, '收拾一下玩具'); s.run(40); s.person('kid'); s.run(130); const ev = s.events, re = tapes.kid.events;
+        out.push(['孩子冲过来', '模式变化的先后', seqOf(re), seqOf(ev)], ['', '安全层停住的次数', tapes.kid.result.guard.halts, s.guard.stats.halts], ['', '第一次停住的时间', f(firstT(re, /有人在附近/)) + ' s', f(firstT(ev, /有人在附近/)) + ' s'], ['', '一共停了多久', tapes.kid.result.guard.halt_s.toFixed(1) + ' s', s.guard.stats.halt_s.toFixed(1) + ' s'], ['', '碰到人', 0, s.stats.contacts]);
+    }
+    if (tapes.fall) {
+        const s = mk(); say(s, '收拾一下玩具'); s.run(70); s.push('roll_l'); s.run(190); const tf = firstT(tapes.fall.events, /摔倒了/), tb = firstT(tapes.fall.events, /→ TASK/, tf), t2 = firstT(s.events, /摔倒了/), tb2 = firstT(s.events, /→ TASK/, t2);
+        out.push(['被推倒', '模式变化的先后', seqOf(tapes.fall.events), seqOf(s.events)], ['', '摔倒到回到收玩具', f(tb && tf ? (tb - tf).toFixed(1) : null) + ' s', f(tb2 && t2 ? (tb2 - t2).toFixed(1) : null) + ' s'], ['', '爬起来的次数', tapes.fall.result.sup_stats.righted, s.stats.righted]);
+    }
+    if (tapes.lowbat) {
+        const s = mk(); say(s, '收拾一下玩具'); s.run(60); s.bat.soc = 0.15 - s.bat.bias; let t = 0; while (t < 1500 && !s.taskDone) { s.run(10); t += 10; }
+        s.run(30); out.push(['电量低（15%）', '模式变化的先后', seqOf(tapes.lowbat.events), seqOf(s.events)], ['', '去充电的时间点', f(firstT(tapes.lowbat.events, /停在两件事之间去充电/)) + ' s', f(firstT(s.events, /停在两件事之间去充电/)) + ' s'], ['', '充电用时（快进）', f(minutesOf(tapes.lowbat.events)) + ' 分', f(minutesOf(s.events)) + ' 分'], ['', '5 件全送完的时间', f(firstT(tapes.lowbat.events, /任务结束/)) + ' s', f(firstT(s.events, /任务结束/)) + ' s'], ['', '送到', tapes.lowbat.result.delivered + '/5', s.delivered() + '/5']);
+    }
+    if (tapes.tidy) {
+        const s = mk(); say(s, '收拾一下玩具'); let t = 0; while (t < 2000 && !s.taskDone) { s.run(10); t += 10; }
+        const F = tapes.tidy.frames; let tLast = null; for (let i = 1; i < F.length; i++) if (F[i][12] > F[i - 1][12]) tLast = F[i][0];
+        s.run(30); out.push(['整套收玩具（不打断）', '模式变化的先后（收完后去充电还是待命，看电量低于不低于 85%）', seqOf(tapes.tidy.events), seqOf(s.events)], ['', '第 5 件放进筐的时间', f(tLast) + ' s', f(s.deliveries && s.deliveries[s.deliveries.length - 1] !== undefined ? s.deliveries[s.deliveries.length - 1].toFixed(0) : null) + ' s'], ['', '任务结束的时间（含放完后满屋再巡一圈、回起点）', f(firstT(tapes.tidy.events, /任务结束/)) + ' s', f(firstT(s.events, /任务结束/)) + ' s'], ['', '送到', tapes.tidy.result.delivered + '/5', s.delivered() + '/5']);
+    }
+    if (tapes.scan) {
+        const s = mk(); say(s, '把家里扫描一遍'); let t = 0; while (t < 900 && !s.scanDone) { s.run(5); t += 5; } const re = tapes.scan.events.find(x => /扫描完成/.test(x[2])), me = s.events.find(x => /扫描完成/.test(x[2]));
+        const num = (e, r) => e ? (r.exec(e[2]) || [])[1] : null;
+        s.run(3); out.push(['扫描家里', '模式变化的先后', seqOf(tapes.scan.events), seqOf(s.events)], ['', '用了多久', f(num(re, /，(\d+) 秒/)) + ' s', f(num(me, /，(\d+) 秒/)) + ' s'], ['', '停靠点', f(num(re, /：(\d+) 个停靠点/)), f(num(me, /：(\d+) 个停靠点/))]);
+    }
+    return out;
+}
+function compareHTML() {
+    const V = cmpVoice(), G = cmpGuard(), B = app.D.golden.battery; let h = '';
+    const nIn = V.rows.same.length + V.rows.diff.length;
+    h += `<div class="sec"><h3>1　说的话（${V.n} 句 × 4 种说话的人，和 ${V.dtotal} 段多轮对话）</h3><p>${chip(V.rows.diff.length ? 'warn' : 'good', `沙盘做了的 ${nIn} 句里：回答和真代码完全一样 <b>${V.rows.same.length}</b>，不一样 <b>${V.rows.diff.length}</b>`)} ${chip('', `沙盘没做的 <b>${V.rows.skip.length}</b> 句`)} ${chip(V.ddiff.length ? 'warn' : 'good', `多轮对话一样 <b>${V.dsame}/${V.dtotal}</b>`)}</p><p class="note">“一样”是指听懂的意图、动作（直接做 / 先问 / 拒绝 / 追问）和说出来的话逐字相同。真代码按拼音的近似匹配听，沙盘用同一张拼音表和同一个匹配算法，所以打同音字也认。</p>`;
+    h += `<details><summary>沙盘没做的 ${V.rows.skip.length} 句（真实系统要走同意和确认流程，或是英文）</summary><div class="scroll"><table><tr><th>谁</th><th>说</th><th>真代码</th></tr>${V.rows.skip.map(([r]) => `<tr><td>${ROLE_CN[r.role]}</td><td>${esc(r.text.replace('小拾小拾，', ''))}</td><td>${esc(r.action)} · ${esc(r.reply || '')}</td></tr>`).join('')}</table></div></details>`;
+    if (V.rows.diff.length) h += `<details open><summary>不一样的 ${V.rows.diff.length} 句</summary><div class="scroll"><table><tr><th>谁</th><th>说</th><th>真代码</th><th>沙盘</th></tr>${V.rows.diff.map(([r, j]) => `<tr><td>${ROLE_CN[r.role]}</td><td>${esc(r.text.replace('小拾小拾，', ''))}</td><td>${esc(r.action)} · ${esc(r.reply || '')}</td><td>${esc(j.action)} · ${esc(j.reply || '')}</td></tr>`).join('')}</table></div></details>`;
+    h += `<details><summary>看几句真代码的回答（前 24 句，主人 / 孩子）</summary><div class="scroll"><table><tr><th>说</th><th>主人</th><th>孩子</th></tr>${app.D.golden.voice.single.filter(r => r.role === 'owner').slice(0, 24).map(r => { const c = app.D.golden.voice.single.find(q => q.role === 'child' && q.text === r.text); return `<tr><td>${esc(r.text.replace('小拾小拾，', '') || '（只喊了名字）')}</td><td>${esc(r.reply || '（不回应）')}</td><td>${esc(c.reply || '（不回应）')}</td></tr>`; }).join('')}</table></div></details></div>`;
+    h += `<div class="sec"><h3>2　安全层（${G.n} 种情形：人是大人 / 小孩 / 拿不准，在 4 个方向，离 5 cm 到 2 m，朝它走过来的速度 0 到 1.4 m/s，机器人 0.06 或 0.18 m/s，手臂干活或不干活）</h3><p>${chip(G.bad.length ? 'bad' : 'good', `“停住与否”和“减速到多少”一样 <b>${G.same}/${G.n}</b>`)}</p></div>`;
+    h += `<div class="sec"><h3>3　电池</h3><div class="scroll"><table><tr><th>从</th><th class="num">真代码：充到 90% 要</th><th class="num">沙盘</th></tr>${B.charge.filter(r => r.from_soc < 0.89).map(r => { const b = new XS.Battery(app.D.battery, r.from_soc, 0); const m = b.chargeUntil(0.9) / 60; return `<tr><td>${Math.round(r.from_soc * 100)}%</td><td class="num">${r.minutes.toFixed(1)} 分钟</td><td class="num">${m.toFixed(1)} 分钟</td></tr>`; }).join('')}</table></div></div>`;
+    h += `<div class="sec"><h3>4　同一个剧本，真实物理仿真 和 沙盘</h3><p class="note">这里规则相同，但移动、抓取、起身的用时是简化的，所以数字相近而不相同。差得多的地方就是沙盘不可信的地方。</p><div class="scroll" id="runs-tbl"><p class="note">正在跑…</p></div></div>`;
+    setTimeout(async () => {
+        const rows = await cmpRuns(); const t = $('#runs-tbl'); if (!t) return;
+        t.innerHTML = `<table><tr><th>剧本</th><th>量</th><th class="num">真实仿真</th><th class="num">沙盘</th></tr>${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td></tr>`).join('')}</table>`;
+    }, 50);
+    return h;
+}
+
+// ---------------------------------------------------------------------------------------------------------------- the notes page
+function buildAbout() {
+    const acc = app.D.accept || {}, items = acc.items || {}, vals = Object.values(items), pass = vals.filter(i => i.verdict === 'PASS').length;
+    $('#about-body').innerHTML = `
+    <div class="sec"><h3>什么是真的，什么是模型</h3><div class="scroll"><table>
+      <tr><th>部分</th><th>这个页面里</th><th>怎么保证</th></tr>
+      <tr><td>安全层（离人多远减速、停住、手臂在动时停下、孩子的距离更大）</td><td>真代码的规则，逐行重写</td><td>${app.D.golden.guard.length} 种情形，在“对照”页现场和真代码的答案比一遍</td></tr>
+      <tr><td>听中文：唤醒词、停止词、拼音近似匹配、谁能让它做什么、拿不准先问</td><td>真代码的规则和同一张拼音表</td><td>${app.D.golden.voice.single.length} 句 × 4 种说话人和 ${app.D.golden.voice.dialogues.length} 段多轮对话，在“对照”页现场比（沙盘没做的会列出来）</td></tr>
+      <tr><td>电池：充电曲线、读数的偏差、20% 和 10% 两条线</td><td>真代码的公式和常数</td><td>“对照”页比充电时间</td></tr>
+      <tr><td>模式：收玩具、导航、扫描、遥控、充电、起身、待命、故障，谁能打断谁，打断后怎么接着做</td><td>真代码的逻辑，用同样结构的生成器重写</td><td>剧本对照（“对照”第 4 部分）；真实录像里的先后顺序一样</td></tr>
+      <tr><td>机器人怎么走、怎么抓、怎么起身、功率</td><td><b>简化</b>：A* 路线 + 匀速；抓取是 9.6 秒计时 + 实测成功率；起身是录像里的计时；功率是录像里各状态的平均值</td><td>只能说数量级接近。准不准看“对照”第 4 部分</td></tr>
+      <tr><td>它看到什么</td><td><b>简化</b>：相机 ±35°、5 米内、没有噪声；雷达看到在动的东西当“拿不准”</td><td>真实的深度图检测和分类在验收 E1、E2、E5 里测</td></tr>
+      <tr><td>物理（摩擦、抓得住抓不住、摔倒的力学）、真实相机和雷达的数据</td><td><b>没有</b></td><td>看“回放”页的真实仿真录像，或在电脑上运行真的仿真</td></tr>
+      <tr><td>英文、中英夹杂、记住人和忘掉人、给东西起名、声音从哪来、声纹、画像</td><td><b>没有</b>（说了会告诉你没做）</td><td>真实系统有，验收 E4、F2、G1–G4、H1</td></tr>
+    </table></div></div>
+    <div class="sec"><h3>真实验收结果</h3><p>真实物理仿真的 ${vals.length} 项验收：${pass} 项通过，${vals.length - pass} 项没通过（${vals.filter(i => i.verdict !== 'PASS').map(i => i.title ? Object.keys(items).find(k => items[k] === i) : '').join('、')}）。跑于 ${esc(acc.when || '')}，代码版本 ${esc(acc.code || '')}。逐项数字在验证页每一条的最后一行，完整的在仓库的 <span class="kbd">results/acceptance_sim.json</span>。没通过的 E3（人走近时刹得住）：安全层本身停得住、碰到人 0 次、走进 0.6 m 的场景它都停过；没过的是“5 件都送到”这一条：一家人的场景里，一个球被走过的人踢到沙发边上，机器人找不到能站的位置去夹它。后来试着做了“沿着家具面把它推开”的动作：在物理仿真里夹爪的手掌会碰到沙发，推的时候球又被卡在拨板和沙发之间，没成，所以这一条仍然没过（要换更窄的夹爪、带手腕偏转的夹爪，或者让人帮一把）。<b>已接受为已知限制</b>（2026-11-26，判定仍记“没通过”）。</p></div>
+    <div class="sec"><h3>想看真的代码在跑</h3><p>这个页面不用装任何东西。想看真的 MuJoCo 仿真（有 3D 画面、真的控制器），要在电脑上运行：</p><div class="log" style="white-space:pre">cd sim\npython live.py --open</div><p class="note">在仓库里的 <span class="kbd">docs/playground.md</span> 里有安装步骤，和在 GitHub Codespaces（浏览器里的开发环境，不用装）里运行的办法（这一条我没有在 Codespaces 里试过）。</p></div>
+    <div class="sec"><h3>这个页面怎么来的</h3><p class="note">数字、词表和真代码的答案由 <span class="kbd">sim/export_playground.py</span> 从仓库导出；回放由 <span class="kbd">sim/record_tapes.py</span> 在真实仿真里录；规则的 JavaScript 版在 <span class="kbd">web/playground/xs_logic.js</span> 和 <span class="kbd">xs_world.js</span>；<span class="kbd">node web/playground/test_core.mjs</span> 做“对照”页里的那些比较。</p></div>`;
+}
+
+// ---------------------------------------------------------------------------------------------------------------- the loop
+let last = performance.now();
+function loop(ts) {
+    const dtw = Math.min((ts - last) / 1000, 0.1); last = ts;
+    try {
+        if (app.view === 'sim') {
+            const s = app.sim;
+            if (!app.paused) {
+                app.acc += app.speed * dtw / s.dt; let n = Math.min(Math.floor(app.acc), 3000); app.acc -= Math.floor(app.acc); if (app.acc > 3000) app.acc = 0;
+                for (let i = 0; i < n; i++) { while (app.script.length && app.script[0][0] <= s.t) runCmd(app.script.shift()[1]); if (app.keys.size && s.mode === 'TELEOP') { const k = app.keys; s.drive(((k.has('w') ? 1 : 0) - (k.has('s') ? 1 : 0)) * 0.18, ((k.has('a') ? 1 : 0) - (k.has('d') ? 1 : 0)) * 0.18, ((k.has('q') ? 1 : 0) - (k.has('e') ? 1 : 0)) * 1.0); } s.tick(); }
+            }
+            draw(viewOfSim());
+            if (ts - app.lastHud > 120) { app.lastHud = ts; hudSim(); renderPanels(); runChecks(); }
+        } else if (app.tape) {
+            const T = app.tape.frames[app.tape.frames.length - 1][0];
+            if (app.tapePlay) { app.tapeT += dtw * app.tapeSpeed; if (app.tapeT >= T) { app.tapeT = T - 0.01; app.tapePlay = false; $('#tape-play').textContent = '重放'; } }
+            const v = viewOfTape(app.tape, app.tapeT); draw(v);
+            if (ts - app.lastHud > 120) { app.lastHud = ts; hudTape(v); $('#tape-scrub').value = 100 * app.tapeT / T; $$('#tape-events div').forEach(d => d.style.color = +d.dataset.t <= app.tapeT ? 'var(--ink)' : ''); }
+        }
+    } catch (e) { console.error(e); const sb = $('#saybox'); if (sb) sb.textContent = '出错了：' + e.message; }
+    requestAnimationFrame(loop);
+}
+window.XSApp = app;
+boot();
+})();
+
+</script>
+
+</body>
+</html>

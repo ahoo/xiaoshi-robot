@@ -10,8 +10,13 @@
 
 第十六轮把**相机从头部立杆挪到了机械臂上**（装在前臂上、向上翻到仰 32.5°，行进姿势下就朝前向上看，不用抬手臂，不要立杆；仿真里找人、分大人孩子、认人（替身识别器）、人和机器人同场干活都和立杆差不多，代价是手臂干活时约 12% 的时间看不到人，以及**相机会影响起身**（75 g 装上去，原来存着的起身动作向左侧倒就起不来了；已带着相机重搜，新场景上起身 23–24/24，机器人有前臂相机时自动用新动作；但侧倒时相机会压在地上，要加保护挡条；整机摔倒试验里还抓到并修了起身模式里一个等不完的等待，没有相机也会遇到），见 [`docs/status.md`](docs/status.md)）；接上了**大模型 API**（`sim/llm.py`，**不限哪一家**：Claude、任何 OpenAI 兼容的服务——DeepSeek、通义、Kimi、智谱、OpenAI、Azure……以及家里电脑上的 Ollama / LM Studio / vLLM，还能几个串起来；默认关，只发唤醒词之后这一句话的文字，孩子和认不出的人的话不发，动作仍要先口头确认；真服务没有测过）；唤醒词和停止词改成**在声音上直接听**（`sim/wakeword.py`，sherpa-onnx 的中英双语关键词模型，词用文字写进去；真录音上验证了流程，**真人喊“小拾小拾”有多灵没有测**）。
 
+第十八轮做了四件事（都只在仿真里）：**修了毛绒玩具把指垫楔住的问题**（抓取最后一步分档加夹力、物体一松动就停，整套任务 B1 6/6 送到）；**彩色图人体检测**（接口、仿真替身和与深度的融合，默认关；检测器是替身，数字是假定的，真网络没有，见 [`docs/people_rgb.md`](docs/people_rgb.md)）；**前臂相机的保护挡条**（相机压地力最大 77 N → 0，可打印的 OpenSCAD/STL 文件在 `docs/cad/`，见 [`docs/camera_bumper.md`](docs/camera_bumper.md)，**安装和强度没在实物上试**）；**仿真提速**（整套任务快约 20%，结果不变）。验收从 29 项变成 30 项（加了 E5）。见 [`docs/status.md`](docs/status.md)。
+
+- **现在就想玩、想验证，什么都不想装**：网页沙盘 [`docs/playground.md`](docs/playground.md)（`cd web/playground && python -m http.server`，或用会话里发布的页面）：对它说中文、让孩子冲过来、推倒它、调低电量、遥控；验证页做对了自己打勾；回放页放**真实物理仿真**录下的 7 段数据；对照页让沙盘的规则把真代码答过的 2600 多个情形再答一遍。**沙盘是 JavaScript 写的行为模型，不是真的机器人代码，没有物理**（规则和真代码一样、用数字比过；走路、抓取、起身的用时是简化的，偏快 20%–40%）。
+- **想亲手看它干活、点一点验证**：[`docs/architecture.md`](docs/architecture.md)（系统怎么分层、一句话怎么变成动作、逐功能怎么验证）；`cd sim && python live.py --open` 在浏览器里实时观察和操作（**只在 Linux 上测过**）。
+- **先在仿真里做功能验收**：[`docs/acceptance_sim.md`](docs/acceptance_sim.md)（30 项功能，每项一个场景、一条通过标准；`cd sim && python accept.py --run quick`，约 50 分钟，逐项给出通过/没通过和数字；`--run standard` 全部重跑约 2.5–3.5 小时）。买物料等这份验收满意了再说。最近一次全部重跑的结果：**29 项通过，1 项没通过（已接受为已知限制）**（共 30 项）。没通过的：E3 人走近时刹得住（一家三口的场景里 5 件只送到 4 件：妈妈走过时踢到一个球，球滚到家具边，机器人拿不回来；碰到人 0 次、碰撞 0 次，**不是安全问题**，原因和证据见 [`acceptance_sim.md`](docs/acceptance_sim.md)；试着做了“把贴着家具的东西推开”的动作，在物理仿真里夹爪的手掌会碰到沙发、推的时候球被卡住，没成，代码已撤掉，要修得换夹爪；**你已决定接受它作为已知限制**（2026-11-26，判定仍记“没通过”）。
 - 当前状态和已知限制：[`docs/status.md`](docs/status.md)；下一步计划：[`docs/roadmap.md`](docs/roadmap.md)
-- 试验结果和实物验收表：[`docs/validation.md`](docs/validation.md)
+- 试验结果和实物验收表（买了硬件以后做）：[`docs/validation.md`](docs/validation.md)
 - 要买的东西：[`docs/bom.md`](docs/bom.md)
 - 原始数据：[`results/`](results/)（每次试验的结果和事件日志）
 
@@ -19,6 +24,7 @@
 
 | 路径 | 内容 |
 |---|---|
+| `sim/accept.py`、`accept_job.py`、`accept_day2.py` | **仿真功能验收**：30 项功能的注册表（场景、通过标准、命令、仿真证明不了什么），`--report` 读已有结果下结论，`--run quick/standard` 在临时副本里重跑并下结论，写 `results/acceptance_sim.json` 和 `docs/acceptance_sim.md` |
 | `sim/model.py` | 整机物理模型：带滚子的全向轮、底盘、SO-101、房间。硬件参数集中在顶部的 `P` |
 | `sim/objects.py` | 物体库：方块、小球、玩具车、香蕉、L 形积木、随机形状的石头、袜子（软）、毛绒玩具（软）。每次出场尺寸和重量随机 |
 | `sim/robot.py` | 驱动层接口：底盘速度、关节目标、雷达、里程计 |
@@ -42,6 +48,9 @@
 | `sim/home.py` | `Home`：把三维地图和物件记录挂到前置相机的每一帧上（`Agent.depth_hook`，不挂的时候旧路径不变） |
 | `sim/inventory.py` | 物件记录：颜色直方图 + 尺寸 → 种类猜测；跨次会话再识别（挪过位置的认得出是同一件）；「不见了」「还没核实」；按名字问「在哪」；命名；存本机 JSON，不存图片 |
 | `sim/people.py` | 人和孩子：仿真里的人（五种身高、走、站、坐、追着机器人跑）；头部深度相机（立杆）；深度图检测、跟踪、身高 → 大人/小孩/不确定；激光雷达上会动的东西（相机看不到的方向）；登记簿（要大人同意、可删、只存特征向量）；安全层 `Guard`（放慢、停下、手臂不动）；**认人那一层是替身，见 `docs/privacy.md`** |
+| `sim/rgbdet.py` | 彩色图里的人体检测（第十八轮）：`SimBoxes`（**仿真替身**，找到率、框抖动、假框是假定的数字）、`OnnxBoxes`（接真模型，没有模型文件、没跑过）、`box_detections`（框和深度怎么合）；默认关，`PEOPLE_RGB=sim` 打开，见 [`docs/people_rgb.md`](docs/people_rgb.md) |
+| `sim/test_track.py`、`sim/cam_contact_probe.py` | 跟踪器“滑行”的小检查；相机壳体哪里碰地的探针（保护挡条的依据） |
+| `docs/cad/` | 前臂相机保护挡条（第十八轮）：`camera_bumper.scad`（OpenSCAD，参数在开头）和 `camera_bumper.stl`，见 [`docs/camera_bumper.md`](docs/camera_bumper.md) |
 | `sim/voice.py`、`sim/voice_data.py`、`sim/voice_data_en.py` | 中文和英文语音（第十五轮起两种语言和夹杂）：唤醒词和停止词、模拟的语音识别（中文：同音字、声调、平翘舌、前后鼻音、掉字；英文：同音词、差一个音素的词、中国人说英文的口音、掉词；夹杂时另一种语言的词会被写成对方的字）、拼音/音素模糊匹配的理解、多轮对话、谁能让它做什么、执行器、可选大模型的接口、声纹登记；`voice_data.py` 是带标注的中文说法，`voice_data_en.py` 是英文和夹杂的（开发集、第一次看过的保留集、没调过的测试集） |
 | `sim/lang.py` | 双语工具：语种判断、英文音素（CMU 词典）和音素距离匹配、英文唤醒词/停止词/意图/物品/地点/是否、句型（动词+东西）、拼音写的名字（`xiaoshi`）、英文识别错误模型 |
 | `sim/acoustics.py` | 声学仿真：长方体房间（镜像声源法 3 阶 + 扩散尾巴）、2/4/6 麦阵列、espeak-ng 合成的中英文说话声、电视、机器人自己的风扇和轮子声、背景和麦克风自噪声 |
@@ -65,6 +74,8 @@
 | `sim/test_clear.py` | 透明瓶台架：空洞簇给出的位置、粗细、朝向、长度准不准（远处、近处、下手站位，机身转着看），空房间误报，只凭空洞抓一次 → `results/clear_bench.json` |
 | `sim/run_clear.py` | 透明瓶单独在房间里：两个办法分开开关的对照、强制各种朝向、更苛刻的深度图、没参与开发的新种子（含整机难材质）→ `results/clear_bottle.json` |
 | `sim/render_video.py` | 把一次试验渲染成录像 |
+| `sim/live.py`、`sim/live_ui.html` | **实时观察台**（第十八轮后）：在你自己的电脑上 `python live.py --open`，浏览器里看机器人干活、打字对它说话、点按钮让孩子冲过来/推倒它/调低电量/关安全层、W A S D 遥控；用的是验收跑的那一套控制代码，见 [`docs/architecture.md`](docs/architecture.md) |
+| `web/playground/`、`sim/export_playground.py`、`sim/record_tapes.py` | **网页沙盘**（见 [`docs/playground.md`](docs/playground.md)）：`index.html` 是拼好的完整页面（用 `python -m http.server` 打开）；`xs_logic.js`（电池、安全层、中文对话的规则）和 `xs_world.js`（房间、人、模式、路线）是真代码规则的 JavaScript 版；`data/model.json` 是从仓库导出的常量和**真代码的答案**；`tapes/` 是 7 段真实物理仿真的录像数据；`test_core.mjs`、`test_world.mjs` 在 node 里比对和跑剧本 |
 | `third_party/so101/` | SO-101 官方 MuJoCo 模型（Apache-2.0，来自 TheRobotStudio/SO-ARM100） |
 | `web/` | 结果页面的模板和生成脚本；`web/concept-v0.1/` 是第一版概念演示，不是物理仿真 |
 | `web/dist/` | 页面的构建产物，由 `web/build_page.py` 生成：`index.html`（完整文档，可直接用浏览器打开）、`artifact.html`（同一份页面去掉外层文档标签，线上发布的逐字节就是它，平台再套自己的外壳）、两段录像和封面图（与 `results/` 里的是同一份文件） |

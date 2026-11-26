@@ -1653,6 +1653,6 @@
    "reply": "I only process what you say after I hear \"Xiaoshi Xiaoshi\" or \"Hey Xiaoshi\". I do not store recordings and I do not send sound anywhere. To make me stop listening completely, press the mute button on my body."
   }
  ],
- "ms_per_parse_en": 23.2,
- "ms_per_parse_zh": 34.1
+ "ms_per_parse_en": 11.6,
+ "ms_per_parse_zh": 18.8
 }

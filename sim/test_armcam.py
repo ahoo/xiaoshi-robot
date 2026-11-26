@@ -203,7 +203,7 @@ def _right_col_job(args):
     for k in range(n):
         env.unperturb(); env.drop(rng, jitter=3.0); env.perturb(rng, **kw)
         o = env.run_phases([dict(q=np.array(p['q']), w=np.array(p['w']), T=p['T'], speed=p['speed']) for p in ph])
-        rows.append(dict(upright=bool(o['upright']), final=round(float(o['final']), 1), cam_force=round(float(o.get('cam_force', 0.0)), 1), cam_s=round(float(o.get('cam_s', 0.0)), 2), cam_clear_mm=round(1000 * float(o.get('cam_clear', 0.05)), 1)))
+        rows.append(dict(upright=bool(o['upright']), final=round(float(o['final']), 1), cam_force=round(float(o.get('cam_force', 0.0)), 1), cam_s=round(float(o.get('cam_s', 0.0)), 2), cam_clear_mm=round(1000 * float(o.get('cam_clear', 0.05)), 1), guard_force=round(float(o.get('guard_force', 0.0)), 1), guard_s=round(float(o.get('guard_s', 0.0)), 2)))
     return dict(cls=cls, mode=mode, mass=mass, n=n, rows=rows)
 
 
@@ -215,8 +215,8 @@ def righting_camera_bench(n=12, procs=4, lib=None, name='righting_camera', masse
     with mp.Pool(procs, maxtasksperchild=1) as p: res = p.map(_right_col_job, jobs)
     out = {}
     for r in res:
-        key = f'{r["cls"]} / {r["mode"]}' + ('' if r['mode'] == 'none' else f' / {int(1000 * r["mass"])} g'); up = sum(x['upright'] for x in r['rows']); f = [x['cam_force'] for x in r['rows']]; cs = [x['cam_s'] for x in r['rows']]
-        out[key] = dict(upright=f'{up}/{r["n"]}', mean_final_tilt=round(float(np.mean([x['final'] for x in r['rows']])), 1), camera_peak_force_N=dict(median=round(float(np.median(f)), 1), max=round(float(np.max(f)), 1)), camera_on_floor_s=dict(median=round(float(np.median(cs)), 2), max=round(float(np.max(cs)), 2)), camera_closest_to_body_mm=min(x['cam_clear_mm'] for x in r['rows']))
+        key = f'{r["cls"]} / {r["mode"]}' + ('' if r['mode'] == 'none' else f' / {int(1000 * r["mass"])} g'); up = sum(x['upright'] for x in r['rows']); f = [x['cam_force'] for x in r['rows']]; cs = [x['cam_s'] for x in r['rows']]; gf = [x.get('guard_force', 0.0) for x in r['rows']]
+        out[key] = dict(upright=f'{up}/{r["n"]}', mean_final_tilt=round(float(np.mean([x['final'] for x in r['rows']])), 1), camera_peak_force_N=dict(median=round(float(np.median(f)), 1), max=round(float(np.max(f)), 1)), camera_on_floor_s=dict(median=round(float(np.median(cs)), 2), max=round(float(np.max(cs)), 2)), camera_closest_to_body_mm=min(x['cam_clear_mm'] for x in r['rows']), bumper_peak_force_N=dict(median=round(float(np.median(gf)), 1), max=round(float(np.max(gf)), 1)))
         print(key, out[key], flush=True)
     _save(name, dict(library=lib or 'sim/righting_maneuvers.json', rows=res, summary=out)); return out
 

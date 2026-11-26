@@ -29,9 +29,10 @@ def quat_axis(axis, ang):
 class Env:
     def __init__(self, cls, arm_acc=30.0):
         self.cls = cls; self.arm_acc = arm_acc
-        kw = {'arm_cam': os.environ['ARM_CAM'], 'arm_cam_collide': bool(os.environ.get('ARM_CAM_COLLIDE'))} if os.environ.get('ARM_CAM') else {}      # ARM_CAM=forearm_up: search with the camera's weight on the arm; ARM_CAM_COLLIDE=1: and its box touching the floor (round 16)
+        kw = {'arm_cam': os.environ['ARM_CAM'], 'arm_cam_collide': bool(os.environ.get('ARM_CAM_COLLIDE')), 'arm_cam_guard': os.environ.get('ARM_CAM_GUARD', '1') != '0'} if os.environ.get('ARM_CAM') else {}      # ARM_CAM=forearm_up: search with the camera's weight on the arm; ARM_CAM_COLLIDE=1: and its box touching the floor (round 16)
         self.r = Robot([], seed=0, robot_pose=(2.0, 1.5, 0.0), **kw)
         r = self.r; m = r.m; self.cam_geom = mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, 'armcam_col'); self._f6 = np.zeros(6)
+        self.guard_geoms = {g for g in range(m.ngeom) if (mujoco.mj_id2name(m, mujoco.mjtObj.mjOBJ_GEOM, g) or '').startswith('armcam_guard')}          # the camera's bumper: what it takes instead of the camera
         self.body_geoms = [g for g in (mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, n) for n in ('chassis_col', 'lidar_head', 'lidar_post')) if g >= 0] if self.cam_geom >= 0 else []       # what the camera must not run into
         jid = [mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, j) for j in ('shoulder_pan', 'shoulder_lift', 'elbow_flex', 'wrist_flex')]
         self.lo = np.array([m.jnt_range[j][0] for j in jid]) + 0.03; self.hi = np.array([m.jnt_range[j][1] for j in jid]) - 0.03
@@ -103,7 +104,7 @@ class Env:
         r.arm_cmd[:] = self.arm0 + 0; r.arm_target[:] = r.arm_cmd; r.arm_vel[:] = 0; r.wheel_cmd[:] = 0; r.wheel_target[:] = 0
         r.d.qpos[r.arm_qadr] = r.arm_cmd + r.arm_offset; r.d.ctrl[3:9] = r.arm_cmd + r.arm_offset; r.arm_acc = self.arm_acc
         mujoco.mj_forward(r.m, r.d)
-        pen = 0.0; best = 999.0; track = []; cam_peak = 0.0; cam_steps = 0; cam_clear = 0.05
+        pen = 0.0; best = 999.0; track = []; cam_peak = 0.0; cam_steps = 0; cam_clear = 0.05; guard_peak = 0.0; guard_steps = 0
         for p in ph:
             if self.arm_hits_chassis(p['q']): pen += 40.0
             r.arm_target[:4] = p['q']; r.arm_target[4] = 0.0; r.arm_target[5] = GRIP_CLOSED; r.arm_speed = p['speed']; r.wheel_target[:] = p['w']
@@ -111,17 +112,18 @@ class Env:
                 r.step(); t = math.degrees(r.tilt()); best = min(best, t)
                 if record: track.append(t)
                 if self.cam_geom >= 0:                                                                       # is the camera pressed against the floor?
-                    d = r.d; hit = False
+                    d = r.d; hit = False; ghit = False
                     for i in range(d.ncon):
                         c = d.contact[i]
                         if c.geom1 == self.cam_geom or c.geom2 == self.cam_geom: mujoco.mj_contactForce(r.m, d, i, self._f6); cam_peak = max(cam_peak, float(self._f6[0])); hit = True
-                    cam_steps += hit
+                        elif c.geom1 in self.guard_geoms or c.geom2 in self.guard_geoms: mujoco.mj_contactForce(r.m, d, i, self._f6); guard_peak = max(guard_peak, float(self._f6[0])); ghit = True
+                    cam_steps += hit; guard_steps += ghit
                     for g in self.body_geoms: cam_clear = min(cam_clear, float(mujoco.mj_geomDistance(r.m, d, self.cam_geom, g, 0.05, self._f6)))      # signed distance to the chassis and the lidar (capped at 5 cm); not part of the fitness
         r.wheel_target[:] = 0; r.arm_target[:5] = Q_CARRY; r.arm_speed = 2.0
         for _ in range(int(settle / 0.02)): r.step()
         final = math.degrees(r.tilt()); r.arm_acc = 8.0
         cam_pen = 15.0 * min(cam_peak / 30.0, 1.0) + 15.0 * min(cam_steps * 0.02, 1.0)                          # the camera is not to be crushed: up to 30 points for a hard, long press
-        return dict(final=final, best=best, pen=pen, fit=final + 0.5 * min(best, 90.0) + pen + cam_pen, upright=bool(final < 20 and abs(r.d.qpos[2] - 0.0513) < 0.02), track=track, cam_force=cam_peak, cam_s=cam_steps * 0.02, cam_clear=cam_clear)
+        return dict(final=final, best=best, pen=pen, fit=final + 0.5 * min(best, 90.0) + pen + cam_pen, upright=bool(final < 20 and abs(r.d.qpos[2] - 0.0513) < 0.02), track=track, cam_force=cam_peak, cam_s=cam_steps * 0.02, cam_clear=cam_clear, guard_force=guard_peak, guard_s=guard_steps * 0.02)
 
     def robust(self, x, n=6, seed=0, **kw):
         """Mean fitness over n perturbed rest states / models (the same n each call: common random numbers)."""
@@ -137,7 +139,7 @@ _ENV = None
 def _init(cls, n):
     global _ENV, _N; _ENV = Env(cls); _N = n
 def _eval(x):
-    f, ups = _ENV.robust(x, n=_N); return f, ups
+    f, ups = _ENV.robust(x, n=_N, seed=int(os.environ.get('SEARCH_SEED', '0'))); return f, ups                # SEARCH_SEED: which scenarios the candidates are judged on (judge the result on others)
 
 
 def cem(cls, x0, gens, pop, nproc, n, std0, tag, seed=11):
@@ -170,5 +172,5 @@ if __name__ == '__main__':
         json.dump(dict(cls=cls, x=env.encode(lib['maneuvers'][cls][0]['phases']).tolist()), open(sys.argv[3], 'w'))
     elif mode == 'test':      # test CLASS JSON N
         cls = sys.argv[2]; x = np.array(json.load(open(sys.argv[3]))['x']); n = int(sys.argv[4])
-        env = Env(cls); f, ups = env.robust(x, n=n, seed=99)
+        env = Env(cls); f, ups = env.robust(x, n=n, seed=int(os.environ.get('SEARCH_SEED', '99')))
         print(f'{cls} {sys.argv[3]}: mean final tilt {f:.1f}, upright {ups}/{n}')
