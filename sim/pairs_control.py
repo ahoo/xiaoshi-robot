@@ -5,8 +5,8 @@ confirmation needs two frames) and not of the pair: a lone grown-up is found in 
 
   PROCS=4 python pairs_control.py
 """
-import sys, math, multiprocessing as mp, numpy as np
-sys.path.insert(0, '/home/user/xiaoshi-robot/sim')
+import os, sys, math, multiprocessing as mp, numpy as np
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 def job(args):
     seed, reps = args
     import mujoco, people as P

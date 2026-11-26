@@ -144,7 +144,7 @@ def _arm_parts(arm_cam=None, arm_cam_collide=False, arm_cam_guard=None):
             ET.SubElement(cb, 'geom', dict(name='armcam_col', type='box', size='0.045 0.0125 0.0125', pos=' '.join(f'{0.0125 * v:.5f}' for v in za), xyaxes=' '.join(str(v) for v in c['xyaxes']),
                                            contype='2', conaffinity='1', group='3', rgba='0.5 0.5 0.5 0.3', mass='0', friction='0.6 0.005 0.0001'))
         if arm_cam_guard:
-            g = GUARD; xa, ya = np.array(c['xyaxes'][:3]), np.array(c['xyaxes'][3:]); zb = np.cross(xa, ya); centre = np.array(c['pos']) + 0.0125 * zb         # the body's centre, in the link's frame
+            g = GUARD; xa, ya = np.array(c['xyaxes'][:3]), np.array(c['xyaxes'][3:]); zb = np.cross(xa, ya)
             gb = ET.SubElement(parent, 'body', dict(name='armcam_guard', pos=' '.join(str(v) for v in c['pos'])))
             ET.SubElement(gb, 'inertial', dict(pos=' '.join(f'{0.0125 * v:.5f}' for v in zb), mass=str(g['mass']), diaginertia='3e-6 6e-6 6e-6'))                  # a bar about as long as the camera
             ct, ca = ('2', '1') if arm_cam_collide else ('0', '0'); ax = ' '.join(str(v) for v in c['xyaxes'])

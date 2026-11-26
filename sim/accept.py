@@ -18,6 +18,7 @@ import json
 import math
 import os
 import shutil
+import signal
 import statistics
 import subprocess
 import sys
@@ -495,9 +496,14 @@ def run_jobs(names, w, procs):
         cmd, minutes = JOBS[n]; t0 = time.time(); log = os.path.join(w, 'logs', f'{n}.log')
         env = dict(os.environ, MUJOCO_GL=os.environ.get('MUJOCO_GL', 'egl'), PROCS=str(procs), PYTHONUNBUFFERED='1')
         print(f'[{time.strftime("%H:%M:%S")}] {n}: {cmd}   (约 {minutes} 分钟)', flush=True)
-        try:
-            with open(log, 'w') as f: rc = subprocess.run(cmd, shell=True, cwd=os.path.join(w, 'sim'), env=env, stdout=f, stderr=subprocess.STDOUT, timeout=max(minutes * 4, 10) * 60).returncode
-        except subprocess.TimeoutExpired: rc = 'timeout'
+        with open(log, 'w') as f:
+            proc = subprocess.Popen(cmd, shell=True, cwd=os.path.join(w, 'sim'), env=env, stdout=f, stderr=subprocess.STDOUT, start_new_session=True)         # its own process group: a timeout kills the workers too
+            try: rc = proc.wait(timeout=max(minutes * 4, 10) * 60)
+            except subprocess.TimeoutExpired:
+                rc = 'timeout'
+                try: os.killpg(proc.pid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError, AttributeError): proc.kill()
+                proc.wait()
         out[n] = dict(ok=rc == 0, rc=rc, seconds=round(time.time() - t0), log=log); print(f'    -> {"完成" if rc == 0 else "没跑完 (" + str(rc) + ")，见 " + log}，{out[n]["seconds"]} 秒', flush=True)
     return out
 
@@ -652,7 +658,8 @@ def main():
         if a.run:
             new = [j for j in it['jobs'] if j not in done]; done.update(run_jobs(new, w, a.procs))
             after = stamp(); fresh = {f[:-5] for f, t in after.items() if t > before.get(f, 0)}
-            v = judge(R, it, fresh)
+            v = judge(R, it, fresh); failed = [j for j in it['jobs'] if j in done and not done[j]['ok']]
+            if failed and v['verdict'] != 'ERROR': v = dict(verdict='ERROR', lines=v['lines'], why='命令没跑完（' + '、'.join(f'{j}: {done[j]["rc"]}' for j in failed) + '），它写出的结果可能只有一半，不拿来判；日志在沙箱的 logs/')
             if not a.no_write: keep_owned(w)
             if a.adopt: ch = adopt(w, before); print(f'      adopt: {len(ch)} 个结果文件和 results/ 里的不一样：' + '、'.join(ch[:12]) + ('…' if len(ch) > 12 else ''), flush=True)
         else: v = judge(R, it)
@@ -667,7 +674,7 @@ def main():
         bad = [n for n, j in done.items() if not j['ok']]
         if w and not a.keep and not bad: shutil.rmtree(w, ignore_errors=True)
         else: print(f'沙箱留在 {w}（有命令没跑成：{bad}），日志在 {w}/logs')
-        report['source'] = f'重跑（{a.run}），用了 {round((time.time() - t0) / 60)} 分钟'; save()
+        source = f'重跑（{a.run}），用了 {round((time.time() - t0) / 60)} 分钟'; save()
 
 
 if __name__ == '__main__':

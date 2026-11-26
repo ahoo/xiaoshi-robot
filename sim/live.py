@@ -293,10 +293,20 @@ def serve(host, port):
             else: self._send(404, b'not found', 'text/plain')
 
         def do_POST(self):
-            n = int(self.headers.get('Content-Length', 0) or 0); body = json.loads(self.rfile.read(n) or b'{}')
+            # Only the page itself may drive the robot: a web page on another site can send a "simple" POST (text/plain, no preflight) to 127.0.0.1 from the user's browser; requiring JSON makes the browser
+            # ask first, and the Origin has to be this server's own when there is one.
+            origin = self.headers.get('Origin')
+            if 'application/json' not in (self.headers.get('Content-Type') or '') or (origin and origin.split('://', 1)[-1] != self.headers.get('Host')):
+                self._send(403, b'{"ok":false}', 'application/json'); return
+            try:
+                n = int(self.headers.get('Content-Length', 0) or 0); body = json.loads(self.rfile.read(n) or b'{}')
+                if not isinstance(body, dict): raise ValueError('not an object')
+                if self.path == '/drive': vx, vy, wz = (float(body.get(k, 0)) for k in ('vx', 'vy', 'wz'))
+            except (ValueError, TypeError):
+                self._send(400, b'{"ok":false}', 'application/json'); return
             if self.path == '/cmd': G.cmds.put(str(body.get('text', ''))); self._send(200, b'{"ok":true}', 'application/json')
             elif self.path == '/drive':
-                G.drive = (float(body.get('vx', 0)), float(body.get('vy', 0)), float(body.get('wz', 0)), time.time()); self._send(200, b'{"ok":true}', 'application/json')
+                G.drive = (vx, vy, wz, time.time()); self._send(200, b'{"ok":true}', 'application/json')
             else: self._send(404, b'not found', 'text/plain')
 
     class Srv(ThreadingHTTPServer): daemon_threads = True

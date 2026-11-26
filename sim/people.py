@@ -719,6 +719,7 @@ def make_boxes(robot, names, rng, rgb=None):
     if rgb in (False, 'off', '0', ''): return None
     if rgb is True or rgb in ('sim', '1'): return rgbdet.SimBoxes(robot, names, rng)
     if isinstance(rgb, dict): return rgbdet.SimBoxes(robot, names, rng, **rgb)
+    if isinstance(rgb, str): raise ValueError(f"PEOPLE_RGB / rgb={rgb!r}: expected 'sim', 'off', a JSON dict of the stand-in's parameters, or a detector object")
     return rgb
 
 

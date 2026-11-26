@@ -5,10 +5,10 @@ z the 25 mm depth behind the lens). Runs the first stored maneuver of each class
 """
 import os, sys, json, math
 os.environ['ARM_CAM'] = 'forearm_up'; os.environ['ARM_CAM_COLLIDE'] = '1'; os.environ.setdefault('ARM_CAM_GUARD', '0')           # without the bumper by default: where it would be hit
-sys.path.insert(0, '/home/user/xiaoshi-robot/sim')
+HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import numpy as np, mujoco
 import search_righting as S
-lib = json.load(open('/home/user/xiaoshi-robot/sim/righting_maneuvers_armcam.json'))
+lib = json.load(open(os.path.join(HERE, 'righting_maneuvers_armcam.json')))
 print({k: (type(v).__name__, (len(v) if hasattr(v, '__len__') else v)) for k, v in lib['maneuvers'].items()})
 for cls in ('side_l', 'side_r', 'fwd'):
     env = S.Env(cls); r = env.r; m = r.m

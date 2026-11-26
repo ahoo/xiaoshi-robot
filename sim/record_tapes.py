@@ -53,11 +53,6 @@ def snapshot_say(tape, live):
     return orig
 
 
-class Rec:
-    """Built lazily so that importing this file (for --list) does not import MuJoCo."""
-    pass
-
-
 def record(name):
     import live as L
     import numpy as np
@@ -135,7 +130,6 @@ def record(name):
 
     live = R()
     live.run()
-    tape['frames'] = [f for f in tape['frames']]
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, f'{name}.json')
     with open(path, 'w') as f: json.dump(tape, f, ensure_ascii=False, separators=(',', ':'))

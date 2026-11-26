@@ -253,6 +253,7 @@ def grasp(robot, plan, log=None, look=None):
     if tipped:                                   # the jaw is sitting on top of the object and pushing the robot up
         if log: log('机身被顶起，松手重来')
         robot.set_arm(grip=0.5); yield from wait(robot, 0.3)
+        robot.set_grip_torque(P['gripper_torque'])         # (the ramp may have stopped part of the way up: the next thing the gripper does starts from the full limit, as after the other aborts)
         robot.set_arm(q5=plan['lift'][1], grip=0.3, speed=1.0); yield from wait_arm(robot)
         return False
     for q in plan['lift']:
