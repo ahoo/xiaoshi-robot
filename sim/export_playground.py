@@ -73,7 +73,7 @@ def accept_summary():
         r = json.load(open(os.path.join(ROOT, 'results', 'acceptance_sim.json')))
         import accept
         titles = {it['id'] if isinstance(it, dict) else it[0]: (it['title'] if isinstance(it, dict) else it[1]) for it in accept.ITEMS}
-        return dict(when=r.get('when'), code=r.get('code'), items={k: dict(title=titles.get(k, ''), verdict=v.get('verdict'), lines=[dict(label=l.get('label'), measured=l.get('measured'), need=l.get('need'), ok=l.get('ok')) for l in v.get('lines', [])][:6]) for k, v in r['items'].items()})
+        return dict(when=r.get('when'), code=r.get('code'), items={k: dict(title=titles.get(k, ''), verdict=v.get('verdict'), accepted=accept.ACCEPTED.get(k), lines=[dict(label=l.get('label'), measured=l.get('measured'), need=l.get('need'), ok=l.get('ok')) for l in v.get('lines', [])][:6]) for k, v in r['items'].items()})
     except Exception as e:
         print('accept summary skipped:', type(e).__name__, e)
         return {}

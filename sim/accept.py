@@ -450,7 +450,7 @@ def dashboard_rows(report):
     for it in ITEMS:
         v = report['items'].get(it['id'], dict(verdict='NODATA', lines=[], why='还没跑'))
         items.append(dict(id=it['id'], group=GROUPS[it['group']], title=it['title'], verdict=word[v['verdict']], measured='；'.join(f'{c["label"]} {c["measured"]}' for c in v['lines'][:3]) or v.get('why', ''),
-                          criterion=it['criterion'], scenario=it['scenario'], not_shown=it['not_shown'], known=(KNOWN.get(it['id'], '') if v['verdict'] != 'PASS' else ''), caveat=CAVEAT.get(it['id'], ''), real='第 ' + '、'.join(str(n) for n in REAL.get(it['id'], [])) + ' 项', command='；'.join(JOBS[j][0] for j in it['jobs']), source=v.get('mode', '—') + (' ' + v['when'] if v.get('when') else '')))
+                          criterion=it['criterion'], scenario=it['scenario'], not_shown=it['not_shown'], known=((('**已接受：** ' + ACCEPTED[it['id']] + '\n\n') if it['id'] in ACCEPTED else '') + KNOWN.get(it['id'], '') if v['verdict'] != 'PASS' else ''), caveat=CAVEAT.get(it['id'], ''), real='第 ' + '、'.join(str(n) for n in REAL.get(it['id'], [])) + ' 项', command='；'.join(JOBS[j][0] for j in it['jobs']), source=v.get('mode', '—') + (' ' + v['when'] if v.get('when') else '')))
         for c in v['lines']: lines.append(dict(item=it['id'], line=c['label'], measured=c['measured'], need=c['need'], ok='✓' if c['ok'] else '✗'))
     return items, lines
 
@@ -547,12 +547,18 @@ KNOWN = {
            '(1) 球离沙发端头不到 2 cm，机器人要站的那条走道（沙发端头和书架之间，实宽 45 cm）按地图只剩 18–20 cm 的净空（地图格 5 cm，沙发端面正好落在格线上，被标成两格厚，多出 2.5 cm），低于规划要求的 21.5 cm，放宽到 19 cm 才有解；'
            '(2) 拨板落在球南边、离沙发端面 5 cm 时，**夹爪的手掌先碰到沙发**（碰撞检测里是 sofa–palm，机身被顶起 4°）；把拨板转 90°（两爪沿推的方向排）手掌才不碰，可是这样推，球被夹在拨板和沙发端面之间卡住，机身只往前走了 2–5 cm 就被顶得转了 10–12°，球没动；'
            '(3) 把拨板放在球正上方轻轻压住再往外拖，想靠摩擦把它滚出来：夹爪在球上滑过去，球没动（压重了还把机身顶起来 4°）。'
-           '所以要修只能换硬件或换手段：夹爪更窄更长（手掌不碰家具）、带手腕偏转（夹爪能顺着家具面夹）、或者让人帮一把（机器人说“沙发边上有个球我拿不到，请帮我拿一下”）。我的建议仍是先接受这一条，等真机上看夹爪对贴边的东西到底怎么样再决定；上面的数字都是在物理仿真里量的；推开的动作代码和试验脚本没有留在仓库里（没有一个能用的）。'),
+           '所以要修只能换硬件或换手段：夹爪更窄更长（手掌不碰家具）、带手腕偏转（夹爪能顺着家具面夹）、或者让人帮一把（机器人说“沙发边上有个球我拿不到，请帮我拿一下”）。我的建议是先接受这一条，等真机上看夹爪对贴边的东西到底怎么样再决定（你已经决定接受，见下面的“已接受”）；上面的数字都是在物理仿真里量的；推开的动作代码和试验脚本没有留在仓库里（没有一个能用的）。'),
     'B1': ('4 号布局里第 2 件是毛绒玩具：抓取时夹爪合到底，固定指垫被楔进玩具的躯干和头之间（头的偏转铰链被顶到 0.79 rad，超出它的限位 ±0.60 rad；躯干和头各顶着指垫约 20 N，指垫陷进去 7.5 和 11.8 mm），松手后指垫仍卡在里面。'
            '控制器自带的“抖 3 次、按到筐底 2 次”没有把它弄下来；我另外试的 10 种动作（手腕转 45°/90°/180°、按在筐底再转、夹爪反复开合、腕关节抖动、在筐底拖、快速抬起、整只手翻过来）也都没有，所以控制器按设计停机求助。'
            '同样的代码、同样的种子，每次都在 149.8 s 停在这里；第十六轮的 12 个布局试验里这个布局也是唯一失败的（11/12）。'
            '单独拿毛绒玩具和袜子各做 40 次“抓起来放进筐里”（夹力 1.0 和 0.8 N·m）一次都没卡住，所以这是少见的几何组合，不是普遍问题；但一旦发生，整套任务就停在那里。'
            '注意仿真里的毛绒玩具是几块刚性球加弹簧铰链，指垫“楔进去”的方式在真玩具上不一定会出现。这一项没有改控制器；把最后一下夹力从 1.0 降到 0.4/0.6/0.8 N·m，这个布局都能 5/5，但这只是一次观察，不当作修复。'),
+}
+
+
+# a person's decision about an item that does not pass: the verdict stays what the simulator showed, the decision is written beside it
+ACCEPTED = {
+    'E3': '2026-11-26 你决定接受这一条作为已知限制。判定仍是“没通过”（没有改标准，也没有改成通过）；机器人拿不到时也先不加“请人帮忙”的提示。要重新打开它：换夹爪（更窄更长、带手腕偏转）以后重跑 `python accept.py --run standard --only E3`。',
 }
 
 
@@ -568,13 +574,15 @@ def render_markdown(report):
     where = report['source'] if len(modes) <= 1 else '各项的来源不同，见每项的“来源”列：' + '、'.join(modes)
     L += [f'## 最近一次：{whens[-1] if whens else report["when"]}（{where}，代码 {report["code"]}）', '']
     if report.get('note'): L += [report['note'], '']
-    L += [f'**{npass} 项通过，{nfail} 项没通过，{nnd} 项没有数据或没跑成**（共 {len(items)} 项）。', '']
+    acc = [i for i, v in items.items() if v['verdict'] == 'FAIL' and i in ACCEPTED]
+    L += [f'**{npass} 项通过，{nfail} 项没通过' + (f'（其中 {len(acc)} 项已接受为已知限制：{"、".join(acc)}）' if acc else '') + f'，{nnd} 项没有数据或没跑成**（共 {len(items)} 项）。', '']
     bad = [(i, v) for i, v in items.items() if v['verdict'] != 'PASS']
     if bad:
         L += ['### 没通过或没有数据的', '']
         for i, v in bad:
             it = next(x for x in ITEMS if x['id'] == i); L.append(f'- **{i} {it["title"]}**：' + ('没有数据或没跑成（' + v['why'] + '）' if v['verdict'] in ('NODATA', 'ERROR') else '；'.join(f'{c["label"]} {c["measured"]}（要求 {c["need"]}）' for c in v['lines'] if not c['ok'])))
             if i in KNOWN: L.append(f'  - **查过了**：{KNOWN[i]}')
+            if i in ACCEPTED: L.append(f'  - **已接受**：{ACCEPTED[i]}')
         L.append('')
     sym = dict(PASS='✅ 通过', FAIL='❌ 没通过', NODATA='⚪ 没有数据', ERROR='⚠️ 没跑成')
     for g, gname in GROUPS.items():
@@ -582,7 +590,7 @@ def render_markdown(report):
         for it in [x for x in ITEMS if x['group'] == g]:
             v = items.get(it['id'], dict(verdict='NODATA', lines=[], why='没跑')); nums = '<br>'.join(f'{"✓" if c["ok"] else "✗"} {c["label"]}：{c["measured"]}（{c["need"]}）' for c in v['lines']) or v.get('why', '')
             cmds = '<br>'.join(f'`{JOBS[j][0]}`' for j in it['jobs'])
-            L.append(f'| {it["id"]} | {it["title"]} | {sym[v["verdict"]]} | {nums} | {cmds} | {v.get("mode", "—")}<br>{v.get("when", "")} |')
+            L.append(f'| {it["id"]} | {it["title"]} | {sym[v["verdict"]] + ("（已接受）" if v["verdict"] == "FAIL" and it["id"] in ACCEPTED else "")} | {nums} | {cmds} | {v.get("mode", "—")}<br>{v.get("when", "")} |')
         L.append('')
     L += ['## 每一项做了什么、标准是什么、仿真证明不了什么', '']
     for it in ITEMS:
