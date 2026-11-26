@@ -171,7 +171,7 @@
     "found": true,
     "named": true,
     "wrong": false,
-    "t_named": 0.8
+    "t_named": 1.0
    },
    {
     "cam": "forearm_up",
@@ -193,7 +193,7 @@
     "found": true,
     "named": true,
     "wrong": false,
-    "t_named": 1.2
+    "t_named": 2.2
    },
    {
     "cam": "forearm_up",
@@ -666,7 +666,7 @@
     "found": true,
     "named": true,
     "wrong": false,
-    "t_named": 2.2
+    "t_named": 1.0
    },
    {
     "cam": "forearm_up",

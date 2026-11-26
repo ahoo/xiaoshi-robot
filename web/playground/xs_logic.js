@@ -262,6 +262,7 @@ class Voice {
                 if (!ft.length) break;
                 const [sc] = match(p, ft, false);
                 let th = thr(p.length); if (intent === 'stop') th = Math.min(th, p.length > 1 ? 0.7 : 0.5);
+                if (this.V.sensitive.includes(intent)) th = Math.max(th, 0.99);          // remember / forget somebody and the microphone: never on a near miss of the sound ('巡视一下' is not '记一下')
                 if (sc >= th) { const v = sc * w * (0.62 + 0.13 * Math.min(p.length, 3)); if (v > best[0]) best = [v, phrase]; }
             }
             bestBy[intent] = best;
@@ -426,7 +427,7 @@ class Voice {
             if (!H) { say(`好的，我去${name}那边`); break; }
             if (!H.placeKnown(name)) say(`我还不知道${name}在哪里，要先扫描一下家里`);
             else if (H.goToPlace(name)) { this.ctx.place = name; say(`好的，我去${name}那边`); }
-            else say(`我去不了${name}那边，路被挡住了`);
+            else say(`我找不到能站的位置去${name}那边，它旁边太挤了`);
             break;
         }
         case 'charge': if (H) H.chargeNow(); say('好的，我去充电'); break;

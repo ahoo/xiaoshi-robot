@@ -532,6 +532,38 @@ def _voice_dialogues():
     chk('forget asks and then forgets', a.get('action') == 'confirm' and b.get('action') == 'forgot' and ('forget', '小明') in vs.actions, (a.get('reply'), b.get('reply')))
     vs = new(); vs.extra_persons = ['小明']; a = vs.hear('小拾小拾，忘掉小明', role='child')
     chk('a child cannot make it forget', a.get('action') == 'denied', a.get('reply'))
+    # 'go to the sofa' after the house has been scanned: a free spot is found even when the four standard ones (0.5 m from the middle of each side) are taken by the table and the shelf; when there really is none it says so,
+    # and it only says 'scan the house first' when the house has not been scanned
+    import numpy as np
+    from episode import _furn_dist
+    from model import BASKET, FURNITURE
+    class _O: pass
+    def stub(blocked=False, scanned=True):
+        sup = _O(); sup.calls = []; sup.go_to = lambda x, y, **kw: sup.calls.append((round(x, 2), round(y, 2))); sup.r = _O(); sup.r.t = 0.0; sup.mode = 'IDLE'; sup.idle = lambda: None; sup.charge_now = lambda: None
+        home = _O(); home.inv = None; home.a = _O(); home.a.basket = dict(BASKET); home.a.pose = lambda: (3.0, 2.0, 0.0)
+        home.a.costmap = lambda: np.zeros((60, 80)) if blocked else np.array([[_furn_dist((i + 0.5) * 0.05, (j + 0.5) * 0.05) for i in range(80)] for j in range(60)])
+        home.analysis = dict(furniture=[dict(centre=(f[1], f[2], 0.0), length=max(f[3], f[4] or f[3]), width=min(f[3], f[4] or f[3]), yaw=0.0 if (f[4] is None or f[3] >= f[4]) else math.pi / 2, height_seen=f[5]) for f in FURNITURE]) if scanned else None
+        return sup, home
+    sup, home = stub(); vs = VoiceSystem(sup, home, None, asr=SimASR(0.0, 1)); vs.hear('小拾小拾，过去沙发', role='owner')
+    spot = sup.calls[0] if sup.calls else None; edge = None if spot is None else math.hypot(max(abs(spot[0] - 0.95) - 0.75, 0), max(abs(spot[1] - 0.4) - 0.3, 0))       # the sofa: centre (0.95, 0.4), 1.5 x 0.6 m
+    ok_spot = spot is not None and 0.4 <= edge <= 0.75 and _furn_dist(*spot) >= 0.235
+    chk('go to the sofa finds a spot when the four standard ones are taken', ok_spot, sup.calls)
+    sup, home = stub(blocked=True); vs = VoiceSystem(sup, home, None, asr=SimASR(0.0, 1)); a = vs.hear('小拾小拾，过去沙发', role='owner')
+    chk('no free spot at all: says so, does not say the house is unknown', not sup.calls and '找不到能站的位置' in (a.get('reply') or ''), a.get('reply'))
+    sup, home = stub(scanned=False); vs = VoiceSystem(sup, home, None, asr=SimASR(0.0, 1)); a = vs.hear('小拾小拾，过去沙发', role='owner')
+    chk('before a scan: asks for the scan', not sup.calls and '要先扫描' in (a.get('reply') or ''), a.get('reply'))
+    # remembering / forgetting somebody and muting need the sound to be right, not nearly right: sentences that only sound a little like '记一下', '这是我的', '忘掉', '静音' are not those intents
+    #   ('巡视一下' was heard as '记一下', the remember-a-person flow, instead of 'scan the house': found by checking the web playground against this code)
+    near = [('巡视一下', 'scan_home'), ('去巡视一下家里', 'scan_home'), ('吃一下', None), ('试一下', None), ('这是谁的', None), ('那个球是我的', None)]       # (a word that sounds exactly the same, like 清楚 / 清除 or 路 / 录, cannot be told apart by sound and is not in this list)
+    got = []
+    for text, want in near:
+        vs = new(); rec = vs.hear('小拾小拾，' + text, role='owner'); got.append((text, rec.get('intent'), rec.get('action')))
+    bad = [g for g, (text, want) in zip(got, near) if (g[1] != want if want else g[1] in ('enrol', 'forget', 'privacy'))]
+    chk('a near miss of the sound is not a sensitive intent', not bad, bad or got)
+    vs = new(); ok_all = []
+    for text, want in (('记一下我女儿', 'enrol'), ('记住这个孩子', 'enrol'), ('忘掉小明', 'forget'), ('静音', 'privacy'), ('你在录音吗', 'privacy')):
+        vs = new(); vs.extra_persons = ['小明']; rec = vs.hear('小拾小拾，' + text, role='owner'); ok_all.append((text, rec.get('intent')) if rec.get('intent') != want else None)
+    chk('the sensitive intents are still understood when said right', not any(ok_all), [x for x in ok_all if x])
     # language model: a proposed intent goes through the permission check and a confirmation; garbage and timeouts fall back
     llm = MockLLM({'乱糟糟': dict(intent='tidy'), '去客厅扫地图': dict(intent='scan_home'), '胡说': dict(intent='rm_rf'), '讲个故事': dict(say='从前有一只小机器人，它每天都在家里捡玩具。')})
     vs = new(llm=llm); a = vs.hear('小拾小拾，房间乱糟糟的', role='owner'); b = vs.hear('好的', role='owner')

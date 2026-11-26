@@ -1,7 +1,7 @@
 {
- "when": "2026-11-25 04:23",
+ "when": "2026-11-26 03:55",
  "source": "重跑（standard）",
- "code": "62a94d1",
+ "code": "65c4bb9+未提交的改动",
  "items": {
   "A1": {
    "verdict": "PASS",
@@ -759,18 +759,18 @@
      "ok": true,
      "rc": 0,
      "seconds": 2,
-     "log": "/tmp/accept_final/logs/identity.log"
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/identity.log"
     },
     "faces": {
      "ok": true,
      "rc": 0,
-     "seconds": 23,
-     "log": "/tmp/accept_final/logs/faces.log"
+     "seconds": 43,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/faces.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 05:53"
+   "when": "2026-11-26 03:56"
   },
   "E5": {
    "verdict": "PASS",
@@ -954,13 +954,13 @@
     "voice": {
      "ok": true,
      "rc": 0,
-     "seconds": 58,
-     "log": "/tmp/accept_final/logs/voice.log"
+     "seconds": 74,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/voice.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 06:14"
+   "when": "2026-11-26 03:57"
   },
   "F2": {
    "verdict": "PASS",
@@ -1007,20 +1007,20 @@
     "lang": {
      "ok": true,
      "rc": 0,
-     "seconds": 168,
-     "log": "/tmp/accept_final/logs/lang.log"
+     "seconds": 191,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/lang.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 06:17"
+   "when": "2026-11-26 04:00"
   },
   "F3": {
    "verdict": "PASS",
    "lines": [
     {
      "label": "对话检查",
-     "measured": "50/50",
+     "measured": "55/55",
      "need": "全部",
      "ok": true
     },
@@ -1036,19 +1036,19 @@
     "lang": {
      "ok": true,
      "rc": 0,
-     "seconds": 168,
-     "log": "/tmp/accept_final/logs/lang.log"
+     "seconds": 191,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/lang.log"
     },
     "voice": {
      "ok": true,
      "rc": 0,
-     "seconds": 58,
-     "log": "/tmp/accept_final/logs/voice.log"
+     "seconds": 74,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/voice.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 06:17"
+   "when": "2026-11-26 04:00"
   },
   "F4": {
    "verdict": "PASS",
@@ -1077,13 +1077,13 @@
     "day": {
      "ok": true,
      "rc": 0,
-     "seconds": 375,
-     "log": "/tmp/accept_final/logs/day.log"
+     "seconds": 311,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/day.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 06:23"
+   "when": "2026-11-26 04:06"
   },
   "F5": {
    "verdict": "PASS",
@@ -1176,13 +1176,13 @@
     "voiceprint": {
      "ok": true,
      "rc": 0,
-     "seconds": 351,
-     "log": "/tmp/accept_final/logs/voiceprint.log"
+     "seconds": 273,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/voiceprint.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 06:34"
+   "when": "2026-11-26 04:10"
   },
   "G3": {
    "verdict": "PASS",
@@ -1223,13 +1223,13 @@
     "assoc": {
      "ok": true,
      "rc": 0,
-     "seconds": 310,
-     "log": "/tmp/accept_final/logs/assoc.log"
+     "seconds": 269,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/assoc.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 06:39"
+   "when": "2026-11-26 04:15"
   },
   "G4": {
    "verdict": "PASS",
@@ -1258,13 +1258,13 @@
     "day2": {
      "ok": true,
      "rc": 0,
-     "seconds": 155,
-     "log": "/tmp/accept_final/logs/day2.log"
+     "seconds": 217,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/day2.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 06:42"
+   "when": "2026-11-26 04:18"
   },
   "H1": {
    "verdict": "PASS",
@@ -1288,12 +1288,12 @@
      "ok": true,
      "rc": 0,
      "seconds": 5,
-     "log": "/tmp/accept_final/logs/profile.log"
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/profile.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 06:42"
+   "when": "2026-11-26 04:18"
   },
   "I1": {
    "verdict": "PASS",
@@ -1351,13 +1351,13 @@
     "llm": {
      "ok": true,
      "rc": 0,
-     "seconds": 6,
-     "log": "/tmp/accept_final/logs/llm.log"
+     "seconds": 5,
+     "log": "/tmp/claude-0/-home-user-xiaoshi-robot/19481d5e-3cd5-5575-879e-3635829a892b/scratchpad/accept_voice/logs/llm.log"
     }
    },
    "source": "重跑（standard）",
    "mode": "重跑 standard",
-   "when": "2026-11-25 06:42"
+   "when": "2026-11-26 04:18"
   }
  }
 }

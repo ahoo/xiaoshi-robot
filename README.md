@@ -14,7 +14,7 @@
 
 - **现在就想玩、想验证，什么都不想装**：网页沙盘 [`docs/playground.md`](docs/playground.md)（`cd web/playground && python -m http.server`，或用会话里发布的页面）：对它说中文、让孩子冲过来、推倒它、调低电量、遥控；验证页做对了自己打勾；回放页放**真实物理仿真**录下的 7 段数据；对照页让沙盘的规则把真代码答过的 2600 多个情形再答一遍。**沙盘是 JavaScript 写的行为模型，不是真的机器人代码，没有物理**（规则和真代码一样、用数字比过；走路、抓取、起身的用时是简化的，偏快 20%–40%）。
 - **想亲手看它干活、点一点验证**：[`docs/architecture.md`](docs/architecture.md)（系统怎么分层、一句话怎么变成动作、逐功能怎么验证）；`cd sim && python live.py --open` 在浏览器里实时观察和操作（**只在 Linux 上测过**）。
-- **先在仿真里做功能验收**：[`docs/acceptance_sim.md`](docs/acceptance_sim.md)（30 项功能，每项一个场景、一条通过标准；`cd sim && python accept.py --run quick`，约 50 分钟，逐项给出通过/没通过和数字；`--run standard` 全部重跑约 2.5–3.5 小时）。买物料等这份验收满意了再说。最近一次全部重跑的结果：**29 项通过，1 项没通过**（共 30 项）。没通过的：E3 人走近时刹得住（一家三口的场景里 5 件只送到 4 件：妈妈走过时踢到一个球，球滚到家具边，机器人拿不回来；碰到人 0 次、碰撞 0 次，**不是安全问题**，原因和证据见 [`acceptance_sim.md`](docs/acceptance_sim.md)，接受还是先修由你定）。
+- **先在仿真里做功能验收**：[`docs/acceptance_sim.md`](docs/acceptance_sim.md)（30 项功能，每项一个场景、一条通过标准；`cd sim && python accept.py --run quick`，约 50 分钟，逐项给出通过/没通过和数字；`--run standard` 全部重跑约 2.5–3.5 小时）。买物料等这份验收满意了再说。最近一次全部重跑的结果：**29 项通过，1 项没通过**（共 30 项）。没通过的：E3 人走近时刹得住（一家三口的场景里 5 件只送到 4 件：妈妈走过时踢到一个球，球滚到家具边，机器人拿不回来；碰到人 0 次、碰撞 0 次，**不是安全问题**，原因和证据见 [`acceptance_sim.md`](docs/acceptance_sim.md)；试着做了“把贴着家具的东西推开”的动作，在物理仿真里夹爪的手掌会碰到沙发、推的时候球被卡住，没成，代码已撤掉，要修得换夹爪，接受还是先修由你定）。
 - 当前状态和已知限制：[`docs/status.md`](docs/status.md)；下一步计划：[`docs/roadmap.md`](docs/roadmap.md)
 - 试验结果和实物验收表（买了硬件以后做）：[`docs/validation.md`](docs/validation.md)
 - 要买的东西：[`docs/bom.md`](docs/bom.md)

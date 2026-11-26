@@ -1272,6 +1272,67 @@
    "detail": "这个要大人来说哦"
   },
   {
+   "name": "go to the sofa finds a spot when the four standard ones are taken",
+   "ok": true,
+   "detail": [
+    [
+     2.2,
+     1.25
+    ]
+   ]
+  },
+  {
+   "name": "no free spot at all: says so, does not say the house is unknown",
+   "ok": true,
+   "detail": "我找不到能站的位置去沙发那边，它旁边太挤了"
+  },
+  {
+   "name": "before a scan: asks for the scan",
+   "ok": true,
+   "detail": "我还不知道沙发在哪里，要先扫描一下家里"
+  },
+  {
+   "name": "a near miss of the sound is not a sensitive intent",
+   "ok": true,
+   "detail": [
+    [
+     "巡视一下",
+     "scan_home",
+     "scan_home"
+    ],
+    [
+     "去巡视一下家里",
+     "scan_home",
+     "scan_home"
+    ],
+    [
+     "吃一下",
+     null,
+     "reask"
+    ],
+    [
+     "试一下",
+     null,
+     "reask"
+    ],
+    [
+     "这是谁的",
+     null,
+     "reask"
+    ],
+    [
+     "那个球是我的",
+     null,
+     "reask"
+    ]
+   ]
+  },
+  {
+   "name": "the sensitive intents are still understood when said right",
+   "ok": true,
+   "detail": []
+  },
+  {
    "name": "LLM proposal still has to be confirmed",
    "ok": true,
    "detail": [
@@ -1311,5 +1372,5 @@
    "detail": "llm reply"
   }
  ],
- "ms_per_parse": 18.2
+ "ms_per_parse": 17.9
 }
